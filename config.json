@@ -1,0 +1,31 @@
+{
+    "general": {
+        "schema_version": 1.0,
+        "debug": true
+    },
+    "storage": {
+        "type": "S3",
+        "host": "s3.example.com",
+        "bucket": "my_bucket",
+        "bucket_location": "us-east-1",
+        "use_https": true,
+	"access_key": "MY_ACCESS_KEY",
+	"secret_key": "MY_SECRET_KEY"
+    },
+    "launcher": {
+	"type": "ghz",
+	"ghz_params": {
+	    "host": "",
+	    "insecure": true,
+	    "proto_path": "./common-service.proto",
+	    "call": "watson.runtime.core_ansible_wisdom_ext.v0.CoreAnsibleWisdomExtService.AnsibleWisdomPredict",
+	    "data": "{ \"prompt\": \"install node on rhel\", \"input\": { \"text\": \"\", \"output\":\"\"  } }",
+	    "metadata": "{\"mm-vmodel-id\":\"gpu-version-inference-service-v01\"}",
+	    "rps": 5,
+	    "concurrent_users": 3
+         }
+    },
+    "test_conditions": {
+	 "type": "ocp"
+    }
+}

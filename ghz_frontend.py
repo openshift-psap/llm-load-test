@@ -6,7 +6,6 @@ import argparse
 import json
 import logging
 import os
-import shlex
 import subprocess
 import sys
 import time
@@ -15,6 +14,7 @@ import yaml
 
 import boto3
 import botocore.exceptions
+import numpy as np
 
 CONFIG_PATH = "IS_LOAD_TEST_CONFIG_PATH"
 CONFIG_FILENAME = "IS_LOAD_TEST_CONFIG_FILENAME"
@@ -75,6 +75,52 @@ class Base():
                     # pylint: disable=raise-missing-from
 
 
+class AnsibleWisdomQueryGenerator(Base):
+    """
+    Parses an input file containing one json object per line (Gold Dataset)
+    and chooses a subset of input prompts / contexts
+    to be used as input to the load generator querying the model.
+
+    If max_size is defined, dataset will be a subset of max_size which are
+    equally spaced from the full sorted dataset.
+    """
+
+    def __init__(self, file, max_size):
+        input_json = self._json_load(file)
+        self.dataset = input_json["dataset"]
+        if max_size is not None:
+            self.dataset = self._get_subset(max_size)
+
+        self.dataset_version = input_json["metadata"]["version"]
+        self.next_query = 0
+
+    """
+    Get the next query. Iterates through the dataset in a round-robin.
+    """
+
+    def get_next_query(self):
+        ret_idx = self.next_query
+        self.next_query = (self.next_query+1) % len(self.dataset)
+        return self.dataset[ret_idx]
+
+    """
+    Access current dataset
+    """
+
+    def get_dataset(self):
+        return self.dataset
+
+    """
+    Returns a subset of n queries, equally spaced from current self.queries
+    """
+
+    def _get_subset(self, max_size):
+        query_list_length = len(self.dataset)
+        indices = np.round(np.linspace(
+            0, query_list_length - 1, max_size)).astype(int)
+        return ([self.dataset[i] for i in indices])
+
+
 class CommandRunner(Base):
     """
     """
@@ -84,11 +130,12 @@ class CommandRunner(Base):
         """
 
         with subprocess.Popen(
-            shlex.split(command),
+            command,
             stdout=subprocess.PIPE
         ) as process:
             full_output = []
             full_error = []
+            error=""
             while True:
                 try:
                     output = process.stdout.readline()
@@ -127,7 +174,7 @@ class Config(Base):
             config_file = "config.json"
         try:
             self.config = super()._json_load(
-                    os.path.join(base_path, config_file)
+                os.path.join(base_path, config_file)
             )
         except (FileNotFoundError, RuntimeError) as msg:
             super()._exit_failure("Could not open/parse " + str(msg))
@@ -275,6 +322,62 @@ class S3Storage():
             return None
         return metadata
 
+class GRPCurlRunner(CommandRunner, Base):
+    """
+    """
+
+    def __init__(self, params):
+        """
+        """
+        self.call = params.get("call")
+        self.test_output = None
+        self.output_tokens = 0
+        self.test_metadata = {}
+        self.host = params.get("host")
+        self.query = params.get("query")
+        self.context = params.get("context")
+        self.vmodel_id = params.get("vmodel_id")
+
+    def run(self):
+        """
+        """
+        data_obj = {"prompt": self.query, "context": self.context}
+        command = ["grpcurl",
+                   "-plaintext",
+                   "-proto",
+                   "common-service.proto",
+                   "-d",
+                   json.dumps(data_obj),
+                   "-H",
+                   f"mm-vmodel-id: {self.vmodel_id}",
+                   f"{self.host}",
+                   f"{self.call}",
+                   ]
+
+        print(command)
+        rcode, output, error = super()._run_command(command, verbose=True)
+        self.test_output = ''.join([byte_array.decode('utf-8') for byte_array in output])
+        output_obj = json.loads(self.test_output)
+        output_text = output_obj.get("text")
+        print(f"OUTPUT from grpcurl run: \n{output_text}")
+        self.output_tokens=output_obj.get("generatedTokenCount")
+        print(f"OUTPUT TOKENS: {self.output_tokens}")
+
+    def get_output(self):
+        """
+        """
+        return self.test_output
+
+    def get_output_tokens(self):
+        """
+        """
+        return self.output_tokens
+
+    def set_input(self, prompt, context):
+        self.query = prompt
+        self.context = context
+
+
 
 class GhzRunner(CommandRunner, Base):
     """
@@ -290,34 +393,38 @@ class GhzRunner(CommandRunner, Base):
         self.host = params.get("host")
         self.query = params.get("query")
         self.context = params.get("context")
-        self.insecure = "--insecure " if params.get("insecure") else None
+        self.insecure = "--insecure" if params.get("insecure") else None
         self.call = params.get("call")
         self.vmodel_id = params.get("vmodel_id")
 
     def run(self):
         """
         """
-        command = "" + \
-            "ghz " +\
-            f"{self.insecure} " +\
-            "--proto " +\
-            "./protos/common-service.proto " +\
-            "--call " +\
-            f"{self.call} " +\
-            "-d " +\
-            f"\"{{ \\\"prompt\\\": \\\"{self.query}\\\", \\\"context\\\": \\\"{self.context}\\\" }}\" " +\
-            f"{self.host} " +\
-            f"--metadata=\"{{\\\"mm-vmodel-id\\\":\\\"{self.vmodel_id}\\\"}}\" " +\
-            "-c " +\
-            f"{self.ghz_concurrency} " +\
-            "--total " +\
-            f"{self.total_requests} " +\
-            "-O " +\
-            "json " +\
-            "-o " +\
-            "./temp.json"
+        data_obj = {"prompt": self.query, "context": self.context}
+        command = ["ghz",
+                   self.insecure,
+                   "--disable-template-data",
+                   "--proto",
+                   "./protos/common-service.proto",
+                   "--call",
+                   f"{self.call}",
+                   "-d",
+                   json.dumps(data_obj),
+                   f"{self.host}",
+                   "--metadata",
+                   f"{{\"mm-vmodel-id\":\"{self.vmodel_id}\"}}",
+                   "-c",
+                   f"{self.ghz_concurrency}",
+                   "--total",
+                   f"{self.total_requests}",
+                   "-O",
+                   "json",
+                   "-o",
+                   "./temp.json",
+                   ]
+
         print(command)
-        rcode, output, error = super()._run_command(command)
+        rcode, output, error = super()._run_command(command, verbose=False)
         self.test_output = super()._json_load("./temp.json")
         result = super()._json_load("./temp.json")
         self.test_metadata["date"] = result.get("date")
@@ -331,6 +438,90 @@ class GhzRunner(CommandRunner, Base):
         """
         """
         return self.test_metadata
+
+    def set_input(self, prompt, context):
+        self.query = prompt
+        self.context = context
+
+
+class AnsibleWisdomExperimentRunner():
+    """
+    """
+
+    def __init__(self):
+        """
+        """
+        self.ghz_instance = GhzRunner(
+            params={
+                "concurrency": 1,
+                "requests": 4,
+                "host": "localhost:8033",
+                "query": "temp",
+                "context": "temp",
+                "insecure": True,
+                "call": "watson.runtime.wisdom_ext.v0.WisdomExtService.AnsiblePredict",
+                "vmodel_id": "gpu-version-inference-service-v02"
+
+            }
+        )
+
+        self.grpcurl_instance = GRPCurlRunner(
+            params={
+            "host": "localhost:8033",
+            "query": "install httpd on rhel",
+            "context": "",
+            "insecure": True,
+            "call": "watson.runtime.wisdom_ext.v0.WisdomExtService.AnsiblePredict",
+            "vmodel_id": "gpu-version-inference-service-v02"
+            }
+        )
+
+        self.dataset_gen = AnsibleWisdomQueryGenerator(
+            "sorted_dataset.json", max_size=5)
+
+        self.storage = S3Storage(
+            region='default',
+            access_key="myuser",
+            secret_key="25980928",
+            s3_endpoint="http://localhost:9000",
+            bucket="mybucket"
+        )
+
+    def run(self):
+        """
+        """
+        dataset = self.dataset_gen.get_dataset()
+        for query in dataset:
+            print("#################")
+            print(f"###### Running GRPCURL/GHZ with query: \n{query}")
+            self.grpcurl_instance.set_input(query.get("prompt"), query.get("context"))
+            self.grpcurl_instance.run()
+            #print(f"GRPCURL INSTANCE OUTPUT: {self.grpcurl_instance.get_output()}")
+            self.ghz_instance.set_input(query.get("prompt"), query.get("context"))
+            self.ghz_instance.run()
+
+            output_obj = self.ghz_instance.get_output()
+            print("####RESULT####")
+            throughput = output_obj.get("rps")
+            min_lat = float(output_obj.get("fastest"))/(10**9)
+            print(f"throughput: {throughput}")
+            print(f"minimum latency: {min_lat}")
+
+            test_date = output_obj.get("date")
+            # TODO
+            # self.storage.upload_object_with_metadata(
+            #    body=self.ghz_instance.get_output(),
+            #    object_name=f"data/test-{test_date}.json",
+            #    metadata={
+            #        'date': test_date
+            #    }
+            # )
+        # obj_content = self.storage.retrieve_object_body(f"data/test-{test_date}.json")
+        # obj_metadata = self.storage.retrieve_object_metadata(f"data/test-{test_date}.json")
+        # print("#################")
+        # print(f'Object body: {obj_content}')
+        # print("#################")
+        # print(f'Object metadata: {obj_metadata.get("Metadata")}')
 
 
 class GHZDemo():
@@ -350,7 +541,6 @@ class GHZDemo():
                 "insecure": True,
                 "call": "watson.runtime.wisdom_ext.v0.WisdomExtService.AnsiblePredict",
                 "vmodel_id": "gpu-version-inference-service-v02"
-
             }
         )
         self.storage = S3Storage(
@@ -375,12 +565,36 @@ class GHZDemo():
                 'date': test_date
             }
         )
-        obj_content = self.storage.retrieve_object_body(f"data/test-{test_date}.json")
-        obj_metadata = self.storage.retrieve_object_metadata(f"data/test-{test_date}.json")
+        obj_content = self.storage.retrieve_object_body(
+            f"data/test-{test_date}.json")
+        obj_metadata = self.storage.retrieve_object_metadata(
+            f"data/test-{test_date}.json")
         print("#################")
         print(f'Object body: {obj_content}')
         print("#################")
         print(f'Object metadata: {obj_metadata.get("Metadata")}')
+
+
+class DatasetDemo():
+    """
+    Demo for the dataset generator
+    """
+
+    def __init__(self):
+        print("#################")
+        test_query_generator = AnsibleWisdomQueryGenerator(
+            "sorted_dataset.json", max_size=4)
+        print("Dataset version: {}".format(
+            test_query_generator.dataset_version))
+        token_sizes = [x["op_token_count"]
+                       for x in test_query_generator.dataset]
+        print("Token sizes of all entries in the dataset:  {}".format(token_sizes))
+        print("#################")
+        print("Here are the next 5 queries to be used (round robin):")
+        for i in range(5):
+            next_query = test_query_generator.get_next_query()
+            print({"prompt": next_query["prompt"],
+                  "context": next_query["context"]})
 
 
 class S3Demo():
@@ -439,15 +653,24 @@ def main():
                         help="use ghz")
     parser.add_argument("--s3demo", action="store_true",
                         help="S3 Demo")
+    parser.add_argument("--dataset_demo", action="store_true",
+                        help="Dataset Demo")
+    parser.add_argument("--wisdom_experiment", action="store_true",
+                        help="Ansible Wisdom model experiment")
     args = parser.parse_args()
     config = Config()
     if args.verbose:
         print(config.get_complete_config())
     if args.s3demo:
         S3Demo()
+    if args.dataset_demo:
+        DatasetDemo()
     if args.ghz:
         demo = GHZDemo()
         demo.run()
+    if args.wisdom_experiment:
+        test = AnsibleWisdomExperimentRunner()
+        test.run()
 
 
 if __name__ == "__main__":

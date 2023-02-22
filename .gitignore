@@ -1,5 +1,8 @@
 # Other
 mc
+sorted_dataset.json
+awgold_v2.4.2_tasks-202300113-185050.json
+protos
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

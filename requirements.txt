@@ -1,0 +1,6 @@
+numpy
+pyyaml
+pylint
+flake8
+boto3
+

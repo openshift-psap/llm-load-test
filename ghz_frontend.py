@@ -3,6 +3,7 @@
 """
 
 import argparse
+import datetime
 import json
 import logging
 import os
@@ -73,6 +74,16 @@ class Base():
             except json.JSONDecodeError:
                 raise RuntimeError(f"Could not parse {file}") \
                     # pylint: disable=raise-missing-from
+
+    def _json_dump(self, dictionary, file):
+        """
+        Simple JSON file writer
+        #TODO error checking
+        """
+        json_object = json.dumps(dictionary, indent=4)
+ 
+        with open(file, "w") as outfile:
+            outfile.write(json_object)  
 
 
 class AnsibleWisdomQueryGenerator(Base):
@@ -189,16 +200,15 @@ class S3Storage():
     """
     """
 
-    def __init__(self, region, bucket, access_key, secret_key, s3_endpoint):
+    def __init__(self, region, bucket, access_key=None, secret_key=None, s3_endpoint=None):
         """
         """
         try:
-            region = 'default'
-            s3_client = boto3.client(
+            session = boto3.Session(profile_name='default')
+            region = region
+            s3_client = session.client(
                 service_name='s3',
                 region_name=region,
-                aws_access_key_id=access_key,
-                aws_secret_access_key=secret_key,
                 endpoint_url=s3_endpoint
             )
             # location = {'LocationConstraint': region}
@@ -355,13 +365,11 @@ class GRPCurlRunner(CommandRunner, Base):
                    ]
 
         print(command)
-        rcode, output, error = super()._run_command(command, verbose=True)
+        rcode, output, error = super()._run_command(command, verbose=False)
         self.test_output = ''.join([byte_array.decode('utf-8') for byte_array in output])
         output_obj = json.loads(self.test_output)
         output_text = output_obj.get("text")
-        print(f"OUTPUT from grpcurl run: \n{output_text}")
         self.output_tokens=output_obj.get("generatedTokenCount")
-        print(f"OUTPUT TOKENS: {self.output_tokens}")
 
     def get_output(self):
         """
@@ -400,6 +408,30 @@ class GhzRunner(CommandRunner, Base):
     def run(self):
         """
         """
+        command = self.get_command()
+        
+        print(command)
+        start_time = datetime.datetime.now().isoformat()
+        #TODO check rcode, output, error
+        rcode, output, error = super()._run_command(command, verbose=False)
+        end_time = datetime.datetime.now().isoformat()
+
+        self.test_output = super()._json_load("./temp.json")
+        self.test_output["start_time"] = start_time
+        self.test_output["end_time"] = end_time
+    
+        result = super()._json_load("./temp.json")
+        self.test_metadata["date"] = result.get("date")
+        self.test_metadata["start_time"] = start_time
+        self.test_metadata["end_time"] = end_time
+        self.test_metadata["throughput"] = str(self.test_output.get("rps"))
+        self.test_metadata["min_latency"] =  str(float(self.test_output.get("fastest"))/(10**9))
+        self.test_metadata["prompt"] = self.query
+        self.test_metadata["ghz_concurrency"] = str(self.ghz_concurrency)
+        self.test_metadata["ghz_max_requests"] = str(self.total_requests)
+
+
+    def get_command(self):
         data_obj = {"prompt": self.query, "context": self.context}
         command = ["ghz",
                    self.insecure,
@@ -422,12 +454,7 @@ class GhzRunner(CommandRunner, Base):
                    "-o",
                    "./temp.json",
                    ]
-
-        print(command)
-        rcode, output, error = super()._run_command(command, verbose=False)
-        self.test_output = super()._json_load("./temp.json")
-        result = super()._json_load("./temp.json")
-        self.test_metadata["date"] = result.get("date")
+        return command
 
     def get_output(self):
         """
@@ -444,7 +471,7 @@ class GhzRunner(CommandRunner, Base):
         self.context = context
 
 
-class AnsibleWisdomExperimentRunner():
+class AnsibleWisdomExperimentRunner(Base):
     """
     """
 
@@ -453,8 +480,8 @@ class AnsibleWisdomExperimentRunner():
         """
         self.ghz_instance = GhzRunner(
             params={
-                "concurrency": 1,
-                "requests": 4,
+                "concurrency": 4,
+                "requests": 128,
                 "host": "localhost:8033",
                 "query": "temp",
                 "context": "temp",
@@ -480,12 +507,18 @@ class AnsibleWisdomExperimentRunner():
             "sorted_dataset.json", max_size=5)
 
         self.storage = S3Storage(
-            region='default',
-            access_key="myuser",
-            secret_key="25980928",
-            s3_endpoint="http://localhost:9000",
-            bucket="mybucket"
+            region='us-east-1',
+            bucket="wisdom-perf-data-test"
         )
+
+    def s3_result_path(self):
+        """
+        Temporary hack for our planned file structure in S3.
+        This path should depend on the config / param input to the experiment.
+        """
+        date_day = datetime.datetime.today().strftime('%Y-%m-%d')
+        path = f"InferenceResults/ModelMesh/WatsonRuntime/Wisdom_v0.0.8/{date_day}"
+        return path
 
     def run(self):
         """
@@ -496,32 +529,43 @@ class AnsibleWisdomExperimentRunner():
             print(f"###### Running GRPCURL/GHZ with query: \n{query}")
             self.grpcurl_instance.set_input(query.get("prompt"), query.get("context"))
             self.grpcurl_instance.run()
-            #print(f"GRPCURL INSTANCE OUTPUT: {self.grpcurl_instance.get_output()}")
+            output_tokens = self.grpcurl_instance.get_output_tokens()
+
             self.ghz_instance.set_input(query.get("prompt"), query.get("context"))
             self.ghz_instance.run()
 
+            test_metadata = self.ghz_instance.get_metadata()
+            test_metadata["output_tokens"] = f"{output_tokens}"
+            
+            
+            start_time = test_metadata.get("start_time")
+            
             output_obj = self.ghz_instance.get_output()
-            print("####RESULT####")
-            throughput = output_obj.get("rps")
-            min_lat = float(output_obj.get("fastest"))/(10**9)
-            print(f"throughput: {throughput}")
-            print(f"minimum latency: {min_lat}")
+            output_obj["output_tokens"] = f"{output_tokens}"
 
-            test_date = output_obj.get("date")
-            # TODO
-            # self.storage.upload_object_with_metadata(
-            #    body=self.ghz_instance.get_output(),
-            #    object_name=f"data/test-{test_date}.json",
-            #    metadata={
-            #        'date': test_date
-            #    }
-            # )
-        # obj_content = self.storage.retrieve_object_body(f"data/test-{test_date}.json")
-        # obj_metadata = self.storage.retrieve_object_metadata(f"data/test-{test_date}.json")
-        # print("#################")
-        # print(f'Object body: {obj_content}')
-        # print("#################")
-        # print(f'Object metadata: {obj_metadata.get("Metadata")}')
+            #TODO Should NOT be hardcoded
+            test_metadata["modelmesh_pods_per_node"] = "4"
+            test_metadata["nodes"] = "1"
+            output_obj["modelmesh_pods_per_node"] = "4"
+            output_obj["nodes"] = "1"
+
+            #TODO delete this local copy
+            super()._json_dump(output_obj, f"ghz-test-{start_time}-.json")
+
+            path = self.s3_result_path()
+            s3_json_obj =  "{}-ghz-results.json".format(str(uuid.uuid4()))
+            self.storage.upload_object_with_metadata(
+                body=json.dumps(output_obj),
+                object_name=f"{path}/{s3_json_obj}",
+                metadata=test_metadata
+            )
+            
+            obj_content = self.storage.retrieve_object_body(f"{path}/{s3_json_obj}")
+            obj_metadata = self.storage.retrieve_object_metadata(f"{path}/{s3_json_obj}")
+            print("#################")
+            print(f'Object body: {obj_content}')
+            print("#################")
+            print(f'Object metadata: {obj_metadata.get("Metadata")}')
 
 
 class GHZDemo():
@@ -608,11 +652,11 @@ class S3Demo():
         print("#################")
         print("Connecting to S3...")
         self.storage = S3Storage(
-            region='default',
-            access_key="myuser",
-            secret_key="25980928",
-            s3_endpoint="http://localhost:9000",
-            bucket="mybucket"
+            region='us-east-1',
+            #access_key="myuser",
+            #secret_key="25980928",
+            #s3_endpoint="http://localhost:9000",
+            bucket="wisdom-perf-data-test"
         )
         print("Listing buckets...")
         buckets = self.storage.list_buckets()

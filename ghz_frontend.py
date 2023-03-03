@@ -1,4 +1,4 @@
-# pylint: disable=too-few-public-methods,empty-docstring,too-many-arguments
+# pylint: disable=too-few-public-methods,empty-docstring,too-many-arguments,too-many-instance-attributes
 """
 """
 
@@ -8,6 +8,8 @@ import json
 import os
 import subprocess
 import uuid
+
+import deprecation
 
 from ansible_wisdom_query_generator import AnsibleWisdomQueryGenerator
 from base import Base
@@ -63,6 +65,10 @@ class Config(Base):
     def __init__(self):
         """
         """
+        self.storage_config = {}
+        self.command_config = {}
+        self.input_dataset = {}
+        self.test_conditions = {}
         base_path = os.getenv(CONFIG_PATH)
         config_file = os.getenv(CONFIG_FILENAME)
         if base_path is None:
@@ -75,11 +81,106 @@ class Config(Base):
             )
         except (FileNotFoundError, RuntimeError) as msg:
             super()._exit_failure("Could not open/parse " + str(msg))
+        self.__parse_storage_config()
+        self.__parse_command_config()
+        self.__parse_test_conditions()
 
+    @deprecation.deprecated()
     def get_complete_config(self):
         """
+        Deprecated
         """
         return self.config
+
+    def get_storage_config(self):
+        """
+        Returns a dictionary of the storage configuration.
+        Currently only S3 buckets are supported.
+        """
+        return self.storage_config
+
+    def __parse_storage_config(self):
+        """
+        Meant to be called at config load time e.g. constructor.
+        Only supports S3 atm.
+        """
+        if self.config.get("storage").get("type") == "s3":
+            self.storage_config["type"] = "s3"
+            subconfig = self.config.get("storage").get("s3_params")
+            self.storage_config["host"] = subconfig.get("s3_host")
+            self.storage_config["use_https"] = subconfig.get("s3_use_https")
+            self.storage_config["s3_access_key"] = subconfig.get("s3_access_key")
+            self.storage_config["s3_secret_key"] = subconfig.get("s3_secret_key")
+            self.storage_config["s3_bucket"] = subconfig.get("s3_bucket")
+            self.storage_config["s3_region"] = subconfig.get("s3_region")
+
+            s3_separator = subconfig.get("s3_separator")
+            s3_base_path = subconfig.get("s3_base_path")
+            s3_component = subconfig.get("s3_component")
+            s3_sub_component = subconfig.get("s3_sub_component")
+            s3_sub_comp_version = subconfig.get("s3_sub_comp_version")
+            self.storage_config["s3_result_path"] = s3_separator.join([
+                s3_base_path,
+                s3_component,
+                s3_sub_component,
+                s3_sub_comp_version
+            ])
+            # self.storage_config[""] = ""
+
+    def __parse_command_config(self):
+        """
+        Meant to be called at config load time e.g. constructor
+        Only supports ghz atm.
+        """
+        if self.config.get("launcher").get("type") == "ghz":
+            self.command_config["type"] = "ghz"
+            subconfig = self.config.get("launcher").get("ghz_params")
+            self.command_config["host"] = "localhost:8033"
+            self.command_config["insecure"] = subconfig.get("insecure")
+            self.command_config["proto_path"] = subconfig.get("proto_path")
+            self.command_config["call"] = subconfig.get("call")
+            self.command_config["vmodel_id"] = subconfig.get("vmodel_id")
+            self.command_config["query"] = subconfig.get("query")
+            self.command_config["context"] = subconfig.get("context")
+            self.command_config["concurrency"] = subconfig.get("concurrency")
+            self.command_config["requests"] = subconfig.get("requests")
+            # self.command_config[""] = ""
+            launcher_dataset_config = self.config.get("launcher").get("input_dataset")
+            self.input_dataset["filename"] = launcher_dataset_config.get("filename")
+            self.input_dataset["max_size"] = launcher_dataset_config.get("max_size")
+            # self.input_dataset[""] = ""
+
+    def __parse_test_conditions(self):
+        """
+        Meant to be called at config load time e.g. constructor
+        Used for any extra metadata which will be attached to results,
+        that is not already apart of the ghz / storage config.
+        """
+        test_conditions = self.config.get("test_conditions")
+
+        # S3 metadata needs to be strings
+        for keys in test_conditions:
+            test_conditions[keys] = str(test_conditions[keys])
+        self.test_conditions = test_conditions
+
+    def get_command_config(self):
+        """
+        Returns a dictionary of the command configuration.
+        Currently only GHZ commands are supported (type: ghz)
+        """
+        return self.command_config
+
+    def get_input_dataset(self):
+        """
+        Returns a dictionary of the dataset configuration.
+        """
+        return self.input_dataset
+
+    def get_test_conditions(self):
+        """
+        Returns a dictionary of the test condition metadata
+        """
+        return self.test_conditions
 
 
 class GRPCurlRunner(CommandRunner, Base):
@@ -97,15 +198,20 @@ class GRPCurlRunner(CommandRunner, Base):
         self.query = params.get("query")
         self.context = params.get("context")
         self.vmodel_id = params.get("vmodel_id")
+        # grpcurl can only search for protos in current dir
+        self.proto_dir = os.path.dirname(params.get("proto_path"))
+        self.proto_file = os.path.basename(params.get("proto_path"))
+        self.current_directory = os.getcwd()
 
     def run(self):
         """
         """
         data_obj = {"prompt": self.query, "context": self.context}
+
         command = ["grpcurl",
                    "-plaintext",
                    "-proto",
-                   "common-service.proto",
+                   f"{self.proto_file}",
                    "-d",
                    json.dumps(data_obj),
                    "-H",
@@ -113,12 +219,18 @@ class GRPCurlRunner(CommandRunner, Base):
                    f"{self.host}",
                    f"{self.call}",
                    ]
-
         print(command)
-        rcode, output, error = super()._run_command(command, verbose=False)
+
+        # grpcurl can only search for protos in current dir
+        os.chdir(os.path.join(self.current_directory, self.proto_dir))
+        rcode, output, _ = super()._run_command(command, verbose=False)
+        os.chdir(self.current_directory)
+        if rcode != 0:
+            raise RuntimeError
+
         self.test_output = ''.join([byte_array.decode('utf-8') for byte_array in output])
         output_obj = json.loads(self.test_output)
-        output_text = output_obj.get("text")
+        # output_text = output_obj.get("text")
         self.output_tokens = output_obj.get("generatedTokenCount")
 
     def get_output(self):
@@ -155,6 +267,7 @@ class GhzRunner(CommandRunner, Base):
         self.insecure = "--insecure" if params.get("insecure") else None
         self.call = params.get("call")
         self.vmodel_id = params.get("vmodel_id")
+        self.proto_path = params.get("proto_path")
 
     def run(self):
         """
@@ -164,7 +277,7 @@ class GhzRunner(CommandRunner, Base):
         print(command)
         start_time = datetime.datetime.now().isoformat()
         # TODO check rcode, output, error
-        rcode, output, error = super()._run_command(command, verbose=False)
+        rcode, _, _ = super()._run_command(command, verbose=False)
         if rcode != 0:
             raise RuntimeError
         end_time = datetime.datetime.now().isoformat()
@@ -191,7 +304,7 @@ class GhzRunner(CommandRunner, Base):
                    self.insecure,
                    "--disable-template-data",
                    "--proto",
-                   "./protos/common-service.proto",
+                   f"{self.proto_path}",
                    "--call",
                    f"{self.call}",
                    "-d",
@@ -231,40 +344,48 @@ class AnsibleWisdomExperimentRunner(Base):
     """
     """
 
-    def __init__(self):
+    def __init__(self, storage_config, command_config, input_dataset, test_conditions):
         """
         """
+        # do we need an abstraction layer here?
+        self.storage_config = storage_config
+        self.command_config = command_config
+        self.test_conditions = test_conditions
+
         self.ghz_instance = GhzRunner(
             params={
-                "concurrency": 4,
-                "requests": 128,
-                "host": "localhost:8033",
+                "concurrency": self.command_config.get("concurrency"),
+                "requests": self.command_config.get("requests"),
+                "host": self.command_config.get("host"),
                 "query": "temp",
                 "context": "temp",
-                "insecure": True,
-                "call": "watson.runtime.wisdom_ext.v0.WisdomExtService.AnsiblePredict",
-                "vmodel_id": "gpu-version-inference-service-v02"
-
+                "insecure": self.command_config.get("insecure"),
+                "call": self.command_config.get("call"),
+                "vmodel_id": self.command_config.get("vmodel_id"),
+                "proto_path": self.command_config.get("proto_path")
             }
         )
 
         self.grpcurl_instance = GRPCurlRunner(
             params={
-                "host": "localhost:8033",
-                "query": "install httpd on rhel",
+                "host": self.command_config.get("host"),
+                "query": "",
                 "context": "",
-                "insecure": True,
-                "call": "watson.runtime.wisdom_ext.v0.WisdomExtService.AnsiblePredict",
-                "vmodel_id": "gpu-version-inference-service-v02"
+                "insecure": self.command_config.get("insecure"),
+                "call": self.command_config.get("call"),
+                "vmodel_id": self.command_config.get("vmodel_id"),
+                "proto_path": self.command_config.get("proto_path")
             }
         )
 
         self.dataset_gen = AnsibleWisdomQueryGenerator(
-            "sorted_dataset.json", max_size=5)
+            input_dataset.get("filename"),
+            input_dataset.get("max_size")
+        )
 
         self.storage = S3Storage(
-            region='us-east-1',
-            bucket="wisdom-perf-data-test"
+            region=self.storage_config.get("s3_region"),
+            bucket=self.storage_config.get("s3_bucket")
         )
 
     def s3_result_path(self):
@@ -273,7 +394,8 @@ class AnsibleWisdomExperimentRunner(Base):
         This path should depend on the config / param input to the experiment.
         """
         date_day = datetime.datetime.today().strftime('%Y-%m-%d')
-        path = f"InferenceResults/ModelMesh/WatsonRuntime/Wisdom_v0.0.8/{date_day}"
+        base_path = self.storage_config.get("s3_result_path")
+        path = f"{base_path}/{date_day}"
         return path
 
     def run(self):
@@ -291,20 +413,17 @@ class AnsibleWisdomExperimentRunner(Base):
             self.ghz_instance.run()
 
             test_metadata = self.ghz_instance.get_metadata()
+            output_obj = self.ghz_instance.get_output()
+
+            # Insert test_conditions metadata into test_metadata and output_obj
+            test_metadata.update(self.test_conditions)
+            output_obj.update(self.test_conditions)
+
+            output_obj["output_tokens"] = f"{output_tokens}"
             test_metadata["output_tokens"] = f"{output_tokens}"
 
+            # TODO delete this local copy?
             start_time = test_metadata.get("start_time")
-
-            output_obj = self.ghz_instance.get_output()
-            output_obj["output_tokens"] = f"{output_tokens}"
-
-            # TODO Should NOT be hardcoded
-            test_metadata["modelmesh_pods_per_node"] = "4"
-            test_metadata["nodes"] = "1"
-            output_obj["modelmesh_pods_per_node"] = "4"
-            output_obj["nodes"] = "1"
-
-            # TODO delete this local copy
             super()._json_dump(output_obj, f"ghz-test-{start_time}-.json")
 
             path = self.s3_result_path()
@@ -402,7 +521,12 @@ def main():
         demo = GHZDemo()
         demo.run()
     if args.wisdom_experiment:
-        test = AnsibleWisdomExperimentRunner()
+        test = AnsibleWisdomExperimentRunner(
+            storage_config=config.get_storage_config(),
+            command_config=config.get_command_config(),
+            input_dataset=config.get_input_dataset(),
+            test_conditions=config.get_test_conditions(),
+        )
         test.run()
 
 

@@ -1,6 +1,7 @@
+boto3
+deprecation
+flake8
 numpy
 pyyaml
 pylint
 flake8
-boto3
-

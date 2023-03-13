@@ -29,9 +29,18 @@ HOWTO
 - see your S3 bucket afterwards.
 
 
-BACKLOG / Wishlist
+REPORTING ISSUES
 
-- The ability to run different queries at the same time
-- Capture the model's output and output token length 
-- CI
-- the various demoes probably don't work anymore
+- Please use GitHub issues
+- Please include as much information as possible for us to
+  understand and if at all possible reproduce the issue.
+
+
+CONTRIBUTING
+
+- Open an issue before opening a PR and reference the issue in
+  your PR
+- Make sure your contribution passes the linter
+- Add comments / documentation
+- Include tests in your contribution
+

@@ -9,6 +9,7 @@ import os
 import subprocess
 import uuid
 
+import concurrent.futures
 import deprecation
 
 from ansible_wisdom_query_generator import AnsibleWisdomQueryGenerator
@@ -176,14 +177,13 @@ class Config(Base):
         Returns a dictionary of the dataset configuration.
         """
         return self.input_dataset
-    
 
     def get_warmup(self):
         """
         Returns boolean, whether warm up is enabled
         """
         return self.warmup
-    
+
     def get_test_conditions(self):
         """
         Returns a dictionary of the test condition metadata
@@ -276,6 +276,7 @@ class GhzRunner(CommandRunner, Base):
         self.call = params.get("call")
         self.vmodel_id = params.get("vmodel_id")
         self.proto_path = params.get("proto_path")
+        self.uuid = uuid.uuid4()
 
     def run(self):
         """
@@ -290,13 +291,13 @@ class GhzRunner(CommandRunner, Base):
             raise RuntimeError
         end_time = datetime.datetime.now().isoformat()
 
-        self.test_output = super()._json_load("./temp.json")
+        self.test_output = super()._json_load(f"{self.uuid}.json")
         self.test_output["start_time"] = start_time
         self.test_output["end_time"] = end_time
         self.test_output["prompt"] = self.query
         self.test_output["context"] = self.context
 
-        result = super()._json_load("./temp.json")
+        result = super()._json_load(f"{self.uuid}.json")
         self.test_metadata["date"] = result.get("date")
         self.test_metadata["start_time"] = start_time
         self.test_metadata["end_time"] = end_time
@@ -329,7 +330,7 @@ class GhzRunner(CommandRunner, Base):
                    "-O",
                    "json",
                    "-o",
-                   "./temp.json",
+                   f"{self.uuid}.json",
                    ]
         return command
 
@@ -354,7 +355,15 @@ class AnsibleWisdomExperimentRunner(Base):
     """
     """
 
-    def __init__(self, storage_config, command_config, input_dataset, test_conditions, warmup):
+    def __init__(
+        self,
+        storage_config,
+        command_config,
+        input_dataset,
+        test_conditions,
+        warmup,
+        nb_threads=5
+    ):
         """
         """
         # do we need an abstraction layer here?
@@ -362,8 +371,10 @@ class AnsibleWisdomExperimentRunner(Base):
         self.command_config = command_config
         self.test_conditions = test_conditions
         self.warmup = warmup
+        self.nb_threads = nb_threads
 
-        self.ghz_instance = GhzRunner(
+        # only used for warmup purposes.
+        self.ghz_instance_warmup = GhzRunner(
             params={
                 "concurrency": self.command_config.get("concurrency"),
                 "requests": self.command_config.get("requests"),
@@ -408,71 +419,94 @@ class AnsibleWisdomExperimentRunner(Base):
         base_path = self.storage_config.get("s3_result_path")
         path = f"{base_path}/{date_day}"
         return path
-    
-    def upload_to_s3(self, obj, metadata):
-            path = self.s3_result_path()
-            s3_json_obj_name = "{}-ghz-results.json".format(str(uuid.uuid4()))
-            self.storage.upload_object_with_metadata(
-                body=json.dumps(obj),
-                object_name=f"{path}/{s3_json_obj_name}",
-                metadata=metadata
-            )
 
-            obj_content = self.storage.retrieve_object_body(f"{path}/{s3_json_obj_name}")
-            obj_metadata = self.storage.retrieve_object_metadata(f"{path}/{s3_json_obj_name}")
-            print("#################")
-            print(f'Object body: {obj_content}')
-            print("#################")
-            print(f'Object metadata: {obj_metadata.get("Metadata")}')
+    def upload_to_s3(self, obj, metadata):
+        """
+        """
+        path = self.s3_result_path()
+        s3_json_obj_name = "{}-ghz-results.json".format(str(uuid.uuid4()))
+        self.storage.upload_object_with_metadata(
+            body=json.dumps(obj),
+            object_name=f"{path}/{s3_json_obj_name}",
+            metadata=metadata
+        )
+
+        obj_content = self.storage.retrieve_object_body(f"{path}/{s3_json_obj_name}")
+        obj_metadata = self.storage.retrieve_object_metadata(f"{path}/{s3_json_obj_name}")
+        print("#################")
+        print(f'Object body: {obj_content}')
+        print("#################")
+        print(f'Object metadata: {obj_metadata.get("Metadata")}')
 
     def run_tests(self, save_output=True):
+        """
+        """
         dataset = self.dataset_gen.get_dataset()
-        for query in dataset:
-            print(f"###### Running GRPCURL/GHZ with query: \n{query}")
-            self.grpcurl_instance.set_input(query.get("prompt"), query.get("context"))
-            self.grpcurl_instance.run()
-            output_tokens = self.grpcurl_instance.get_output_tokens()
+        with concurrent.futures.ThreadPoolExecutor(max_workers=self.nb_threads) \
+            as executor:
+            executor.map(self._run_test, dataset)
 
-            self.ghz_instance.set_input(query.get("prompt"), query.get("context"))
-            self.ghz_instance.run()
+    def _run_test(self, query, save_output=True):
+        """
+        """
+        print(f"###### Running GRPCURL/GHZ with query: \n{query}")
+        self.grpcurl_instance.set_input(query.get("prompt"), query.get("context"))
+        self.grpcurl_instance.run()
+        output_tokens = self.grpcurl_instance.get_output_tokens()
 
-            test_metadata = self.ghz_instance.get_metadata()
-            output_obj = self.ghz_instance.get_output()
+        ghz_instance = GhzRunner(
+                    params={
+                        "concurrency": self.command_config.get("concurrency"),
+                        "requests": self.command_config.get("requests"),
+                        "host": self.command_config.get("host"),
+                        "query": "temp",
+                        "context": "temp",
+                        "insecure": self.command_config.get("insecure"),
+                        "call": self.command_config.get("call"),
+                        "vmodel_id": self.command_config.get("vmodel_id"),
+                        "proto_path": self.command_config.get("proto_path")
+                    }
+                )
 
-            # Insert test_conditions metadata into test_metadata and output_obj
-            test_metadata.update(self.test_conditions)
-            output_obj.update(self.test_conditions)
+        ghz_instance.set_input(query.get("prompt"), query.get("context"))
+        ghz_instance.run()
 
-            output_obj["output_tokens"] = f"{output_tokens}"
-            test_metadata["output_tokens"] = f"{output_tokens}"
-            
-            # TODO delete this local copy?
-            start_time = test_metadata.get("start_time")
-            super()._json_dump(output_obj, f"ghz-test-{start_time}.json")
-           
-            if save_output:
-                self.upload_to_s3(output_obj, test_metadata)
+        test_metadata = ghz_instance.get_metadata()
+        output_obj = ghz_instance.get_output()
 
+        # Insert test_conditions metadata into test_metadata and output_obj
+        test_metadata.update(self.test_conditions)
+        output_obj.update(self.test_conditions)
+
+        output_obj["output_tokens"] = f"{output_tokens}"
+        test_metadata["output_tokens"] = f"{output_tokens}"
+
+        # TODO delete this local copy?
+        start_time = test_metadata.get("start_time")
+        super()._json_dump(output_obj, f"ghz-test-{start_time}.json")
+
+        if save_output:
+            self.upload_to_s3(output_obj, test_metadata)
 
     def run(self):
         """
         """
         if self.warmup:
-            save_concurrency = self.ghz_instance.ghz_concurrency
-            save_requests = self.ghz_instance.total_requests
-            # fill the queues but avoid overload errors 
-            self.ghz_instance.ghz_concurrency = 4*self.ghz_instance.ghz_concurrency
-            self.ghz_instance.total_requests = 256
+            save_concurrency = self.ghz_instance_warmup.ghz_concurrency
+            save_requests = self.ghz_instance_warmup.total_requests
+            # fill the queues but avoid overload errors
+            self.ghz_instance_warmup.ghz_concurrency = \
+                4*self.ghz_instance_warmup.ghz_concurrency
+            self.ghz_instance_warmup.total_requests = 256
 
             print("############ DOING WARMUP RUNS ##############")
             self.run_tests(save_output=False)
-            self.ghz_instance.ghz_concurrency = save_concurrency
-            self.ghz_instance.total_requests = save_requests
-        
+            self.ghz_instance_warmup.ghz_concurrency = save_concurrency
+            self.ghz_instance_warmup.total_requests = save_requests
+
         print("############ WARMUP PHASE COMPLETE ##############")
         print("############  RUNNING LOAD TESTS   ##############")
         self.run_tests(save_output=True)
-        
 
 
 class GHZDemo():
@@ -560,6 +594,7 @@ def main():
             input_dataset=config.get_input_dataset(),
             warmup=config.get_warmup(),
             test_conditions=config.get_test_conditions(),
+            nb_threads=5
         )
         test.run()
 

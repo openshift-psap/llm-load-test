@@ -172,13 +172,12 @@ class Config(Base):
         """
         return self.input_dataset
     
-
     def get_warmup(self):
         """
         Returns boolean, whether warm up is enabled
         """
         return self.warmup
-    
+
     def get_test_conditions(self):
         """
         Returns a dictionary of the test condition metadata
@@ -271,6 +270,7 @@ class GhzRunner(CommandRunner, Base):
         self.call = params.get("call")
         self.vmodel_id = params.get("vmodel_id")
         self.proto_path = params.get("proto_path")
+        self.uuid = uuid.uuid4()
 
     def run(self):
         """
@@ -285,13 +285,13 @@ class GhzRunner(CommandRunner, Base):
             raise RuntimeError
         end_time = datetime.datetime.now().isoformat()
 
-        self.test_output = super()._json_load("./temp.json")
+        self.test_output = super()._json_load(f"{self.uuid}.json")
         self.test_output["start_time"] = start_time
         self.test_output["end_time"] = end_time
         self.test_output["prompt"] = self.query
         self.test_output["context"] = self.context
 
-        result = super()._json_load("./temp.json")
+        result = super()._json_load(f"{self.uuid}.json")
         self.test_metadata["date"] = result.get("date")
         self.test_metadata["start_time"] = start_time
         self.test_metadata["end_time"] = end_time
@@ -326,7 +326,7 @@ class GhzRunner(CommandRunner, Base):
                    "-t",
                    "240s",
                    "-o",
-                   "./temp.json",
+                   f"{self.uuid}.json",
                    ]
         return command
 
@@ -351,7 +351,14 @@ class AnsibleWisdomExperimentRunner(Base):
     """
     """
 
-    def __init__(self, storage_config, command_config, input_dataset, test_conditions, warmup):
+    def __init__(
+        self,
+        storage_config,
+        command_config,
+        input_dataset,
+        test_conditions,
+        warmup
+    ):
         """
         """
         # do we need an abstraction layer here?
@@ -405,7 +412,7 @@ class AnsibleWisdomExperimentRunner(Base):
         base_path = self.storage_config.get("s3_result_path")
         path = f"{base_path}/{date_day}"
         return path
-    
+
     def upload_to_s3(self, obj, metadata):
             path = self.s3_result_path()
             s3_json_obj_name = "{}-ghz-results.json".format(str(uuid.uuid4()))
@@ -452,7 +459,6 @@ class AnsibleWisdomExperimentRunner(Base):
             if save_output:
                 self.upload_to_s3(output_obj, test_metadata)
 
-
     def run(self):
         """
         """
@@ -474,7 +480,6 @@ class AnsibleWisdomExperimentRunner(Base):
         print("############  RUNNING LOAD TESTS   ##############")
         self.run_tests(dataset, save_output=True)
         
-
 
 class GHZDemo():
     """

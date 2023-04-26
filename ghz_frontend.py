@@ -8,8 +8,10 @@ import json
 import os
 import time
 import subprocess
+import sys
 import uuid
 
+from concurrent.futures import ThreadPoolExecutor
 
 from ansible_wisdom_query_generator import AnsibleWisdomQueryGenerator
 from base import Base
@@ -347,6 +349,127 @@ class GhzRunner(CommandRunner, Base):
         self.context = context
 
 
+class AnsibleWisdomParallelExperimentRunner(Base):
+    """
+    """
+
+    def __init__(
+        self,
+        storage_config,
+        command_config,
+        input_dataset,
+        test_conditions,
+        nb_threads=4
+    ):
+        """
+        """
+        # do we need an abstraction layer here?
+        self.storage_config = storage_config
+        self.command_config = command_config
+        self.test_conditions = test_conditions
+        self.nb_threads = nb_threads
+
+        ghz_params = {
+            "concurrency": self.command_config.get("concurrency"),
+            "requests": self.command_config.get("requests"),
+            "host": self.command_config.get("host"),
+            "query": "temp",
+            "context": "temp",
+            "insecure": self.command_config.get("insecure"),
+            "call": self.command_config.get("call"),
+            "vmodel_id": self.command_config.get("vmodel_id"),
+            "proto_path": self.command_config.get("proto_path")
+        }
+
+        self.ghz_instances = tuple(
+                GhzRunner(params=ghz_params) for i in range(0, nb_threads)
+        )
+
+        self.dataset_gen = AnsibleWisdomQueryGenerator(
+            input_dataset.get("filename"),
+            input_dataset.get("max_size")
+        )
+
+        self.storage = S3Storage(
+            region=self.storage_config.get("s3_region"),
+            bucket=self.storage_config.get("s3_bucket")
+        )
+
+    def s3_result_path(self):
+        """
+        Temporary hack for our planned file structure in S3.
+        This path should depend on the config / param input to the experiment.
+        """
+        date_day = datetime.datetime.today().strftime('%Y-%m-%d')
+        base_path = self.storage_config.get("s3_result_path")
+        path = f"{base_path}/{date_day}"
+        return path
+
+    def upload_to_s3(self, obj, metadata):
+        ""
+        ""
+        path = self.s3_result_path()
+        s3_json_obj_name = "{}-ghz-results.json".format(str(uuid.uuid4()))
+        self.storage.upload_object_with_metadata(
+            body=json.dumps(obj),
+            object_name=f"{path}/{s3_json_obj_name}",
+            metadata=metadata
+        )
+
+        obj_content = self.storage.retrieve_object_body(f"{path}/{s3_json_obj_name}")
+        obj_metadata = self.storage.retrieve_object_metadata(f"{path}/{s3_json_obj_name}")
+        print("#################")
+        print(f'Object body: {obj_content}')
+        print("#################")
+        print(f'Object metadata: {obj_metadata.get("Metadata")}')
+
+    def run_tests(self, save_output=True):
+        ""
+        ""
+        dataset = self.dataset_gen.get_dataset()
+        if len(dataset) > self.nb_threads:
+            print("More lines in dataset than threads, exiting")
+            sys.exit(155)
+
+        # queue of instances to actually run.
+        ghz_instances = []
+        for query in dataset:
+            ghz_instance = self.ghz_instances[dataset.index(query)]
+            ghz_instance.set_input(
+                query.get("prompt"),
+                query.get("context")
+            )
+            ghz_instances.append(ghz_instance)
+
+        with ThreadPoolExecutor(max_workers=2*self.nb_threads) as executor:
+            for instance in ghz_instances:
+                executor.submit(instance.run)
+
+        for instance in ghz_instances:
+            test_metadata = instance.get_metadata()
+            output_obj = instance.get_output()
+
+            # Insert test_conditions metadata into test_metadata and output_obj
+            test_metadata.update(self.test_conditions)
+            output_obj.update(self.test_conditions)
+
+            # # leftover from grpcurl
+            # output_obj["output_tokens"] = f"{output_tokens}"
+            # test_metadata["output_tokens"] = f"{output_tokens}"
+
+            start_time = test_metadata.get("start_time")
+
+            if save_output:
+                self.upload_to_s3(output_obj, test_metadata)
+            else:
+                super()._json_dump(output_obj, f"ghz-test-{start_time}.json")
+
+    def run(self):
+        """Used to be more than this with warmup.
+        """
+        self.run_tests(save_output=True)
+
+
 class AnsibleWisdomExperimentRunner(Base):
     """
     """
@@ -548,6 +671,8 @@ def main():
                         help="Dataset Demo")
     parser.add_argument("--wisdom_experiment", action="store_true",
                         help="Ansible Wisdom model experiment")
+    parser.add_argument("--wisdom_parallel_experiment", action="store_true",
+                        help="Ansible Wisdom parallel model experiment")
     args = parser.parse_args()
     config = Config()
     if args.verbose:
@@ -566,6 +691,15 @@ def main():
             input_dataset=config.get_input_dataset(),
             warmup=config.get_warmup(),
             test_conditions=config.get_test_conditions(),
+        )
+        test.run()
+    if args.wisdom_parallel_experiment:
+        test = AnsibleWisdomParallelExperimentRunner(
+            storage_config=config.get_storage_config(),
+            command_config=config.get_command_config(),
+            input_dataset=config.get_input_dataset(),
+            test_conditions=config.get_test_conditions(),
+            nb_threads=16
         )
         test.run()
 

@@ -1,0 +1,28 @@
+FROM quay.io/centos/centos:stream9
+
+RUN dnf install -y wget git golang
+
+RUN python3 -m ensurepip --upgrade
+
+WORKDIR /src 
+
+RUN JQ_VERSION=1.6 && \
+    wget https://github.com/stedolan/jq/releases/download/jq-${JQ_VERSION}/jq-linux64 && \
+    chmod 777 jq-linux64 && \
+    mv jq-linux64 /usr/local/bin/jq && \
+    GRPCURL_VERSION=1.8.7 && \
+    curl -L https://github.com/fullstorydev/grpcurl/releases/download/v${GRPCURL_VERSION}/grpcurl_${GRPCURL_VERSION}_linux_x86_64.tar.gz | tar xz && \
+    chmod 777 grpcurl && mv grpcurl /usr/local/bin/
+
+RUN git clone https://github.com/dagrayvid/ghz.git && \
+    cd ghz/cmd/ghz && \
+    go build . && \
+    mv ghz /usr/local/bin/
+
+WORKDIR /src/llm-load-test
+
+COPY . .
+
+RUN pip3 install -r requirements.txt
+
+

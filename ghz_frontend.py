@@ -6,19 +6,15 @@ import argparse
 import datetime
 import json
 import os
+import time
 import subprocess
 import uuid
 
-import deprecation
 
 from ansible_wisdom_query_generator import AnsibleWisdomQueryGenerator
 from base import Base
 from demo import DatasetDemo, S3Demo
 from s3storage import S3Storage
-
-CONFIG_PATH = "IS_LOAD_TEST_CONFIG_PATH"
-CONFIG_FILENAME = "IS_LOAD_TEST_CONFIG_FILENAME"
-
 
 class CommandRunner(Base):
     """
@@ -69,16 +65,16 @@ class Config(Base):
         self.command_config = {}
         self.input_dataset = {}
         self.test_conditions = {}
-        base_path = os.getenv(CONFIG_PATH)
-        config_file = os.getenv(CONFIG_FILENAME)
+        base_path = os.getenv("CONFIG_PATH")
+        config_file = os.getenv("CONFIG_FILENAME")
         if base_path is None:
             base_path = os.path.dirname(os.path.realpath(__file__))
         if config_file is None:
             config_file = "config.json"
         try:
-            self.config = super()._json_load(
-                os.path.join(base_path, config_file)
-            )
+            config_full_path = os.path.join(base_path, config_file)
+            print(f"Using config file from: {config_full_path}")
+            self.config = super()._json_load(config_full_path)
         except (FileNotFoundError, RuntimeError) as msg:
             super()._exit_failure("Could not open/parse " + str(msg))
         self.__parse_storage_config()
@@ -86,7 +82,6 @@ class Config(Base):
         self.__parse_test_conditions()
         self.warmup = self.config.get("warmup")
 
-    @deprecation.deprecated()
     def get_complete_config(self):
         """
         Deprecated
@@ -136,7 +131,7 @@ class Config(Base):
         if self.config.get("launcher").get("type") == "ghz":
             self.command_config["type"] = "ghz"
             subconfig = self.config.get("launcher").get("ghz_params")
-            self.command_config["host"] = "localhost:8033"
+            self.command_config["host"] = subconfig.get("host")
             self.command_config["insecure"] = subconfig.get("insecure")
             self.command_config["proto_path"] = subconfig.get("proto_path")
             self.command_config["call"] = subconfig.get("call")
@@ -230,7 +225,7 @@ class GRPCurlRunner(CommandRunner, Base):
         print(command)
 
         # grpcurl can only search for protos in current dir
-        os.chdir(os.path.join(self.current_directory, self.proto_dir))
+        os.chdir(os.path.join(self.proto_dir))
         rcode, output, _ = super()._run_command(command, verbose=False)
         os.chdir(self.current_directory)
         if rcode != 0:
@@ -328,6 +323,8 @@ class GhzRunner(CommandRunner, Base):
                    f"{self.total_requests}",
                    "-O",
                    "json",
+                   "-t",
+                   "240s",
                    "-o",
                    "./temp.json",
                    ]
@@ -425,13 +422,15 @@ class AnsibleWisdomExperimentRunner(Base):
             print("#################")
             print(f'Object metadata: {obj_metadata.get("Metadata")}')
 
-    def run_tests(self, save_output=True):
-        dataset = self.dataset_gen.get_dataset()
+    def run_tests(self, dataset, save_output=True):
         for query in dataset:
+            time.sleep(15) # Sleep to show a break in CPU/GPU utilization metrics between runs
             print(f"###### Running GRPCURL/GHZ with query: \n{query}")
             self.grpcurl_instance.set_input(query.get("prompt"), query.get("context"))
             self.grpcurl_instance.run()
             output_tokens = self.grpcurl_instance.get_output_tokens()
+            grpcurl_result = self.grpcurl_instance.get_output()
+            print(f"GRPCURL Result tokens: {output_tokens}, response: {grpcurl_result}")
 
             self.ghz_instance.set_input(query.get("prompt"), query.get("context"))
             self.ghz_instance.run()
@@ -457,21 +456,23 @@ class AnsibleWisdomExperimentRunner(Base):
     def run(self):
         """
         """
+        dataset = self.dataset_gen.get_dataset()
         if self.warmup:
             save_concurrency = self.ghz_instance.ghz_concurrency
             save_requests = self.ghz_instance.total_requests
             # fill the queues but avoid overload errors 
             self.ghz_instance.ghz_concurrency = 4*self.ghz_instance.ghz_concurrency
-            self.ghz_instance.total_requests = 256
+            self.ghz_instance.total_requests = 200*save_concurrency
 
             print("############ DOING WARMUP RUNS ##############")
-            self.run_tests(save_output=False)
+            # Warmup with only first entry in dataset 
+            self.run_tests(dataset[1:2], save_output=False)
             self.ghz_instance.ghz_concurrency = save_concurrency
             self.ghz_instance.total_requests = save_requests
         
         print("############ WARMUP PHASE COMPLETE ##############")
         print("############  RUNNING LOAD TESTS   ##############")
-        self.run_tests(save_output=True)
+        self.run_tests(dataset, save_output=True)
         
 
 

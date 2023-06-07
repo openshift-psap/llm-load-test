@@ -30,7 +30,8 @@
 			"query": "",
 			"context": "",
 			"concurrency": 1,
-			"requests": 1
+			"requests": 1,
+			"max_duration": "120m"
 		},
 		"input_dataset": {
 			"filename": "small-medium-large-dataset.json",

@@ -142,6 +142,7 @@ class Config(Base):
             self.command_config["context"] = subconfig.get("context")
             self.command_config["concurrency"] = subconfig.get("concurrency")
             self.command_config["requests"] = subconfig.get("requests")
+            self.command_config["max_duration"] = subconfig.get("max_duration")
             # self.command_config[""] = ""
             launcher_dataset_config = self.config.get("launcher").get("input_dataset")
             self.input_dataset["filename"] = launcher_dataset_config.get("filename")
@@ -272,6 +273,7 @@ class GhzRunner(CommandRunner, Base):
         self.call = params.get("call")
         self.vmodel_id = params.get("vmodel_id")
         self.proto_path = params.get("proto_path")
+        self.max_duration = params.get("max_duration")
         self.uuid = uuid.uuid4()
 
     def run(self):
@@ -302,6 +304,7 @@ class GhzRunner(CommandRunner, Base):
         self.test_metadata["prompt"] = self.query
         self.test_metadata["ghz_concurrency"] = str(self.ghz_concurrency)
         self.test_metadata["ghz_max_requests"] = str(self.total_requests)
+        self.test_metadata["ghz_max_duration"] = str(self.max_duration)
 
     def get_command(self):
         """
@@ -327,6 +330,8 @@ class GhzRunner(CommandRunner, Base):
                    "json",
                    "-t",
                    "240s",
+                   "-x",
+                   f"{self.max_duration}",
                    "-o",
                    f"{self.uuid}.json",
                    ]
@@ -378,7 +383,8 @@ class AnsibleWisdomParallelExperimentRunner(Base):
             "insecure": self.command_config.get("insecure"),
             "call": self.command_config.get("call"),
             "vmodel_id": self.command_config.get("vmodel_id"),
-            "proto_path": self.command_config.get("proto_path")
+            "proto_path": self.command_config.get("proto_path"),
+            "max_duration": self.command_config.get("max_duration")
         }
 
         self.ghz_instances = tuple(
@@ -409,7 +415,7 @@ class AnsibleWisdomParallelExperimentRunner(Base):
         ""
         ""
         path = self.s3_result_path()
-        s3_json_obj_name = "{}-ghz-results.json".format(str(uuid.uuid4()))
+        s3_json_obj_name = "{}-multiplexed-ghz-results.json".format(str(uuid.uuid4()))
         self.storage.upload_object_with_metadata(
             body=json.dumps(obj),
             object_name=f"{path}/{s3_json_obj_name}",
@@ -445,6 +451,7 @@ class AnsibleWisdomParallelExperimentRunner(Base):
             for instance in ghz_instances:
                 executor.submit(instance.run)
 
+        self.output_obj = []
         for instance in ghz_instances:
             test_metadata = instance.get_metadata()
             output_obj = instance.get_output()
@@ -458,11 +465,12 @@ class AnsibleWisdomParallelExperimentRunner(Base):
             # test_metadata["output_tokens"] = f"{output_tokens}"
 
             start_time = test_metadata.get("start_time")
+            self.output_obj.append(output_obj)
 
-            if save_output:
-                self.upload_to_s3(output_obj, test_metadata)
-            else:
-                super()._json_dump(output_obj, f"ghz-test-{start_time}.json")
+        if save_output:
+            self.upload_to_s3(self.output_obj, test_metadata)
+        else:
+            super()._json_dump(output_obj, f"ghz-test-{start_time}.json")
 
     def run(self):
         """Used to be more than this with warmup.

@@ -63,14 +63,14 @@ class Base():
                 raise RuntimeError(f"Could not parse {file}") \
                     # pylint: disable=raise-missing-from
 
-    def _json_dump(self, dictionary, file):
+    def _json_dump(self, dictionary, file, overwrite=False):
         """
         Simple JSON file writer
         #TODO JSON + write error checking
         """
         json_object = json.dumps(dictionary, indent=4)
 
-        if os.path.isfile(file):
+        if os.path.isfile(file) and not overwrite:
             raise RuntimeError(file)
         with open(file, "w", encoding="utf-8") as outfile:
             outfile.write(json_object)

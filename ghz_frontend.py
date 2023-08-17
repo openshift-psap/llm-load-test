@@ -13,7 +13,7 @@ import uuid
 
 from concurrent.futures import ThreadPoolExecutor
 
-from ansible_wisdom_query_generator import AnsibleWisdomQueryGenerator
+from input_generator import InputGenerator
 from base import Base
 from demo import DatasetDemo, S3Demo
 from s3storage import S3Storage
@@ -64,29 +64,33 @@ class Config(Base):
         """
         """
         self.storage_config = {}
-        self.command_config = {}
+        self.load_gen_config = {}
         self.input_dataset = {}
-        self.test_conditions = {}
+        self.metadata = {}
         base_path = os.getenv("CONFIG_PATH")
         config_file = os.getenv("CONFIG_FILENAME")
         if base_path is None:
             base_path = os.path.dirname(os.path.realpath(__file__))
         if config_file is None:
-            config_file = "config.json"
+            config_file = "config.yaml"
         try:
             config_full_path = os.path.join(base_path, config_file)
             print(f"Using config file from: {config_full_path}")
-            self.config = super()._json_load(config_full_path)
+            self.config = super()._yaml_load(config_full_path)
         except (FileNotFoundError, RuntimeError) as msg:
             super()._exit_failure("Could not open/parse " + str(msg))
         self.__parse_storage_config()
-        self.__parse_command_config()
-        self.__parse_test_conditions()
-        self.warmup = self.config.get("warmup")
+        self.__parse_load_gen_config()
+        self.__parse_metadata()
+        self.warmup = self.config.get("warmup") # TODO remove warmup option, it is unused in lightspeed cpt
+        self.output_dir = self.config.get("output_dir")
+        print(f"Config: self.warmup: {self.warmup} self.output_dir: {self.output_dir}")
+
+    def get_output_dir(self):
+        return self.output_dir
 
     def get_complete_config(self):
         """
-        Deprecated
         """
         return self.config
 
@@ -103,72 +107,41 @@ class Config(Base):
         Only supports S3 atm.
         """
         if self.config.get("storage").get("type") == "s3":
+            self.storage_config = self.config.get("storage").get("s3_params").copy()
             self.storage_config["type"] = "s3"
-            subconfig = self.config.get("storage").get("s3_params")
-            self.storage_config["host"] = subconfig.get("s3_host")
-            self.storage_config["use_https"] = subconfig.get("s3_use_https")
-            self.storage_config["s3_access_key"] = subconfig.get("s3_access_key")
-            self.storage_config["s3_secret_key"] = subconfig.get("s3_secret_key")
-            self.storage_config["s3_bucket"] = subconfig.get("s3_bucket")
-            self.storage_config["s3_region"] = subconfig.get("s3_region")
 
-            s3_separator = subconfig.get("s3_separator")
-            s3_base_path = subconfig.get("s3_base_path")
-            s3_component = subconfig.get("s3_component")
-            s3_sub_component = subconfig.get("s3_sub_component")
-            s3_sub_comp_version = subconfig.get("s3_sub_comp_version")
-            self.storage_config["s3_result_path"] = s3_separator.join([
-                s3_base_path,
-                s3_component,
-                s3_sub_component,
-                s3_sub_comp_version
-            ])
-            # self.storage_config[""] = ""
 
-    def __parse_command_config(self):
+    def __parse_load_gen_config(self):
         """
         Meant to be called at config load time e.g. constructor
         Only supports ghz atm.
         """
-        if self.config.get("launcher").get("type") == "ghz":
-            self.command_config["type"] = "ghz"
-            subconfig = self.config.get("launcher").get("ghz_params")
-            self.command_config["host"] = subconfig.get("host")
-            self.command_config["insecure"] = subconfig.get("insecure")
-            self.command_config["proto_path"] = subconfig.get("proto_path")
-            self.command_config["call"] = subconfig.get("call")
-            self.command_config["vmodel_id"] = subconfig.get("vmodel_id")
-            self.command_config["query"] = subconfig.get("query")
-            self.command_config["context"] = subconfig.get("context")
-            self.command_config["concurrency"] = subconfig.get("concurrency")
-            self.command_config["requests"] = subconfig.get("requests")
-            self.command_config["max_duration"] = subconfig.get("max_duration")
-            # self.command_config[""] = ""
-            launcher_dataset_config = self.config.get("launcher").get("input_dataset")
-            self.input_dataset["filename"] = launcher_dataset_config.get("filename")
-            self.input_dataset["max_size"] = launcher_dataset_config.get("max_size")
-            # self.input_dataset[""] = ""
+        if self.config.get("load_generator").get("type") == "ghz":
+            self.load_gen_config = self.config.get("load_generator").get("ghz_params").copy()
+            self.load_gen_config["type"] = "ghz"
 
-    def __parse_test_conditions(self):
+        self.input_dataset = self.config.get("load_generator").get("input_dataset").copy()
+
+    def __parse_metadata(self):
         """
         Meant to be called at config load time e.g. constructor
         Used for any extra metadata which will be attached to results,
         that is not already apart of the ghz / storage config.
         """
-        test_conditions = self.config.get("test_conditions")
+        metadata = self.config.get("metadata")
 
         # S3 metadata needs to be strings
-        for keys in test_conditions:
-            test_conditions[keys] = str(test_conditions[keys])
-        self.test_conditions = test_conditions
+        for keys in metadata:
+            metadata[keys] = str(metadata[keys])
+        self.metadata = metadata
 
-    def get_command_config(self):
+    def get_load_gen_config(self):
         """
         Returns a dictionary of the command configuration.
         Currently only GHZ commands are supported (type: ghz)
         """
-        return self.command_config
-
+        return self.load_gen_config
+    
     def get_input_dataset(self):
         """
         Returns a dictionary of the dataset configuration.
@@ -181,161 +154,70 @@ class Config(Base):
         """
         return self.warmup
 
-    def get_test_conditions(self):
+    def get_metadata(self):
         """
         Returns a dictionary of the test condition metadata
         """
-        return self.test_conditions
-
-
-class GRPCurlRunner(CommandRunner, Base):
-    """
-    """
-
-    def __init__(self, params):
-        """
-        """
-        self.call = params.get("call")
-        self.test_output = None
-        self.output_tokens = 0
-        self.test_metadata = {}
-        self.host = params.get("host")
-        self.query = params.get("query")
-        self.context = params.get("context")
-        self.vmodel_id = params.get("vmodel_id")
-        # grpcurl can only search for protos in current dir
-        self.proto_dir = os.path.dirname(params.get("proto_path"))
-        self.proto_file = os.path.basename(params.get("proto_path"))
-        self.current_directory = os.getcwd()
-
-    def run(self):
-        """
-        """
-        data_obj = {"prompt": self.query, "context": self.context}
-
-        command = ["grpcurl",
-                   "-plaintext",
-                   "-proto",
-                   f"{self.proto_file}",
-                   "-d",
-                   json.dumps(data_obj),
-                   "-H",
-                   f"mm-vmodel-id: {self.vmodel_id}",
-                   f"{self.host}",
-                   f"{self.call}",
-                   ]
-        print(command)
-
-        # grpcurl can only search for protos in current dir
-        os.chdir(os.path.join(self.proto_dir))
-        rcode, output, _ = super()._run_command(command, verbose=False)
-        os.chdir(self.current_directory)
-        if rcode != 0:
-            raise RuntimeError
-
-        self.test_output = ''.join([byte_array.decode('utf-8') for byte_array in output])
-        output_obj = json.loads(self.test_output)
-        # output_text = output_obj.get("text")
-        self.output_tokens = output_obj.get("generatedTokenCount")
-
-    def get_output(self):
-        """
-        """
-        return self.test_output
-
-    def get_output_tokens(self):
-        """
-        """
-        return self.output_tokens
-
-    def set_input(self, prompt, context):
-        """
-        """
-        self.query = prompt
-        self.context = context
+        return self.metadata
 
 
 class GhzRunner(CommandRunner, Base):
     """
     """
 
-    def __init__(self, params):
+    def __init__(self, params, output_dir):
         """
         """
         self.test_output = None
         self.test_metadata = {}
-        self.ghz_concurrency = params.get("concurrency")
-        self.total_requests = params.get("requests")
-        self.host = params.get("host")
-        self.query = params.get("query")
-        self.context = params.get("context")
-        self.insecure = "--insecure" if params.get("insecure") else None
-        self.call = params.get("call")
-        self.vmodel_id = params.get("vmodel_id")
-        self.proto_path = params.get("proto_path")
-        self.max_duration = params.get("max_duration")
+        self.output_dir=output_dir
+        self.ghz_params=params
+
         self.uuid = uuid.uuid4()
+
+        # Some tests (e.g. ansible lightspeed) need input data in different formats.
+        # The expectation is that this will get overwritten before used,
+        # and that the format of this string will match the required format for the
+        # model under test.
+        self.input = {"text": "Temporary ghz input prompt in json format"}
 
     def run(self):
         """
         """
-        command = self.get_command()
 
-        print(command)
+        self.ghz_params["data"] = self.input
+        self.ghz_params["format"] = "json"
+        self.ghz_params["output"] = f"{self.output_dir}/{self.uuid}.json"
+
+        config_file_name=f"{self.output_dir}/ghz-config-{self.uuid}.json"
+        self._json_dump(self.ghz_params, config_file_name, overwrite=True)
+        print(f"Running ghz with the follow config json in file {config_file_name}")
+        print(self.ghz_params)
+
         start_time = datetime.datetime.now().isoformat()
-        # TODO check rcode, output, error
+
+        command = ["ghz", f"--config={config_file_name}"]
         rcode, _, _ = super()._run_command(command, verbose=False)
         if rcode != 0:
             raise RuntimeError
         end_time = datetime.datetime.now().isoformat()
 
-        self.test_output = super()._json_load(f"{self.uuid}.json")
+        self.test_output = super()._json_load(self.ghz_params["output"])
         self.test_output["start_time"] = start_time
         self.test_output["end_time"] = end_time
-        self.test_output["prompt"] = self.query
-        self.test_output["context"] = self.context
-
-        result = super()._json_load(f"{self.uuid}.json")
-        self.test_metadata["date"] = result.get("date")
+        self.test_output["input"] = self.input
+        # TODO cleanup this metadata
+        # - Flatten all test configs into a string:string dict {x.y.z: foo}
+        # - Add only extra required metadata like start/end times
+        self.test_metadata["date"] = self.test_output.get("date")
         self.test_metadata["start_time"] = start_time
         self.test_metadata["end_time"] = end_time
         self.test_metadata["throughput"] = str(self.test_output.get("rps"))
         self.test_metadata["min_latency"] = str(float(self.test_output.get("fastest"))/(10**9))
-        self.test_metadata["prompt"] = self.query
-        self.test_metadata["ghz_concurrency"] = str(self.ghz_concurrency)
-        self.test_metadata["ghz_max_requests"] = str(self.total_requests)
-        self.test_metadata["ghz_max_duration"] = str(self.max_duration)
-
-    def get_command(self):
-        """
-        """
-        data_obj = {"prompt": self.query, "context": self.context}
-        command = ["ghz",
-                   self.insecure,
-                   "--disable-template-data",
-                   "--proto",
-                   f"{self.proto_path}",
-                   "--call",
-                   f"{self.call}",
-                   "-d",
-                   json.dumps(data_obj),
-                   f"{self.host}",
-                   "--metadata",
-                   f"{{\"mm-vmodel-id\":\"{self.vmodel_id}\"}}",
-                   "-c",
-                   f"{self.ghz_concurrency}",
-                   "-n",
-                   f"{self.total_requests}",
-                   "--max-duration", 
-                   f"{self.max_duration if self.max_duration else 0}",
-                   "-O",
-                   "json",
-                   "-t",
-                   "240s",
-                   "-o",
-                   f"{self.uuid}.json",
-                   ]
-        return command
+        self.test_metadata["input"] = json.dumps(self.input)
+        self.test_metadata["concurrency"] = str(self.ghz_params.get('concurrency'))
+        self.test_metadata["ghz_max_requests"] = str(self.ghz_params.get('requests'))
+        self.test_metadata["ghz_max_duration"] = str(self.ghz_params.get('max_duration'))
 
     def get_output(self):
         """
@@ -347,51 +229,37 @@ class GhzRunner(CommandRunner, Base):
         """
         return self.test_metadata
 
-    def set_input(self, prompt, context):
+    def set_input(self, input):
         """
         """
-        self.query = prompt
-        self.context = context
+        self.input=input
 
-
-class AnsibleWisdomParallelExperimentRunner(Base):
+class ParallelExperimentRunner(Base):
     """
     """
 
     def __init__(
         self,
         storage_config,
-        command_config,
+        load_gen_config,
         input_dataset,
-        test_conditions,
+        metadata,
+        output_dir,
         nb_threads=4
     ):
         """
         """
-        # do we need an abstraction layer here?
         self.storage_config = storage_config
-        self.command_config = command_config
-        self.test_conditions = test_conditions
+        self.load_gen_config = load_gen_config
+        self.output_dir = output_dir
+        self.metadata = metadata
         self.nb_threads = nb_threads
 
-        ghz_params = {
-            "concurrency": self.command_config.get("concurrency"),
-            "requests": self.command_config.get("requests"),
-            "host": self.command_config.get("host"),
-            "query": "temp",
-            "context": "temp",
-            "insecure": self.command_config.get("insecure"),
-            "call": self.command_config.get("call"),
-            "vmodel_id": self.command_config.get("vmodel_id"),
-            "proto_path": self.command_config.get("proto_path"),
-            "max_duration": self.command_config.get("max_duration")
-        }
-
         self.ghz_instances = tuple(
-                GhzRunner(params=ghz_params) for i in range(0, nb_threads)
+                GhzRunner(params=load_gen_config.copy(), output_dir=self.output_dir) for i in range(0, nb_threads)
         )
 
-        self.dataset_gen = AnsibleWisdomQueryGenerator(
+        self.dataset_gen = InputGenerator(
             input_dataset.get("filename"),
             input_dataset.get("max_size")
         )
@@ -441,10 +309,8 @@ class AnsibleWisdomParallelExperimentRunner(Base):
         ghz_instances = []
         for query in dataset:
             ghz_instance = self.ghz_instances[dataset.index(query)]
-            ghz_instance.set_input(
-                query.get("prompt"),
-                query.get("context")
-            )
+            ghz_instance.set_input(query.get("input"))
+            print(f"Prepared ghz instance index {dataset.index(query)} UUID {ghz_instance.uuid} with input \n {query.get('input')}")
             ghz_instances.append(ghz_instance)
 
         with ThreadPoolExecutor(max_workers=2*self.nb_threads) as executor:
@@ -456,13 +322,9 @@ class AnsibleWisdomParallelExperimentRunner(Base):
             test_metadata = instance.get_metadata()
             output_obj = instance.get_output()
 
-            # Insert test_conditions metadata into test_metadata and output_obj
-            test_metadata.update(self.test_conditions)
-            output_obj.update(self.test_conditions)
-
-            # # leftover from grpcurl
-            # output_obj["output_tokens"] = f"{output_tokens}"
-            # test_metadata["output_tokens"] = f"{output_tokens}"
+            # Insert metadata into test_metadata and output_obj
+            test_metadata.update(self.metadata)
+            output_obj.update(self.metadata)
 
             start_time = test_metadata.get("start_time")
             self.output_obj.append(output_obj)
@@ -470,7 +332,7 @@ class AnsibleWisdomParallelExperimentRunner(Base):
         if save_output:
             self.upload_to_s3(self.output_obj, test_metadata)
         else:
-            super()._json_dump(output_obj, f"ghz-test-{start_time}.json")
+            super()._json_dump(output_obj, f"{self.output_dir}/ghz-test-{start_time}.json")
 
     def run(self):
         """Used to be more than this with warmup.
@@ -478,54 +340,33 @@ class AnsibleWisdomParallelExperimentRunner(Base):
         self.run_tests(save_output=True)
 
 
-class AnsibleWisdomExperimentRunner(Base):
+class ExperimentRunner(Base):
     """
     """
 
     def __init__(
         self,
         storage_config,
-        command_config,
+        load_gen_config,
         input_dataset,
-        test_conditions,
+        metadata,
+        output_dir,
         warmup
     ):
         """
         """
-        # do we need an abstraction layer here?
         self.storage_config = storage_config
-        self.command_config = command_config
-        self.test_conditions = test_conditions
+        self.load_gen_config = load_gen_config
+        self.metadata = metadata
+        self.output_dir = output_dir
         self.warmup = warmup
 
         self.ghz_instance = GhzRunner(
-            params={
-                "concurrency": self.command_config.get("concurrency"),
-                "requests": self.command_config.get("requests"),
-                "max_duration": self.command_config.get("max_duration"),
-                "host": self.command_config.get("host"),
-                "query": "temp",
-                "context": "temp",
-                "insecure": self.command_config.get("insecure"),
-                "call": self.command_config.get("call"),
-                "vmodel_id": self.command_config.get("vmodel_id"),
-                "proto_path": self.command_config.get("proto_path")
-            }
+            params=self.load_gen_config.copy(),
+            output_dir = self.output_dir
         )
 
-        self.grpcurl_instance = GRPCurlRunner(
-            params={
-                "host": self.command_config.get("host"),
-                "query": "",
-                "context": "",
-                "insecure": self.command_config.get("insecure"),
-                "call": self.command_config.get("call"),
-                "vmodel_id": self.command_config.get("vmodel_id"),
-                "proto_path": self.command_config.get("proto_path")
-            }
-        )
-
-        self.dataset_gen = AnsibleWisdomQueryGenerator(
+        self.dataset_gen = InputGenerator(
             input_dataset.get("filename"),
             input_dataset.get("max_size")
         )
@@ -538,7 +379,7 @@ class AnsibleWisdomExperimentRunner(Base):
     def s3_result_path(self):
         """
         Temporary hack for our planned file structure in S3.
-        This path should depend on the config / param input to the experiment.
+        This path should probably depend on the config / param input to the experiment.
         """
         date_day = datetime.datetime.today().strftime('%Y-%m-%d')
         base_path = self.storage_config.get("s3_result_path")
@@ -563,30 +404,21 @@ class AnsibleWisdomExperimentRunner(Base):
 
     def run_tests(self, dataset, save_output=True):
         for query in dataset:
-            time.sleep(15) # Sleep to show a break in CPU/GPU utilization metrics between runs
-            print(f"###### Running GRPCURL/GHZ with query: \n{query}")
-            self.grpcurl_instance.set_input(query.get("prompt"), query.get("context"))
-            self.grpcurl_instance.run()
-            output_tokens = self.grpcurl_instance.get_output_tokens()
-            grpcurl_result = self.grpcurl_instance.get_output()
-            print(f"GRPCURL Result tokens: {output_tokens}, response: {grpcurl_result}")
+            #time.sleep(15) # Sleep to show a break in CPU/GPU utilization metrics between runs
 
-            self.ghz_instance.set_input(query.get("prompt"), query.get("context"))
+            self.ghz_instance.set_input(query.get("input"))
             self.ghz_instance.run()
 
             test_metadata = self.ghz_instance.get_metadata()
             output_obj = self.ghz_instance.get_output()
 
-            # Insert test_conditions metadata into test_metadata and output_obj
-            test_metadata.update(self.test_conditions)
-            output_obj.update(self.test_conditions)
-
-            output_obj["output_tokens"] = f"{output_tokens}"
-            test_metadata["output_tokens"] = f"{output_tokens}"
+            # Insert metadata metadata into test_metadata and output_obj
+            test_metadata.update(self.metadata)
+            output_obj.update(self.metadata)
             
             # TODO delete this local copy?
             start_time = test_metadata.get("start_time")
-            super()._json_dump(output_obj, f"ghz-test-{start_time}.json")
+            super()._json_dump(output_obj, f"{self.output_dir}/ghz-test-{start_time}.json")
            
             if save_output:
                 self.upload_to_s3(output_obj, test_metadata)
@@ -596,73 +428,22 @@ class AnsibleWisdomExperimentRunner(Base):
         """
         dataset = self.dataset_gen.get_dataset()
         if self.warmup:
-            save_concurrency = self.ghz_instance.ghz_concurrency
-            save_requests = self.ghz_instance.total_requests
+            save_concurrency = self.ghz_instance.concurrency
+            save_requests = self.ghz_instance.requests
             # fill the queues but avoid overload errors 
-            self.ghz_instance.ghz_concurrency = 4*self.ghz_instance.ghz_concurrency
-            self.ghz_instance.total_requests = 200*save_concurrency
+            self.ghz_instance.concurrency = 4*self.ghz_instance.concurrency
+            self.ghz_instance.requests = 200*save_concurrency
 
             print("############ DOING WARMUP RUNS ##############")
             # Warmup with only first entry in dataset 
             self.run_tests(dataset[1:2], save_output=False)
-            self.ghz_instance.ghz_concurrency = save_concurrency
-            self.ghz_instance.total_requests = save_requests
+            self.ghz_instance.concurrency = save_concurrency
+            self.ghz_instance.requests = save_requests
         
         print("############ WARMUP PHASE COMPLETE ##############")
         print("############  RUNNING LOAD TESTS   ##############")
         self.run_tests(dataset, save_output=True)
         
-
-class GHZDemo():
-    """
-    """
-
-    def __init__(self):
-        """
-        """
-        self.ghz_instance = GhzRunner(
-            params={
-                "concurrency": 3,
-                "requests": 9,
-                "host": "localhost:8033",
-                "query": "install httpd on rhel",
-                "context": "",
-                "insecure": True,
-                "call": "watson.runtime.wisdom_ext.v0.WisdomExtService.AnsiblePredict",
-                "vmodel_id": "gpu-version-inference-service-v02"
-            }
-        )
-        self.storage = S3Storage(
-            region='default',
-            access_key="myuser",
-            secret_key="25980928",
-            s3_endpoint="http://localhost:9000",
-            bucket="mybucket"
-        )
-
-    def run(self):
-        """
-        """
-        self.ghz_instance.run()
-        print("#################")
-        print("Uploading a test file")
-        test_date = self.ghz_instance.get_output().get("date")
-        self.storage.upload_object_with_metadata(
-            body=self.ghz_instance.get_output(),
-            object_name=f"data/test-{test_date}.json",
-            metadata={
-                'date': test_date
-            }
-        )
-        obj_content = self.storage.retrieve_object_body(
-            f"data/test-{test_date}.json")
-        obj_metadata = self.storage.retrieve_object_metadata(
-            f"data/test-{test_date}.json")
-        print("#################")
-        print(f'Object body: {obj_content}')
-        print("#################")
-        print(f'Object metadata: {obj_metadata.get("Metadata")}')
-
 
 def main():
     """
@@ -678,9 +459,9 @@ def main():
                         help="S3 Demo")
     parser.add_argument("--dataset_demo", action="store_true",
                         help="Dataset Demo")
-    parser.add_argument("--wisdom_experiment", action="store_true",
+    parser.add_argument("--experiment", action="store_true",
                         help="Ansible Wisdom model experiment")
-    parser.add_argument("--wisdom_parallel_experiment", action="store_true",
+    parser.add_argument("--parallel_experiment", action="store_true",
                         help="Ansible Wisdom parallel model experiment")
     args = parser.parse_args()
     config = Config()
@@ -690,24 +471,26 @@ def main():
         S3Demo()
     if args.dataset_demo:
         DatasetDemo()
-    if args.ghz:
-        demo = GHZDemo()
-        demo.run()
-    if args.wisdom_experiment:
-        test = AnsibleWisdomExperimentRunner(
+    # if args.ghz:
+    #    demo = GHZDemo()
+    #    demo.run()
+    if args.experiment:
+        test = ExperimentRunner(
             storage_config=config.get_storage_config(),
-            command_config=config.get_command_config(),
+            load_gen_config=config.get_load_gen_config(),
             input_dataset=config.get_input_dataset(),
+            output_dir = config.get_output_dir(),
             warmup=config.get_warmup(),
-            test_conditions=config.get_test_conditions(),
+            metadata=config.get_metadata(),
         )
         test.run()
-    if args.wisdom_parallel_experiment:
-        test = AnsibleWisdomParallelExperimentRunner(
+    if args.parallel_experiment:
+        test = ParallelExperimentRunner(
             storage_config=config.get_storage_config(),
-            command_config=config.get_command_config(),
+            load_gen_config=config.get_load_gen_config(),
             input_dataset=config.get_input_dataset(),
-            test_conditions=config.get_test_conditions(),
+            output_dir = config.get_output_dir(),
+            metadata=config.get_metadata(),
             nb_threads=16
         )
         test.run()

@@ -5,7 +5,7 @@
 
 import time
 
-from ansible_wisdom_query_generator import AnsibleWisdomQueryGenerator
+from input_generator import InputGenerator
 from s3storage import S3Storage
 
 
@@ -16,7 +16,7 @@ class DatasetDemo():
 
     def __init__(self):
         print("#################")
-        test_query_generator = AnsibleWisdomQueryGenerator(
+        test_query_generator = InputGenerator(
             "sorted_dataset.json", max_size=4)
         print("Dataset version: {}".format(
             test_query_generator.dataset_version))

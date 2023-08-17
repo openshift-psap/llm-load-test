@@ -8,11 +8,9 @@ import numpy as np
 from base import Base
 
 
-class AnsibleWisdomQueryGenerator(Base):
+class InputGenerator(Base):
     """
-    Parses an input file containing one json object per line (Gold Dataset)
-    and chooses a subset of input prompts / contexts
-    to be used as input to the load generator querying the model.
+    Parses a json input file
 
     If max_size is defined, dataset will be a subset of max_size which are
     equally spaced from the full sorted dataset.
@@ -46,6 +44,9 @@ class AnsibleWisdomQueryGenerator(Base):
     def _get_subset(self, max_size):
         """
         Returns a subset of n queries, equally spaced from current self.queries
+
+        This is useful if the dataset is sorted in some way and you want an even distribution.
+        For example, if it is sorted by input length and you want to test different input sizes.
         """
         query_list_length = len(self.dataset)
         indices = np.round(np.linspace(

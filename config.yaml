@@ -1,0 +1,39 @@
+# Where to put temporary output files
+output_dir: "./output"
+warmup: false
+storage:
+  type: s3
+  s3_params:
+    s3_host: ""
+    s3_use_https: true
+    s3_access_key: ""
+    s3_secret_key": ""
+    s3_bucket: "watsonx-llm-load-test-data"
+    s3_result_path: "gpt-neox-20b"
+    s3_region: "us-east-1"
+load_generator:
+  type: "ghz"
+  ghz_params:
+    host: "gpt-neox-20b-isvc-predictor-gpt-neox-20b.apps.dagray-watsonx-ocp.nvidia.eng.rdu2.redhat.com:443"
+    skipTLS: true
+    proto: "./protos/nlpservice.proto"
+    call: "caikit.runtime.Nlp.NlpService/TextGenerationTaskPredict"
+    # metadata is additional headers attached to the grpc request
+    metadata:
+      mm-model-id: "gpt-neox-20b"
+    concurrency: 4
+    total: 8
+    max_duration: "2m"
+  multiplexed: true
+  input_dataset:
+    filename: "dataset.json"
+    max_size: 2
+metadata:
+  platform_type: "ocp"
+  model_serving_stack: "kserve"
+  max_batch_size: 16
+  nodes: 1
+  instance_type: "beaker-2xa100"
+  instance_gpu_count: 2
+  runtime_version: "quay.io/opendatahub/caikit-tgis-serving:stable-4d0134e"
+  model_version: "gpt-neox-20b"

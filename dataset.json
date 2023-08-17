@@ -1,0 +1,23 @@
+{
+    "dataset" : [
+        {
+            "input":
+	    {
+		    "text": "What is the boiling point of water"
+	    },
+            "expected_output": "100 degrees C"
+        },
+        {
+            "input":
+	    {
+		    "text": "What is the best linux distribution for running enterprise applications?"
+	    },
+            "expected_output": "Red Hat Enterprise Linux" 
+        }
+    ],
+    "metadata": {
+    	"name": "example data",
+	"version": "0.0.1"
+    }
+}
+

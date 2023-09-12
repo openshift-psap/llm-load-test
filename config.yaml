@@ -9,31 +9,35 @@ storage:
     s3_access_key: ""
     s3_secret_key": ""
     s3_bucket: "watsonx-llm-load-test-data"
-    s3_result_path: "gpt-neox-20b"
+    s3_result_path: "mpt-7b-instruct2"
     s3_region: "us-east-1"
 load_generator:
   type: "ghz"
   ghz_params:
-    host: "gpt-neox-20b-isvc-predictor-gpt-neox-20b.apps.dagray-watsonx-ocp.nvidia.eng.rdu2.redhat.com:443"
+    host: "mpt-7b-instruct2-isvc-predictor-kserve-demo.apps.dagray-watsonx-beaker.nvidia.eng.rdu2.redhat.com:443"
     skipTLS: true
     proto: "./protos/nlpservice.proto"
     call: "caikit.runtime.Nlp.NlpService/TextGenerationTaskPredict"
     # metadata is additional headers attached to the grpc request
     metadata:
-      mm-model-id: "gpt-neox-20b"
-    concurrency: 4
-    total: 8
-    max_duration: "2m"
+      mm-model-id: "mpt-7b-instruct2"
+    concurrency: 1
+    total: 2000 # ignored
+    duration: "8m"
+    timeout: "240s"
   multiplexed: true
+  threads: 16
   input_dataset:
-    filename: "dataset.json"
-    max_size: 2
+    filename: "openorca-subset-007.json"
+    max_size: 32
 metadata:
+  pt2_compile: "false"
+  replicas: 2
   platform_type: "ocp"
   model_serving_stack: "kserve"
-  max_batch_size: 16
+  max_batch_size: 256
   nodes: 1
   instance_type: "beaker-2xa100"
   instance_gpu_count: 2
   runtime_version: "quay.io/opendatahub/caikit-tgis-serving:stable-4d0134e"
-  model_version: "gpt-neox-20b"
+  model_version: "flan-t5-large"

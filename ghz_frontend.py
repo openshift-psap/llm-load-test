@@ -10,6 +10,7 @@ import time
 import subprocess
 import sys
 import uuid
+import random
 
 from concurrent.futures import ThreadPoolExecutor
 
@@ -88,6 +89,9 @@ class Config(Base):
 
     def get_output_dir(self):
         return self.output_dir
+    
+    def get_threads(self):
+        return self.threads
 
     def get_complete_config(self):
         """
@@ -119,6 +123,9 @@ class Config(Base):
         if self.config.get("load_generator").get("type") == "ghz":
             self.load_gen_config = self.config.get("load_generator").get("ghz_params").copy()
             self.load_gen_config["type"] = "ghz"
+        
+        self.threads = self.config.get("load_generator").get("threads", 8)
+
 
         self.input_dataset = self.config.get("load_generator").get("input_dataset").copy()
 
@@ -214,10 +221,10 @@ class GhzRunner(CommandRunner, Base):
         self.test_metadata["end_time"] = end_time
         self.test_metadata["throughput"] = str(self.test_output.get("rps"))
         self.test_metadata["min_latency"] = str(float(self.test_output.get("fastest"))/(10**9))
-        self.test_metadata["input"] = json.dumps(self.input)
+        #self.test_metadata["input"] = json.dumps(self.input)
         self.test_metadata["concurrency"] = str(self.ghz_params.get('concurrency'))
-        self.test_metadata["ghz_max_requests"] = str(self.ghz_params.get('requests'))
-        self.test_metadata["ghz_max_duration"] = str(self.ghz_params.get('max_duration'))
+        self.test_metadata["ghz_max_requests"] = str(self.ghz_params.get('total'))
+        self.test_metadata["ghz_max_duration"] = str(self.ghz_params.get('duration'))
 
     def get_output(self):
         """
@@ -282,6 +289,8 @@ class ParallelExperimentRunner(Base):
     def upload_to_s3(self, obj, metadata):
         ""
         ""
+
+        print(f"Attempting to upload object with metadata: {metadata}")
         path = self.s3_result_path()
         s3_json_obj_name = "{}-multiplexed-ghz-results.json".format(str(uuid.uuid4()))
         self.storage.upload_object_with_metadata(
@@ -300,25 +309,20 @@ class ParallelExperimentRunner(Base):
     def run_tests(self, save_output=True):
         ""
         ""
-        dataset = self.dataset_gen.get_dataset()
-        if len(dataset) > self.nb_threads:
-            print("More lines in dataset than threads, exiting")
-            sys.exit(155)
 
         # queue of instances to actually run.
-        ghz_instances = []
-        for query in dataset:
-            ghz_instance = self.ghz_instances[dataset.index(query)]
-            ghz_instance.set_input(query.get("input"))
-            print(f"Prepared ghz instance index {dataset.index(query)} UUID {ghz_instance.uuid} with input \n {query.get('input')}")
-            ghz_instances.append(ghz_instance)
+        for ghz_instance in self.ghz_instances:
+            scrambled = self.dataset_gen.get_input_array().copy()
+            random.shuffle(scrambled)
+            ghz_instance.set_input(scrambled)
+            print(f"Prepared ghz instance UUID {ghz_instance.uuid} with input \n {ghz_instance.input}")
 
-        with ThreadPoolExecutor(max_workers=2*self.nb_threads) as executor:
-            for instance in ghz_instances:
+        with ThreadPoolExecutor(max_workers=self.nb_threads) as executor:
+            for instance in self.ghz_instances:
                 executor.submit(instance.run)
 
         self.output_obj = []
-        for instance in ghz_instances:
+        for ghz_instance in self.ghz_instances:
             test_metadata = instance.get_metadata()
             output_obj = instance.get_output()
 
@@ -328,6 +332,8 @@ class ParallelExperimentRunner(Base):
 
             start_time = test_metadata.get("start_time")
             self.output_obj.append(output_obj)
+
+        test_metadata["threads"] = str(self.nb_threads)
 
         if save_output:
             self.upload_to_s3(self.output_obj, test_metadata)
@@ -485,13 +491,18 @@ def main():
         )
         test.run()
     if args.parallel_experiment:
+        threads = config.get_threads()
+        load_gen_config = config.get_load_gen_config()
+        concurrency_per_thread = load_gen_config.get("concurrency")
+        total_conc = threads * concurrency_per_thread
+        print(f"Parallel experiment with {threads} threads and {concurrency_per_thread} concurrency, for a total concurrency of {total_conc}")
         test = ParallelExperimentRunner(
             storage_config=config.get_storage_config(),
-            load_gen_config=config.get_load_gen_config(),
+            load_gen_config=load_gen_config,
             input_dataset=config.get_input_dataset(),
             output_dir = config.get_output_dir(),
             metadata=config.get_metadata(),
-            nb_threads=16
+            nb_threads=threads
         )
         test.run()
 

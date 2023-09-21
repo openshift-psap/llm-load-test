@@ -108,11 +108,13 @@ class Config(Base):
     def __parse_storage_config(self):
         """
         Meant to be called at config load time e.g. constructor.
-        Only supports S3 atm.
+        Only supports S3 and local.
         """
         if self.config.get("storage").get("type") == "s3":
             self.storage_config = self.config.get("storage").get("s3_params").copy()
             self.storage_config["type"] = "s3"
+        elif self.config.get("storage").get("type") == "local":
+            self.storage_config["type"] = "local"
 
 
     def __parse_load_gen_config(self):
@@ -271,10 +273,11 @@ class ParallelExperimentRunner(Base):
             input_dataset.get("max_size")
         )
 
-        self.storage = S3Storage(
-            region=self.storage_config.get("s3_region"),
-            bucket=self.storage_config.get("s3_bucket")
-        )
+        if self.storage_config.get("type") == "s3":
+            self.storage = S3Storage(
+                region=self.storage_config.get("s3_region"),
+                bucket=self.storage_config.get("s3_bucket")
+            )
 
     def s3_result_path(self):
         """
@@ -309,6 +312,7 @@ class ParallelExperimentRunner(Base):
     def run_tests(self, save_output=True):
         ""
         ""
+        print(f"Running multiplexed test with save_output: {save_output}")
 
         # queue of instances to actually run.
         for ghz_instance in self.ghz_instances:
@@ -343,7 +347,8 @@ class ParallelExperimentRunner(Base):
     def run(self):
         """Used to be more than this with warmup.
         """
-        self.run_tests(save_output=True)
+        save_to_s3 = (self.storage_config.get("type") == "s3")
+        self.run_tests(save_output=save_to_s3)
 
 
 class ExperimentRunner(Base):
@@ -448,7 +453,8 @@ class ExperimentRunner(Base):
         
         print("############ WARMUP PHASE COMPLETE ##############")
         print("############  RUNNING LOAD TESTS   ##############")
-        self.run_tests(dataset, save_output=True)
+        save_to_s3 = (self.storage_config.get("type") == "s3")
+        self.run_tests(dataset, save_output=save_to_s3)
         
 
 def main():

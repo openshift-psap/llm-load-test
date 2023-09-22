@@ -345,7 +345,7 @@ class ParallelExperimentRunner(Base):
         if save_output:
             self.upload_to_s3(self.output_obj, test_metadata)
         else:
-            super()._json_dump(output_obj, f"{self.output_dir}/ghz-test-{start_time}.json")
+            super()._json_dump(self.output_obj, f"{self.output_dir}/ghz-multiplexed-results-{start_time}.json")
 
     def run(self):
         """Used to be more than this with warmup.

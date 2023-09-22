@@ -65,6 +65,6 @@ stages:
         sudo apt-get install -y ${UBUNTU_DEP_LIST}
       displayName: "install deps"
     - script: |
-        sh start-minio.sh
+        sh scripts/start-minio.sh
       displayName: "Launch MinIO"
 

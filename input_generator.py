@@ -69,3 +69,4 @@ class InputGenerator(Base):
         ret = self.dataset.copy()
         random.shuffle(ret)
         return (ret[0:max_size])
+

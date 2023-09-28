@@ -11,12 +11,16 @@ import subprocess
 import sys
 import uuid
 import random
+import logging
 
 from concurrent.futures import ThreadPoolExecutor
 
 from input_generator import InputGenerator
 from base import Base
 from s3storage import S3Storage
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s]: %(message)s')
+
 
 class CommandRunner(Base):
     """
@@ -47,11 +51,11 @@ class CommandRunner(Base):
                 if output:
                     full_output.append(output)
                     if verbose:
-                        print(output.strip())
+                        logging.info(output.strip())
                 if error:
                     full_error.append(output)
                     if verbose:
-                        print(error.strip())
+                        logging.info(error.strip())
             rcode = process.poll()
         return rcode, full_output, full_error
 
@@ -74,9 +78,9 @@ class Config(Base):
         if config_file_env is not None:
             config_file = config_file_env
         try:
-            print(f"Base path: {base_path}")
+            logging.info(f"Base path: {base_path}")
             config_full_path = os.path.join(base_path, config_file)
-            print(f"Using config file from: {config_full_path}")
+            logging.info(f"Using config file from: {config_full_path}")
             self.config = super()._yaml_load(config_full_path)
         except (FileNotFoundError, RuntimeError) as msg:
             super()._exit_failure("Could not open/parse " + str(msg))
@@ -85,7 +89,7 @@ class Config(Base):
         self.__parse_metadata()
         self.warmup = self.config.get("warmup") # TODO remove warmup option, it is unused in lightspeed cpt
         self.output_dir = self.config.get("output_dir")
-        print(f"Config: self.warmup: {self.warmup} self.output_dir: {self.output_dir}")
+        logging.info(f"Config: self.warmup: {self.warmup} self.output_dir: {self.output_dir}")
 
     def get_output_dir(self):
         return self.output_dir
@@ -203,8 +207,8 @@ class GhzRunner(CommandRunner, Base):
 
         config_file_name=f"{self.output_dir}/ghz-config-{self.uuid}.json"
         self._json_dump(self.ghz_params, config_file_name, overwrite=True)
-        print(f"Running ghz with the follow config json in file {config_file_name}")
-        print(self.ghz_params)
+        logging.info(f"Running ghz with config.json from file {config_file_name}")
+        logging.debug(self.ghz_params)
 
         start_time = datetime.datetime.now().isoformat()
 
@@ -227,7 +231,7 @@ class GhzRunner(CommandRunner, Base):
         self.test_metadata["throughput"] = str(self.test_output.get("rps"))
         self.test_metadata["min_latency"] = str(float(self.test_output.get("fastest"))/(10**9))
         #self.test_metadata["input"] = json.dumps(self.input)
-        self.test_metadata["concurrency"] = str(self.ghz_params.get('concurrency'))
+        self.test_metadata["concurrency"] = str(self.ghz_params.get('concurrency', None))
         self.test_metadata["ghz_max_requests"] = str(self.ghz_params.get('total'))
         self.test_metadata["ghz_max_duration"] = str(self.ghz_params.get('duration'))
 
@@ -296,7 +300,7 @@ class ParallelExperimentRunner(Base):
         ""
         ""
 
-        print(f"Attempting to upload object with metadata: {metadata}")
+        logging.info(f"Attempting to upload object with metadata: {metadata}")
         path = self.s3_result_path()
         s3_json_obj_name = "{}-multiplexed-ghz-results.json".format(str(uuid.uuid4()))
         self.storage.upload_object_with_metadata(
@@ -307,22 +311,22 @@ class ParallelExperimentRunner(Base):
 
         obj_content = self.storage.retrieve_object_body(f"{path}/{s3_json_obj_name}")
         obj_metadata = self.storage.retrieve_object_metadata(f"{path}/{s3_json_obj_name}")
-        print("#################")
-        print(f'Object body: {obj_content}')
-        print("#################")
-        print(f'Object metadata: {obj_metadata.get("Metadata")}')
+        logging.info("#################")
+        logging.info(f'Object body: {obj_content}')
+        logging.info("#################")
+        logging.info(f'Object metadata: {obj_metadata.get("Metadata")}')
 
     def run_tests(self, save_output=True):
         ""
         ""
-        print(f"Running multiplexed test with save_output: {save_output}")
+        logging.info(f"Running multiplexed test with save_output: {save_output}")
 
         # queue of instances to actually run.
         for ghz_instance in self.ghz_instances:
             scrambled = self.dataset_gen.get_input_array().copy()
             random.shuffle(scrambled)
             ghz_instance.set_input(scrambled)
-            print(f"Prepared ghz instance UUID {ghz_instance.uuid} with input \n {ghz_instance.input}")
+            logging.debug(f"Prepared ghz instance UUID {ghz_instance.uuid} with input \n {ghz_instance.input}")
 
         with ThreadPoolExecutor(max_workers=self.nb_threads) as executor:
             for instance in self.ghz_instances:
@@ -411,10 +415,10 @@ class ExperimentRunner(Base):
 
             obj_content = self.storage.retrieve_object_body(f"{path}/{s3_json_obj_name}")
             obj_metadata = self.storage.retrieve_object_metadata(f"{path}/{s3_json_obj_name}")
-            print("#################")
-            print(f'Object body: {obj_content}')
-            print("#################")
-            print(f'Object metadata: {obj_metadata.get("Metadata")}')
+            logging.info("#################")
+            logging.info(f'Object body: {obj_content}')
+            logging.info("#################")
+            logging.info(f'Object metadata: {obj_metadata.get("Metadata")}')
 
     def run_tests(self, dataset, save_output=True):
         for query in dataset:
@@ -447,14 +451,14 @@ class ExperimentRunner(Base):
             self.ghz_instance.concurrency = 4*self.ghz_instance.concurrency
             self.ghz_instance.requests = 200*save_concurrency
 
-            print("############ DOING WARMUP RUNS ##############")
+            logging.info("############ DOING WARMUP RUNS ##############")
             # Warmup with only first entry in dataset 
             self.run_tests(dataset[1:2], save_output=False)
             self.ghz_instance.concurrency = save_concurrency
             self.ghz_instance.requests = save_requests
         
-        print("############ WARMUP PHASE COMPLETE ##############")
-        print("############  RUNNING LOAD TESTS   ##############")
+        logging.info("############ WARMUP PHASE COMPLETE ##############")
+        logging.info("############  RUNNING LOAD TESTS   ##############")
         save_to_s3 = (self.storage_config.get("type") == "s3")
         self.run_tests(dataset, save_output=save_to_s3)
         
@@ -463,8 +467,12 @@ def run_multiplexed(config):
     threads = config.get_threads()
     load_gen_config = config.get_load_gen_config()
     concurrency_per_thread = load_gen_config.get("concurrency")
-    total_conc = threads * concurrency_per_thread
-    print(f"Parallel experiment with {threads} threads and  {concurrency_per_thread} concurrency, for a total concurrency of {total_conc}")
+    if concurrency_per_thread is not None:
+        total_conc = threads * concurrency_per_thread
+        logging.info(f"Parallel experiment with {threads} threads and  {concurrency_per_thread} concurrency, for a total concurrency of {total_conc}")
+    else:
+        print(f"Parallel experiment with {threads} threads and no concurrency setting (ghz default: 50). Use RPS at your own risk")
+
     test = ParallelExperimentRunner(
         storage_config=config.get_storage_config(),
         load_gen_config=load_gen_config,
@@ -497,8 +505,6 @@ def main(args):
                         help="increase output verbosity")
     parser.add_argument("-c", "--config", action="store", default="config.yaml",
                         help="config YAML file name")
-    parser.add_argument("--ghz", action="store_true",
-                        help="use ghz")
     parser.add_argument("--experiment", action="store_true", default=True,
                         help="Run load test experiment based on config file in ./config.yaml or $CONFIG_PATH/$CONFIG_FILENAME")
     parser.add_argument("--parallel_experiment", action="store_true",
@@ -506,7 +512,8 @@ def main(args):
     args = parser.parse_args(args)
     config = Config(args.config)
     if args.verbose:
-        print(config.get_complete_config())
+        logging.getLogger().setLevel(logging.DEBUG)
+        logging.debug(config.get_complete_config())
     if args.experiment:
         if config.multiplexed:
             run_multiplexed(config)
@@ -514,10 +521,11 @@ def main(args):
             run_one_input_at_a_time(config)
 
     if args.parallel_experiment:
-        print("warning: deprecated. The parallel experiment option is deprecated and will be removed. Set load_generator.multiplexed to True in the config file.")
+        logging.info("warning: deprecated. The parallel experiment option is deprecated and will be removed. Set load_generator.multiplexed to True in the config file.")
         run_multiplexed(config)
 
 
 if __name__ == "__main__":
     main(sys.argv[1:])
+
 

@@ -17,7 +17,7 @@ class Base():
     def _exit_failure(self, msg):
         """
         """
-        print(msg)
+        logging.error(msg)
         sys.exit(1)
 
     def _create_temp_directory(self, working_directory=None):
@@ -30,10 +30,10 @@ class Base():
         try:
             os.mkdir(temp_dir)
         except FileExistsError:
-            print("Proposed working directory already exists, exiting")
+            logging.error("Proposed working directory already exists, exiting")
             sys.exit(1)
         except FileNotFoundError:
-            print("No such directory")
+            logging.error("No such directory")
             sys.exit(1)
         return temp_dir
 
@@ -74,3 +74,4 @@ class Base():
             raise RuntimeError(file)
         with open(file, "w", encoding="utf-8") as outfile:
             outfile.write(json_object)
+

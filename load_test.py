@@ -471,7 +471,7 @@ def run_multiplexed(config):
         total_conc = threads * concurrency_per_thread
         logging.info(f"Parallel experiment with {threads} threads and  {concurrency_per_thread} concurrency, for a total concurrency of {total_conc}")
     else:
-        print(f"Parallel experiment with {threads} threads and no concurrency setting (ghz default: 50). Use RPS at your own risk")
+        logging.info(f"Parallel experiment with {threads} threads and no concurrency setting (ghz default: 50). Use RPS at your own risk")
 
     test = ParallelExperimentRunner(
         storage_config=config.get_storage_config(),

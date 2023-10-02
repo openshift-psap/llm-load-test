@@ -334,8 +334,8 @@ class ParallelExperimentRunner(Base):
 
         self.output_obj = []
         for ghz_instance in self.ghz_instances:
-            test_metadata = instance.get_metadata()
-            output_obj = instance.get_output()
+            test_metadata = ghz_instance.get_metadata()
+            output_obj = ghz_instance.get_output()
 
             # Insert metadata into test_metadata and output_obj
             test_metadata.update(self.metadata)

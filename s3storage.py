@@ -26,7 +26,7 @@ class S3Storage():
             )
             # location = {'LocationConstraint': region}
         except botocore.exceptions.ClientError as err:
-            logging.debug(err)
+            logging.error(err)
             return
         self.s3_client = s3_client
         self.bucket = bucket
@@ -41,7 +41,7 @@ class S3Storage():
                 # print(f'  {bucket["Name"]}')
                 bucket_list.append(bucket)
         except botocore.exceptions.ClientError as err:
-            logging.debug(err)
+            logging.error(err)
             return None
         except TypeError:
             return None
@@ -59,7 +59,7 @@ class S3Storage():
                 Key=object_name,
             )
         except botocore.exceptions.ClientError as err:
-            logging.debug(err)
+            logging.error(err)
             return
 
     def upload_file_with_metadata(self, filename, object_name, metadata):
@@ -76,7 +76,7 @@ class S3Storage():
                 Key=object_name,
             )
         except botocore.exceptions.ClientError as err:
-            logging.debug(err)
+            logging.error(err)
             return
 
     def list_objects_paginated(self, prefix, delimiter):
@@ -96,7 +96,7 @@ class S3Storage():
                     # print(f'  {obj.get("Key")}')
                     obj_list.append(obj)
         except botocore.exceptions.ClientError as err:
-            logging.debug(err)
+            logging.error(err)
         except TypeError:
             return None
         return obj_list
@@ -115,7 +115,7 @@ class S3Storage():
                         Key=obj.get('Key')
                     )
                 except botocore.exceptions.ClientError as err:
-                    logging.debug(err)
+                    logging.error(err)
         return metadata
 
     def retrieve_object_body(self, key):
@@ -126,7 +126,7 @@ class S3Storage():
                 Bucket=self.bucket, Key=key)
             content = res.get('Body').read().decode('utf-8')
         except botocore.exceptions.ClientError as err:
-            logging.debug(err)
+            logging.error(err)
         except TypeError:
             return None
         return content
@@ -140,7 +140,7 @@ class S3Storage():
                 Key=key
             )
         except botocore.exceptions.ClientError as err:
-            logging.debug(err)
+            logging.error(err)
         except TypeError:
             return None
         return metadata

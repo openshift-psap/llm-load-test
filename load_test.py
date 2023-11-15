@@ -505,24 +505,17 @@ def main(args):
                         help="increase output verbosity")
     parser.add_argument("-c", "--config", action="store", default="config.yaml",
                         help="config YAML file name")
-    parser.add_argument("--experiment", action="store_true", default=True,
-                        help="Run load test experiment based on config file in ./config.yaml or $CONFIG_PATH/$CONFIG_FILENAME")
-    parser.add_argument("--parallel_experiment", action="store_true",
-                        help="Deprecated. Set load_generator.multiplexed to True in the config file.")
     args = parser.parse_args(args)
     config = Config(args.config)
     if args.verbose:
         logging.getLogger().setLevel(logging.DEBUG)
         logging.debug(config.get_complete_config())
-    if args.experiment:
-        if config.multiplexed:
-            run_multiplexed(config)
-        else:
-            run_one_input_at_a_time(config)
 
-    if args.parallel_experiment:
-        logging.info("warning: deprecated. The parallel experiment option is deprecated and will be removed. Set load_generator.multiplexed to True in the config file.")
+
+    if config.multiplexed:
         run_multiplexed(config)
+    else:
+        run_one_input_at_a_time(config)
 
 
 if __name__ == "__main__":

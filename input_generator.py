@@ -5,6 +5,7 @@
 
 import numpy as np
 import random
+import logging
 
 from base import Base
 
@@ -20,10 +21,15 @@ class InputGenerator(Base):
     def __init__(self, file, max_size):
         """
         """
+        logging.info(f"Loading dataset file {file}")
         input_json = self._json_load(file)
-        self.dataset = input_json["dataset"]
+
+        input_dataset = input_json["dataset"]
+
         if max_size is not None:
-            self.dataset = self._get_even_subset(max_size)
+            self.dataset = self._get_even_subset(input_dataset, max_size)
+        else:
+            self.dataset = input_dataset
 
         self.dataset_version = input_json["metadata"]["version"]
         self.next_query = 0
@@ -50,17 +56,17 @@ class InputGenerator(Base):
         return [data_object.get("input") for data_object in self.dataset]
             
 
-    def _get_even_subset(self, max_size):
+    def _get_even_subset(self, input_dataset, max_size):
         """
-        Returns a subset of n queries, equally spaced from current self.queries
+        Returns a subset of n queries, equally spaced from input_dataset
 
         This is useful if the dataset is sorted in some way and you want an even distribution.
         For example, if it is sorted by input length and you want to test different input sizes.
         """
-        query_list_length = len(self.dataset)
-        indices = np.round(np.linspace(
-            0, query_list_length - 1, max_size)).astype(int)
-        return ([self.dataset[i] for i in indices])
+        dataset_len= len(input_dataset)
+        indices = np.round(np.linspace(0, dataset_len - 1, max_size)).astype(int)
+        logging.info(f"Using subset of dataset file with indices: {indices}")
+        return ([input_dataset[i] for i in indices])
 
     def _get_random_subset(self, max_size):
         """

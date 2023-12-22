@@ -35,36 +35,3 @@ stages:
         sh validate.sh || true
       displayName: "Linux linter - Ubuntu packages"
 
-- stage: build
-  jobs:
-  - job: build_ghz_linux
-    pool:
-      vmImage: ubuntu-latest
-    steps:
-    - script: |
-        git clone ${GHZ_URL}
-      displayName: 'download ghz'
-    - script: |
-        cd ghz/cmd/ghz
-        go build .
-      displayName: "build ghz"
-    - publish: $(System.DefaultWorkingDirectory)/ghz/cmd/ghz/ghz
-      artifact: ghz_bin
-
-- stage: test
-  dependsOn: build
-  jobs:
-  - job: llm_ci
-    pool:
-      vmImage: ubuntu-latest
-    steps:
-    - download: current
-      artifact: ghz_bin
-      displayName: "get ghz binary"
-    - script: |
-        sudo apt-get install -y ${UBUNTU_DEP_LIST}
-      displayName: "install deps"
-    - script: |
-        sh scripts/start-minio.sh
-      displayName: "Launch MinIO"
-

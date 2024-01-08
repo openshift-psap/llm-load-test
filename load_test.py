@@ -2,7 +2,7 @@ from dataset import Dataset
 import logging
 import multiprocessing as mp
 import pandas as pd
-from plugins import caikit_client_plugin
+from plugins import caikit_client_plugin, text_generation_webui_plugin
 import sys
 import time
 from user import User
@@ -21,7 +21,7 @@ def run_user_process(user, stop_q):
     print(f"User {user.user_id} done")
 
 
-def run_main_process(duration, concurrency, dataset):
+def run_main_process(duration, concurrency, plugin, dataset):
     ctx = mp.get_context('spawn')
     stop_q = ctx.Queue(1)
     dataset_q = ctx.Queue()
@@ -32,7 +32,7 @@ def run_main_process(duration, concurrency, dataset):
     # Create all simulated user processes
     for idx in range(concurrency):
         send_results, recv_results = ctx.Pipe()
-        user=User(idx, dataset_q=dataset_q, results_pipe=send_results, request_func=caikit_client_plugin.make_streaming_request)
+        user=User(idx, dataset_q=dataset_q, results_pipe=send_results, plugin=plugin)
         procs.append(ctx.Process(target=run_user_process, args=(user,  stop_q)))
         results_pipes.append(recv_results)
 
@@ -84,9 +84,18 @@ def run_test(config):
     concurrency = load_options.get("concurrency")
     duration = load_options.get("duration")
 
+    plugin_type = config.get("plugin")
+    if plugin_type == "text_generation_webui_plugin":
+        plugin = text_generation_webui_plugin.TextGenerationWebUIPlugin(config.get("plugin_options"))
+    elif plugin_type == "caikit_client_plugin":
+        plugin = caikit_client_plugin.CaikitClientPlugin(config.get("plugin_options"))
+    else:
+        print(f"Unknown plugin type {plugin_type}")
+        return
+
     dataset = Dataset(**config['dataset'])
 
-    results_list = run_main_process(duration, concurrency, dataset)
+    results_list = run_main_process(duration, concurrency, plugin, dataset)
 
     utils.write_output(config, results_list)
 

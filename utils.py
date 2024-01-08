@@ -42,4 +42,8 @@ def write_output(config, results_list):
     df.head()
     with pd.option_context('display.max_rows', None, 'display.max_columns', None):
         print(df)
-    print(df[["TT_ack", "TTFT", "TPOT", "response_time", "output_tokens", "input_tokens"]].mean(numeric_only=True))
+    print(f"\n---\nFull results in {outfile}. Results summary:")
+    if "TTFT" in df:
+        print(df[["TT_ack", "TTFT", "TPOT", "response_time", "output_tokens", "input_tokens"]].mean(numeric_only=True))
+    else:
+        print(df[["TPOT", "response_time", "output_tokens", "input_tokens"]].mean(numeric_only=True))

@@ -29,21 +29,40 @@ class CaikitClientPlugin(plugin.Plugin):
         if args["interface"] == "http":
             if args["streaming"]:
                 self.request_func = self.make_streaming_request
+            else:
+                self.request_func = self.make_request
         else:
             print(f"Interface {args['interface']} not yet implemented") #throw error
 
         self.model_name = args["model_name"]
         self.route = args["route"]
         
+    def make_request(self, query, user_id):
+        http_client = HttpClient(self.route, verify=False)
+    
+        num_tokens = query['max_new_tokens']
+        
+        start_time = time.time()
+        response = http_client.generate_text(
+                self.model_name, 
+                query['text'],
+                min_new_tokens=query['min_new_tokens'], 
+                max_new_tokens=query['max_new_tokens'], 
+                timeout=240
+                )
+        print(response)
+        end_time = time.time()
+    
+        return self._calculate_results(start_time, end_time, response, num_tokens, user_id, query)
 
     def make_streaming_request(self, query, user_id):
         http_client = HttpClient(self.route, verify=False)
     
-        chunks=[]
+        tokens=[]
         ack_time = 0
         first_token_time=0
         start_time = time.time()
-        for chunk in http_client.generate_text_stream(
+        for token in http_client.generate_text_stream(
                 self.model_name, 
                 query['text'],
                 min_new_tokens=query['min_new_tokens'], max_new_tokens=query['max_new_tokens'], timeout=240
@@ -52,11 +71,11 @@ class CaikitClientPlugin(plugin.Plugin):
             if not ack_time:
                 ack_time = time.time()
             # First non empty chunk is the first token
-            if not first_token_time and chunk != "":
+            if not first_token_time and token != "":
                 first_token_time=time.time()
-            chunks.append(chunk)
+            tokens.append(token)
 
         end_time = time.time()
     
-        return self._calculate_results(start_time, ack_time, first_token_time, end_time, chunks, user_id, query)
+        return self._calculate_results_stream(start_time, ack_time, first_token_time, end_time, tokens, user_id, query)
     

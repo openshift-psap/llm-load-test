@@ -1,10 +1,11 @@
 import argparse
 import json
-import os
 from pathlib import Path
 import yaml
 import pandas as pd
+import logging
 
+logger = logging.getLogger()
 
 def parse_args(args):
     parser = argparse.ArgumentParser()
@@ -16,7 +17,7 @@ def parse_args(args):
 
 
 def yaml_load(file):
-    if not os.path.isfile(file):
+    if not Path(file).is_file():
         raise FileNotFoundError(file)
     with open(file, 'r', encoding="utf-8") as stream:
         try:
@@ -29,7 +30,7 @@ def write_output(config, results_list):
     output_path = output_options.get("dir")
     path = Path(output_path)
     if not (path.exists() and path.is_dir()):
-        print(f"Output path {path} does not exist, creating it!")
+        logger.warn(f"Output path {path} does not exist, creating it!")
         path.mkdir(parents=True, exist_ok=True)
     
     outfile = path / Path(output_options.get("file"))
@@ -37,7 +38,7 @@ def write_output(config, results_list):
     with outfile.open('w') as f:
         json.dump(output_obj, f)
 
-    print(f"Length of results: {len(results_list)}")
+    logger.info(f"Length of results: {len(results_list)}")
     df = pd.DataFrame(results_list)    
     df.head()
     with pd.option_context('display.max_rows', None, 'display.max_columns', None):

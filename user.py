@@ -1,4 +1,6 @@
-#import logging
+import logging
+
+logger = logging.getLogger("user")
 
 class User:
     def __init__(self, user_id, dataset_q, results_pipe, plugin):
@@ -10,8 +12,8 @@ class User:
 
     def make_request(self):
         query = self.dataset_q.get()
-        #logging.info(f"User {self.user_id} making request idx {idx}: {query}")
-        print(f"User {self.user_id} making request {query}")
+        logger.info(f"User {self.user_id} making request")
+
         result = self.plugin.request_func(query, self.user_id)
         return result
 

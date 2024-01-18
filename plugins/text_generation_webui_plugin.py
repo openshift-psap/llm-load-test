@@ -2,6 +2,7 @@
 import time
 import json
 import requests
+import logging
 from plugins import plugin
 requests.packages.urllib3.disable_warnings()
 """
@@ -15,6 +16,8 @@ plugin_options:
 
 required_args = ["route", "streaming"]
 
+logger = logging.getLogger("user")
+
 class TextGenerationWebUIPlugin(plugin.Plugin):
     def __init__(self, args):
         self._parse_args(args)
@@ -22,12 +25,12 @@ class TextGenerationWebUIPlugin(plugin.Plugin):
     def _parse_args(self, args):
         for arg in required_args:
             if not args[arg]:
-                print(f"Missing plugin arg: {arg}") #throw error
+                logger.error(f"Missing plugin arg: {arg}") #throw error
     
         if args["streaming"]:
             self.request_func = self.make_streaming_request
         else:
-            print(f"option streaming: {args['streaming']} not yet implemented") #throw error
+            logger.error(f"option streaming: {args['streaming']} not yet implemented") #throw error
 
         self.route = args["route"]
         
@@ -52,13 +55,13 @@ class TextGenerationWebUIPlugin(plugin.Plugin):
         start_time = time.time()
 
         response = requests.post(self.route, headers=headers, json=data, verify=False, stream=True)
-        print(f"Response: {response}")
+        logger.debug(f"Response: {response}")
         for line in response.iter_lines():
             if line and line[:5] == b"data:":
                 try:
                     message = json.loads(line[6:])
                 except json.JSONDecodeError:
-                    print(f"unexpected model response could not be json decoded: {message}")
+                    logger.warn(f"unexpected model response could not be json decoded: {message}")
                 chunk = message['choices'][0]['text']
             else:
                 continue
@@ -73,7 +76,6 @@ class TextGenerationWebUIPlugin(plugin.Plugin):
                 first_token_time=time.time()
             chunks.append(chunk)
 
-            #print("".join(chunks))
 
         end_time = time.time()
     

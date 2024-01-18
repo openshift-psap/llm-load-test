@@ -1,9 +1,4 @@
 import time
-import json
-
-from caikit_nlp_client import HttpClient
-import time
-import json
 import requests
 from plugins import plugin
 requests.packages.urllib3.disable_warnings()

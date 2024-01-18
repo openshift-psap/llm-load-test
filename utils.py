@@ -23,7 +23,7 @@ def parse_args(args):
     parser.add_argument("-c", "--config", action="store", default="config.yaml",
                         help="config YAML file name")
     parser.add_argument( '-log', '--log_level',
-                     default='warning',
+                     default='info',
                      choices=log_levels.keys(),
                      help='Provide logging level. Example --loglevel debug, default=warning' )
     args = parser.parse_args(args)

@@ -1,6 +1,7 @@
-boto3
+caikit-nlp-client
 deprecation
 flake8
 numpy
+pandas
 pyyaml
 pylint

@@ -7,22 +7,18 @@ storage: # TODO
   type: local
 dataset:
   file: "datasets/openorca_large_subset_010.jsonl"
-  max_queries: 3000
+  max_queries: 1000
   max_input_tokens: 1024
   max_output_tokens: 256
 load_options:
   type: constant #Future options: loadgen, stair-step
-  concurrency: 2
+  concurrency: 64
   duration: 20 # In seconds. Maybe in future support "100s" "10m", etc...
-plugin: "text_generation_webui_plugin"
+plugin: "caikit_client_plugin"
 plugin_options:
+  interface: "http" # Some plugins like caikit-nlp-client should support grpc/http
   streaming: True
-  route: "http://127.0.0.1:5000/v1/completions"
-#plugin: "caikit_client_plugin"
-#plugin_options:
-  #interface: "http" # Some plugins like caikit-nlp-client should support grpc/http
-  #streaming: True
-  #model_name: "Llama-2-7b-hf"
-  #route: "https://llama-2-7b-hf-isvc-predictor-dagray-test.apps.modelserving.nvidia.eng.rdu2.redhat.com:443"
+  model_name: "model-70b-chat"
+  route: "https://route.to.host"
 extra_metadata:
   replicas: 1

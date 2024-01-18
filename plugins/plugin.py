@@ -3,12 +3,15 @@ class Plugin():
     def __init__(self, args):
         self.args = args
 
-    def make_streaming_request(self, user_id, query):
+    def make_request(self, query, user_id):
+        pass
+
+    def make_streaming_request(self, query, user_id):
         pass
 
     def _calculate_results(self, start_time, end_time, response, num_tokens, user_id, query):
         resp_time = end_time - start_time
-        TPOT = ((1000*resp_time) / (num_tokens)) # Time per output token in ms
+        TPOT = (1000*resp_time) / num_tokens # Time per output token in ms
     
         results = {
             'start': start_time,
@@ -28,7 +31,7 @@ class Plugin():
         resp_time = end_time - start_time
         TT_ack = 1000*(ack_time-start_time)
         TTFT = 1000*(first_token_time-start_time) # Time to first token in ms
-        TPOT = ((1000*resp_time - TT_ack) / (len(tokens)-1)) # Time per output token in ms
+        TPOT = (1000*resp_time - TT_ack) / (len(tokens)-1) # Time per output token in ms
     
         results = {
             'start': start_time,

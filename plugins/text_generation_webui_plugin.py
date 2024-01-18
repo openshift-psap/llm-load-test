@@ -1,10 +1,11 @@
 
 import time
 import json
-import requests
 import logging
+import requests
+import urllib3
 from plugins import plugin
-requests.packages.urllib3.disable_warnings()
+urllib3.disable_warnings()
 """
 Example plugin config.yaml:
 
@@ -24,16 +25,15 @@ class TextGenerationWebUIPlugin(plugin.Plugin):
 
     def _parse_args(self, args):
         for arg in required_args:
-            if not args[arg]:
-                logger.error(f"Missing plugin arg: {arg}") #throw error
-    
+            if arg not in args:
+                logger.error("Missing plugin arg: %s", arg)
+
         if args["streaming"]:
             self.request_func = self.make_streaming_request
         else:
-            logger.error(f"option streaming: {args['streaming']} not yet implemented") #throw error
+            logger.error("option streaming: %s not yet implemented", args['streaming'])
 
-        self.route = args["route"]
-        
+        self.route = args["route"] 
 
     def make_streaming_request(self, query, user_id):
         headers = {
@@ -49,23 +49,24 @@ class TextGenerationWebUIPlugin(plugin.Plugin):
             "stream": True,
         }
 
-        chunks=[]
+        chunks = []
         ack_time = 0
         first_token_time=0
         start_time = time.time()
 
+        # TODO add configurable timeout to requests
         response = requests.post(self.route, headers=headers, json=data, verify=False, stream=True)
-        logger.debug(f"Response: {response}")
+        logger.debug("response: %s", response)
         for line in response.iter_lines():
             if line and line[:5] == b"data:":
                 try:
                     message = json.loads(line[6:])
                 except json.JSONDecodeError:
-                    logger.warn(f"unexpected model response could not be json decoded: {message}")
+                    logger.warning("response line could not be json decoded: %s", line)
                 chunk = message['choices'][0]['text']
             else:
                 continue
-            
+
             # First chunk is not a token, just an acknowledgement of connection
             if not ack_time:
                 ack_time = time.time()
@@ -78,5 +79,11 @@ class TextGenerationWebUIPlugin(plugin.Plugin):
 
 
         end_time = time.time()
-    
-        return self._calculate_results(start_time, ack_time, first_token_time, end_time, chunks, user_id, query)
+
+        return self._calculate_results_stream(start_time,
+                                              ack_time,
+                                              first_token_time,
+                                              end_time,
+                                              chunks,
+                                              user_id,
+                                              query)

@@ -1,9 +1,15 @@
-from caikit_nlp_client import HttpClient
-import time
+import json
 import logging
-import requests
+import time
+
+from caikit_nlp_client import HttpClient
+import urllib3
+
 from plugins import plugin
-requests.packages.urllib3.disable_warnings()
+
+urllib3.disable_warnings()
+
+
 """
 Example plugin config.yaml:
 
@@ -26,24 +32,24 @@ class CaikitClientPlugin(plugin.Plugin):
     def _parse_args(self, args):
         for arg in required_args:
             if arg not in args:
-                logger.error(f"Missing plugin arg: {arg}") #throw error
-    
+                logger.error("Missing plugin arg: %s", arg)
+
         if args["interface"] == "http":
             if args["streaming"]:
                 self.request_func = self.make_streaming_request
             else:
                 self.request_func = self.make_request
         else:
-            logger.error(f"Interface {args['interface']} not yet implemented") #throw error
+            logger.error("Interface %s not yet implemented", args['interface'])
 
         self.model_name = args["model_name"]
         self.route = args["route"]
-        
+
     def make_request(self, query, user_id):
         http_client = HttpClient(self.route, verify=False)
-    
+
         num_tokens = query['max_new_tokens']
-        
+
         start_time = time.time()
         response = http_client.generate_text(
                 self.model_name, 
@@ -52,22 +58,24 @@ class CaikitClientPlugin(plugin.Plugin):
                 max_new_tokens=query['max_new_tokens'], 
                 timeout=240
                 )
-        logger.debug(response)
+        logger.debug("Response: %s", json.dumps(response))
         end_time = time.time()
-    
+
         return self._calculate_results(start_time, end_time, response, num_tokens, user_id, query)
 
     def make_streaming_request(self, query, user_id):
         http_client = HttpClient(self.route, verify=False)
-    
+
         tokens = []
         ack_time = 0
         first_token_time = 0
         start_time = time.time()
         for token in http_client.generate_text_stream(
-                self.model_name, 
+                self.model_name,
                 query['text'],
-                min_new_tokens=query['min_new_tokens'], max_new_tokens=query['max_new_tokens'], timeout=240
+                min_new_tokens=query['min_new_tokens'],
+                max_new_tokens=query['max_new_tokens'],
+                timeout=240
                 ):
             # First chunk is not a token, just an acknowledgement of connection
             if not ack_time:
@@ -76,7 +84,7 @@ class CaikitClientPlugin(plugin.Plugin):
             if not first_token_time and token != "":
                 first_token_time = time.time()
             tokens.append(token)
-            logger.debug(f"Token: {token}")
+            logger.debug("Token: %s", token)
 
 
         end_time = time.time()

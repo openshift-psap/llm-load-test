@@ -17,6 +17,7 @@ class Dataset:
 
 def read_jsonlines(filename, max_queries=1000, max_input_tokens=1024, max_output_tokens=1024):
     with open(filename, 'r', encoding='utf-8') as file:
+        total_queries = 0
         for idx, line in enumerate(file):
             if idx == 0:
                 # skip the first line, it contains metadata
@@ -34,9 +35,10 @@ def read_jsonlines(filename, max_queries=1000, max_input_tokens=1024, max_output
             except KeyError as e:
                 print(f"Unexpected format in input dataset file {filename}, KeyError: {e}")
             if output_tokens < max_output_tokens and input_tokens < max_input_tokens: 
+                total_queries = total_queries + 1
                 input_data["input_tokens"] = input_tokens
                 yield input_data
-                if idx >= max_queries:
+                if total_queries >= max_queries:
                     break
 
 

@@ -2,6 +2,7 @@ import argparse
 import json
 import logging
 from pathlib import Path
+import sys
 import pandas as pd
 import yaml
 
@@ -46,7 +47,7 @@ def parse_config(config):
         plugin = caikit_client_plugin.CaikitClientPlugin(config.get("plugin_options"))
     else:
         logging.error("Unknown plugin type %s", plugin_type)
-        return
+        raise ValueError(f"Unknown plugin type {plugin_type}")
 
     return concurrency, duration, plugin
 

@@ -54,7 +54,19 @@ def gather_results(results_pipes):
         results_list.extend(user_results)
     return results_list
 
+def exit_gracefully(procs, logger_q, log_reader_thread, code):
+    logging.debug("Calling join() on all user processes")
+    for proc in procs:
+        proc.join()
+    logging.info("User processes terminated succesfully")
 
+    # Shutdown logger thread
+    logger_q.put(None)
+    log_reader_thread.join()
+
+    exit(code)
+
+    
 def main(args):
     args = utils.parse_args(args)
 
@@ -62,19 +74,26 @@ def main(args):
     logger_q = mp_ctx.Queue()
     log_reader_thread = logging_utils.init_logging(args.log_level, logger_q)
 
-    #### Parse config
-    logging.debug("Parsing YAML config file %s", args.config)
-    config = utils.yaml_load(args.config)
-    concurrency, duration, plugin = utils.parse_config(config)
-
-    logging.debug("Creating dataset with configuration %s", config['dataset'])
-    dataset = Dataset(**config['dataset'])
 
     ## Create processes and their Users
     stop_q = mp_ctx.Queue(1)
     dataset_q = mp_ctx.Queue()
     procs = []
     results_pipes = []
+
+    #### Parse config
+    logging.debug("Parsing YAML config file %s", args.config)
+    concurrency, duration, plugin = 0, 0, None
+    config = utils.yaml_load(args.config)
+    try:
+        concurrency, duration, plugin = utils.parse_config(config)
+    except ValueError:
+        logging.error("Exiting due to invalid input")
+        exit_gracefully(procs, logger_q, log_reader_thread, 1)
+
+    logging.debug("Creating dataset with configuration %s", config['dataset'])
+    dataset = Dataset(**config['dataset'])
+
 
     logging.debug("Creating %s Users and corresponding processes", concurrency)
     for idx in range(concurrency):
@@ -94,16 +113,10 @@ def main(args):
 
     results_list = gather_results(results_pipes)
 
-    logging.debug("Calling join() on all user processes")
-    for proc in procs:
-        proc.join()
-    logging.info("User processes terminated succesfully")
-
     utils.write_output(config, results_list)
 
-    # Shutdown logger thread
-    logger_q.put(None)
-    log_reader_thread.join()
+    exit_gracefully(procs, logger_q, log_reader_thread, 0)
+
 
 
 if __name__ == "__main__":

@@ -14,11 +14,11 @@ class DummyPlugin(plugin.Plugin):
 
     def _parse_args(self, args):
         if args["streaming"]:
-            self.request_func = self.make_streaming_request
+            self.request_func = self.streaming_request_http
         else:
-            self.request_func = self.make_request
+            self.request_func = self.request_http
 
-    def make_request(self, query, user_id):
+    def request_http(self, query, user_id):
         response = query.get('text')
         num_tokens = query['max_new_tokens']
 
@@ -28,7 +28,7 @@ class DummyPlugin(plugin.Plugin):
 
         return self._calculate_results(start_time, end_time, response, num_tokens, user_id, query)
 
-    def make_streaming_request(self, query, user_id):
+    def streaming_request_http(self, query, user_id):
         start_time = time.time()
         ack_time = 0
         first_token_time=0

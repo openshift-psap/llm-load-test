@@ -29,13 +29,13 @@ class TextGenerationWebUIPlugin(plugin.Plugin):
                 logger.error("Missing plugin arg: %s", arg)
 
         if args["streaming"]:
-            self.request_func = self.make_streaming_request
+            self.request_func = self.streaming_request_http
         else:
             logger.error("option streaming: %s not yet implemented", args['streaming'])
 
         self.route = args["route"] 
 
-    def make_streaming_request(self, query, user_id):
+    def streaming_request_http(self, query, user_id):
         headers = {
             "Content-Type": "application/json"
         }

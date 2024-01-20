@@ -83,10 +83,10 @@ def write_output(config, results_list):
     with pd.option_context('display.max_rows', None, 'display.max_columns', None):
         print(df)
     print(f"\n---\nFull results in {outfile}. Results summary:")
-    if "TTFT" in df:
-        print(df[["TT_ack", "TTFT", "TPOT", "response_time", "output_tokens", "input_tokens"]].mean(numeric_only=True))
+    if "ttft" in df:
+        print(df[["tt_ack", "ttft", "tpot", "response_time", "output_tokens", "input_tokens"]].mean(numeric_only=True))
     else:
-        print(df[["TPOT", "response_time", "output_tokens", "input_tokens"]].mean(numeric_only=True))
+        print(df[["tpot", "response_time", "output_tokens", "input_tokens"]].mean(numeric_only=True))
 
     load_options = config.get("load_options")
     duration = load_options.get("duration")

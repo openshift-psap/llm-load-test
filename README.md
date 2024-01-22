@@ -8,21 +8,41 @@ This tool is designed to load test large language models
 
 ## Usage
 
-1. **Running the Tool**:
-    ```
-    python load_test.py --config <config_file_path>
-    ```
+**Running the Tool**:
+```
+usage: load_test.py [-h] [-c CONFIG] [-log {warn,warning,info,debug}]
 
-    - `-v, --verbose`: Enables verbose (debug-level) logging.
-    - `-c, --config`: Specifies the path to the configuration file (default is `config.yaml`).
+optional arguments:
+  -h, --help            show this help message and exit
+  -c CONFIG, --config CONFIG
+                        config YAML file name
+  -log {warn,warning,info,debug}, --log_level {warn,warning,info,debug}
+                        Provide logging level. Example --log_level debug, default=warning
+```
 
 ## Configuration Options
 
-The tool's behavior can be customized using a YAML configuration file. 
+The tool's behavior can be customized using a YAML configuration file. Take a look at `config.yaml` for an example. More documentation on this should be added in the future.
 
 
-3. **Results**:
-    The tool will produce test results in json format
+**Results**:
+The tool will produce a results summary logged to stdout, and detailed test results in json format.
+The json output will have an array of results with one element per request sent during the test. For example, here is the detailed information for one request in the array:
+
+```
+{
+    "start": 1705614329.536056, 
+    "end": 1705614332.6319733, 
+    "tt_ack": 77.5759220123291, 
+    "ttft": 113.14225196838379, 
+    "tpot": 13.47473795924868, 
+    "response_time": 3.095917224884033, 
+    "output_tokens": 225, 
+    "worker_id": 0, 
+    "input_tokens": 129, 
+    "response_string": "...", 
+    "input_string": "..."}
+```
 
 
 ## Contributing

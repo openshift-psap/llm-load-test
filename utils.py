@@ -18,14 +18,12 @@ def parse_args(args):
     }
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("-v", "--verbose", action="store_true",
-                        help="increase output verbosity")
     parser.add_argument("-c", "--config", action="store", default="config.yaml",
                         help="config YAML file name")
     parser.add_argument( '-log', '--log_level',
                      default='info',
                      choices=log_levels.keys(),
-                     help='Provide logging level. Example --loglevel debug, default=warning' )
+                     help='Provide logging level. Example --log_level debug, default=warning' )
     args = parser.parse_args(args)
 
     args.log_level = log_levels[args.log_level]

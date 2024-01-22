@@ -74,7 +74,6 @@ def main(args):
     logger_q = mp_ctx.Queue()
     log_reader_thread = logging_utils.init_logging(args.log_level, logger_q)
 
-
     ## Create processes and their Users
     stop_q = mp_ctx.Queue(1)
     dataset_q = mp_ctx.Queue()

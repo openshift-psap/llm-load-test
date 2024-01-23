@@ -38,7 +38,7 @@ class DummyPlugin(plugin.Plugin):
         first_token_time=time.time()
         time.sleep(1)
         end_time=time.time()
-        chunks = query.get('text').split(' ')
+        chunks = query.get('text', "").split(' ')
         return self._calculate_results_stream(start_time, ack_time,
                                               first_token_time, end_time,
                                               chunks, user_id, query)

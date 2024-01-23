@@ -58,12 +58,15 @@ class TextGenerationWebUIPlugin(plugin.Plugin):
         response = requests.post(self.route, headers=headers, json=data, verify=False, stream=True)
         logger.debug("response: %s", response)
         for line in response.iter_lines():
-            if line and line[:5] == b"data:":
+            _, found, data = line.partition(b"data:")
+            if found:
                 try:
-                    message = json.loads(line[6:])
+                    message = json.loads(data)
+                    chunk = message['choices'][0]['text']
                 except json.JSONDecodeError:
-                    logger.warning("response line could not be json decoded: %s", line)
-                chunk = message['choices'][0]['text']
+                    logger.error("response line could not be json decoded: %s", line)
+                except KeyError:
+                    logger.error("KeyError, unexpected response format in line: %s", line)
             else:
                 continue
 

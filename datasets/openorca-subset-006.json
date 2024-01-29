@@ -1,0 +1,361 @@
+{
+    "dataset": [
+        {
+            "id": "t0.1091909",
+            "response": "Horner's syndrome affects one eye.",
+            "input": {
+                "text": "You are an AI assistant. User will you give you a task. Your goal is to complete the task as faithfully as you can. While performing the task think step-by-step and justify your steps.\n\nChoose your answer from:\n +the nose.\n +the tongue.\n +the mouth.\n +one eye.\nGiven those answer options, answer the question: Answer the following question given this paragraph:   Horner\u2019s syndrome is a condition that presents with changes in one eye, such as pupillary constriction and dropping of eyelids, as well as decreased sweating in the face. Why could a tumor in the thoracic cavity have an effect on these autonomic functions? 32. The cardiovascular center is responsible for regulating the heart and blood vessels through homeostatic mechanisms. What tone does each component of the cardiovascular system have? What connections does the cardiovascular center invoke to keep these two systems in their resting tone? 33. Why does smoking increase the risk of heart disease? Provide two reasons based on autonomic function. Why might topical, cosmetic application of atropine or scopolamine from the belladonna plant not cause fatal poisoning, as would occur with ingestion of the plant?.   Q: Which part of the body shows does horner's syndrome affect?   A:\nA:",
+                "min_new_tokens": 8,
+                "max_new_tokens": 8
+            },
+            "prompt_len": 265,
+            "response_len": 8
+        },
+        {
+            "id": "flan.1772672",
+            "response": "\"User-defined single wire or balanced system.\"",
+            "input": {
+                "text": "You are a helpful assistant, who always provide explanation. Think like you are answering to a five year old.\n\nGenerate a correctly punctuated version of the following text:  user defined single wire or balanced system",
+                "min_new_tokens": 10,
+                "max_new_tokens": 10
+            },
+            "prompt_len": 43,
+            "response_len": 10
+        },
+        {
+            "id": "t0.8983",
+            "response": "What was Sasha's condition after she ordered pizza?",
+            "input": {
+                "text": "\n\nSasha ordered some pizza after she got drunk at the party last night.  Given that the answer to a question is \"was hungry\", what is the question?\nA:",
+                "min_new_tokens": 11,
+                "max_new_tokens": 11
+            },
+            "prompt_len": 38,
+            "response_len": 11
+        },
+        {
+            "id": "t0.1012597",
+            "response": "The time zone in California is called Pacific Time Zone (PT).",
+            "input": {
+                "text": "You are an AI assistant that follows instruction extremely well. Help as much as you can.\n\nPlease answer the following question: What is the time zone in california called?\nA:",
+                "min_new_tokens": 13,
+                "max_new_tokens": 13
+            },
+            "prompt_len": 39,
+            "response_len": 13
+        },
+        {
+            "id": "flan.831768",
+            "response": "This is Romanian. It is a language spoken in Romania and Moldova.",
+            "input": {
+                "text": "You are a helpful assistant, who always provide explanation. Think like you are answering to a five year old.\n\nRadovan Pejic, un purt\u0103tor de cuv\u00e2nt al Centrului din Saraievo de Est pentru Securitate Public\u0103 (CSP) din Pale, a declarat c\u0103 \u00eembun\u0103t\u0103\u0163irea modului \u00een care poli\u0163ia local\u0103 este perceput\u0103 de public este un alt motiv pentru care opera\u0163iunile bilunare Recolta dau rezultate.\n\nWhich language is this?",
+                "min_new_tokens": 15,
+                "max_new_tokens": 15
+            },
+            "prompt_len": 121,
+            "response_len": 15
+        },
+        {
+            "id": "t0.227658",
+            "response": "The alias of the person who is ordered to attend the sniper course is \"Swoff\".",
+            "input": {
+                "text": "\n\nQuestion: Read the following paragraph and extract the answer for the question: What is the alias of the person who is ordered to attend the sniper course?  In 1989, Anthony \"Swoff\" Swofford, whose father served in the Vietnam War, attends U.S. Marine Corps training before being stationed at Camp Pendleton. Claiming that he joined the military because he \"got lost on the way to college\", Swofford finds his time at Camp Pendleton difficult, and struggles to make friends. While Swofford feigns illness to avoid his responsibilities, a \"lifer\", Staff Sergeant Sykes, takes note of his potential and orders Swofford to attend his Scout Sniper course. After grueling training, the Scout Sniper course is left with eight candidates, among them Swofford, now a sniper, and Swofford's roommate Corporal Alan Troy who becomes his spotter. When Iraq invades Kuwait, Swofford's unit is deployed to the Arabian Peninsula as a part of Operation Desert Shield. Eager for combat, the Marines find themselves bored with remedial training, constant drills, and a routine monotony that feeds their boredom, and prompts them to talk about the unfaithful girlfriends and wives waiting for them at home. They even erect a bulletin board featuring photographs and brief notes telling what perfidies the women had committed. Swofford obtains unauthorized alcohol and organizes an impromptu Christmas party, arranging for Fergus to cover his watch so he can celebrate. Fergus accidentally sets fire to a tent while cooking some sausages and ignites a crate of flares, waking the whole camp and enraging Staff Sergeant Sykes, who demotes Swofford from lance corporal to private and puts him on \"shit-burning\" detail. The punishments, combined with the heat, the boredom, and Swofford's suspicions of his girlfriend's infidelity, give Swofford a mental breakdown, to the point where he threatens Fergus with a rifle, then orders Fergus to shoot him instead.\nAnswer:",
+                "min_new_tokens": 20,
+                "max_new_tokens": 20
+            },
+            "prompt_len": 453,
+            "response_len": 20
+        },
+        {
+            "id": "flan.1067103",
+            "response": "Sure, I can generate a question with a factual answer. Here's one: What is the capital of France?",
+            "input": {
+                "text": "You are an AI assistant. User will you give you a task. Your goal is to complete the task as faithfully as you can. While performing the task think step-by-step and justify your steps.\n\nCan you generate a question with a factual answer?",
+                "min_new_tokens": 23,
+                "max_new_tokens": 23
+            },
+            "prompt_len": 54,
+            "response_len": 23
+        },
+        {
+            "id": "t0.1067831",
+            "response": "Not answerable. The given movie plot does not mention any character named Lorenzo Lamas or any actor playing a character with that name.",
+            "input": {
+                "text": "You are an AI assistant. You will be given a task. You must generate a detailed and long answer.\n\nAnswer the following question: I am a movie director and I just received the following movie plot. Could you help me answer this question? If not, let me know by writing \"Not answerable\".  Plot title: Mega Shark Vs. Giant Octopus Movie plot: Off the coast of Alaska, oceanographer Emma MacNeil (Deborah Gibson) is studying the migration patterns of whales aboard an experimental submarine she took without permission from her employer. Meanwhile, a military helicopter drops experimental sonar transmitters into the water, causing a pod of whales to go out of control and start ramming a nearby glacier. In the chaos, the helicopter crashes into the glacier, and the combined damage breaks the glacier open, thawing two hibernating, prehistoric creatures. MacNeil narrowly avoids destruction as, unknown to her, a giant shark and octopus are freed. Some time later, a drilling platform off the coast of Japan is attacked by the octopus, which has tentacles large enough to wrap around the entire structure. After returning to Point Dume, California, MacNeil investigates the corpse of a beached whale covered with many bloody wounds. Her employer Dick Richie (Mark Hengst) believes them to be from a tanker propeller, but MacNeil insists they appear to be from a creature. Later, she extracts what appears to be a shark\u00e2\u0080\u0099s tooth from one of the wounds. Elsewhere, the huge shark leaps tens of thousands of feet into the air from the ocean and attacks a commercial aircraft, forcing it to crash into the water. A review board convenes and fires MacNeil from the oceanographic institute for stealing the submarine. She brings the shark tooth to her old professor, former U.S. Navy pilot Lamar Sanders (Sean Lawlor), who believes it belonged to a Megalodon, an enormous species of shark believed to have become extinct 1.5 million years ago. The duo is visited by Dr. Seiji Shimada (Vic Chao), a Japanese scientist trying to determine what attacked the drilling platform. The three review a videotape recorded during MacNeil\u00e2\u0080\u0099s submarine voyage, finding images of both the megalodon and a gigantic octopus. MacNeil reflects on the polar ice caps melting due to man-made global warming, and wonders if the creatures are mankind\u00e2\u0080\u0099s \u00e2\u0080\u009ccomeuppance\u00e2\u0080\u009d. Meanwhile, a U.S. \"naval destroyer\"... My question: What is the name of Lorenzo Lamas' character?\nAnswer:",
+                "min_new_tokens": 27,
+                "max_new_tokens": 27
+            },
+            "prompt_len": 551,
+            "response_len": 27
+        },
+        {
+            "id": "flan.2399651",
+            "response": "Von Neumann's neighbors, including Albert Einstein, complained about the extremely loud German march music that he played on his gramophone, which distracted them from their work.",
+            "input": {
+                "text": "You are a helpful assistant, who always provide explanation. Think like you are answering to a five year old.\n\nVon Neumann liked to eat and drink; his wife, Klara, said that he could count everything except calories. He enjoyed Yiddish and \"off-color\" humor (especially limericks). He was a non-smoker. At Princeton he received complaints for regularly playing extremely loud German march music on his gramophone, which distracted those in neighbouring offices, including Albert Einstein, from their work. Von Neumann did some of his best work blazingly fast in noisy, chaotic environments, and once admonished his wife for preparing a quiet study for him to work in. He never used it, preferring the couple's living room with its television playing loudly.\nTry to answer this question if possible (otherwise reply \"unanswerable\"): What complaints did Von Neumann's neighbor's have?",
+                "min_new_tokens": 33,
+                "max_new_tokens": 33
+            },
+            "prompt_len": 187,
+            "response_len": 33
+        },
+        {
+            "id": "flan.2234920",
+            "response": "The dogs will be running in a snowy and cold environment because they will be participating in the Iditarod race, which takes place in Alaska during the winter season.",
+            "input": {
+                "text": "You are a helpful assistant, who always provide explanation. Think like you are answering to a five year old.\n\nWe met Jessie Royer , who also runs the Iditarod each year . She talked to us about her dogs , and even hooked them up to a four - wheeler that was turned off , but in neutral and they ran her around the kennels at 20 mph ! It was really cool .\n\nAnswer the following question: What kind of environment will the dogs be running in ?",
+                "min_new_tokens": 34,
+                "max_new_tokens": 34
+            },
+            "prompt_len": 104,
+            "response_len": 34
+        },
+        {
+            "id": "flan.141329",
+            "response": "A.S. Roma is a soccer team that plays in a league called Serie A in Italy, and they compete against other teams to score goals and try to win games.",
+            "input": {
+                "text": "You are a helpful assistant, who always provide explanation. Think like you are answering to a five year old.\n\nData: A.S. Roma LEAGUE Serie A\n\nWhat would a sentence about this data be like?",
+                "min_new_tokens": 36,
+                "max_new_tokens": 36
+            },
+            "prompt_len": 49,
+            "response_len": 36
+        },
+        {
+            "id": "t0.706320",
+            "response": "The answer provided is not relevant to the question asked. The weight of a 1952 US 1/2 franc is not related to the denominations and names of the smaller units of Swiss Franc.",
+            "input": {
+                "text": "\n\nThis is a correct answer to the following question about Swiss Franc. Yes or no? Answer: The smaller denomination, a hundredth of a franc, is a Rappen (Rp.) in German, centime (c.) in French, centesimo (ct.) in Italian, and rap (rp.) in Romansh . Question: how much does 1952 us 1/2 franc weight\nAnswer:",
+                "min_new_tokens": 38,
+                "max_new_tokens": 38
+            },
+            "prompt_len": 86,
+            "response_len": 38
+        },
+        {
+            "id": "flan.231415",
+            "response": "On a volatile Tuesday, stocks fell as General Motors Corp.'s sharp decline dragged down the Dow Jones Industrial Average, while broader indexes experienced a minor drop due to end-of-year malaise.",
+            "input": {
+                "text": "You are an AI assistant. User will you give you a task. Your goal is to complete the task as faithfully as you can. While performing the task think step-by-step and justify your steps.\n\nBriefly summarize this sentence: stocks fell in a volatile session tuesday , with a sharp decline in general motors corp. dragging down the dow jones industrial average , while broader indexes fell slightly in an end-of-year malaise .",
+                "min_new_tokens": 41,
+                "max_new_tokens": 41
+            },
+            "prompt_len": 94,
+            "response_len": 41
+        },
+        {
+            "id": "cot.67950",
+            "response": "The hypothesis is not entailed by the premise. The premise describes a construction worker wearing a hard hat and yellow neon vest, but it does not provide any information about what specific task the worker is performing, such as working on stairs.",
+            "input": {
+                "text": "You are an AI assistant that helps people find information.\n\nDenny asked: Premise: \"Construction worker in a hard hat and yellow neon vest.\"\nHypothesis: \"Working on stairs.\"\nIs the hypothesis entailed by the premise?\nOptions:\n- yes\n- it is not possible to tell\n- no.\nLe: OK, so how can I answer with some explanation?\n",
+                "min_new_tokens": 47,
+                "max_new_tokens": 47
+            },
+            "prompt_len": 85,
+            "response_len": 47
+        },
+        {
+            "id": "t0.1303832",
+            "response": "Based on this review, it seems that the user would recommend this book. They mention that it presents the language succinctly and logically, providing a firm foundation for understanding its structure. They also mention that it is useful for further learning.",
+            "input": {
+                "text": "\n\n\nQ: Based on this review, would the user recommend this product? === Review: When I first approached this book it looked extremely dry and boring, as many people have already commented. My intention was to be able to learn Arabic with a view to understanding the Quran and also for daily use. In this respect the book presents the language very succinctly and logically and endows you with a firm foundation in understanding its structure which allows you to go away and generalise very easily; very useful for further learning. This, I think, more than makes up for a more ad hoc approach. After all, MSA is descended from the Quran whose language is extremely mathematically elegant. It only seems right that we try to understand the language at this depth if we are to truly appreciate it. Answer:\nA:",
+                "min_new_tokens": 48,
+                "max_new_tokens": 48
+            },
+            "prompt_len": 166,
+            "response_len": 48
+        },
+        {
+            "id": "t0.665466",
+            "response": "No, this product review is not negative. It highlights the positive aspects of the product, such as the lower price, the additional feature of lighting up, and its overall great performance. The reviewer also expressed their satisfaction with the product by calling it a \"great deal.\"",
+            "input": {
+                "text": "You are an AI assistant. Provide a detailed answer so user don\u2019t need to search outside to understand the answer.\n\n\n\nTitle: great price and it lights up Review: I did not know but it lights up. Wow. I got this to replace one I had for years. I thought this one was just like the one I had, but nope the new one is less expensive and it lights up. This was a great deal and it works great. Is this product review negative?\nAnswer:",
+                "min_new_tokens": 54,
+                "max_new_tokens": 54
+            },
+            "prompt_len": 104,
+            "response_len": 54
+        },
+        {
+            "id": "flan.1845060",
+            "response": "The easiest and cheapest way to get a visa is through the Ukrainian consulate or embassy in your country.\n\nIn simpler words, to get a visa, you need to go to a special office called a consulate or embassy for Ukraine in the country where you live. They will help you with the process.",
+            "input": {
+                "text": "You are a helpful assistant, who always provide explanation. Think like you are answering to a five year old.\n\n\u0421\u0430\u043c\u044b\u0439 \u043f\u0440\u043e\u0441\u0442\u043e\u0439 \u0438 \u0434\u0435\u0448\u0435\u0432\u044b\u0439 \u0441\u043f\u043e\u0441\u043e\u0431 \u043f\u043e\u043b\u0443\u0447\u0435\u043d\u0438\u044f \u0432\u0438\u0437\u044b - \u044d\u0442\u043e \u0447\u0435\u0440\u0435\u0437 \u043a\u043e\u043d\u0441\u0443\u043b\u044c\u0441\u0442\u0432\u043e \u0438\u043b\u0438 \u043f\u043e\u0441\u043e\u043b\u044c\u0441\u0442\u0432\u043e \u0423\u043a\u0440\u0430\u0438\u043d\u044b \u0432 \u0412\u0430\u0448\u0435\u0439 \u0441\u0442\u0440\u0430\u043d\u0435.\n\nTranslate this to English?",
+                "min_new_tokens": 63,
+                "max_new_tokens": 63
+            },
+            "prompt_len": 79,
+            "response_len": 63
+        },
+        {
+            "id": "t0.919787",
+            "response": "The American group that co-hosted the 2005 Teen Choice Awards ceremony was probably the Black Eyed Peas, as they were founded in Los Angeles, California in 1995. However, it is important to note that the question does not explicitly mention the name of the group, so this is just an educated guess based on the available information.",
+            "input": {
+                "text": "You are an AI assistant. Provide a detailed answer so user don\u2019t need to search outside to understand the answer.\n\nCombine facts and answer this:  The 2005 Teen Choice Awards ceremony was hosted in part by an American group founded where in 1995?\nThe answer to this question is:",
+                "min_new_tokens": 68,
+                "max_new_tokens": 68
+            },
+            "prompt_len": 62,
+            "response_len": 68
+        },
+        {
+            "id": "flan.1140945",
+            "response": "The sentiment of the following review is [b]. positive. \n\nExplanation: \nThe review contains positive words such as \"outstanding\" and \"must do again\". These words indicate a positive sentiment towards the food. Although the reviewer mentions that the portions were huge, this does not necessarily indicate a negative sentiment towards the food itself. Therefore, the correct answer is [b]. positive.",
+            "input": {
+                "text": "You are an AI assistant. You should describe the task and explain your answer. While answering a multiple choice question, first output the correct answer(s). Then explain why other answers are wrong. You might need to use additional knowledge to answer the question.\n\nWhat is the sentiment of the following review?\nFood was outstanding!! Huge portions though. Must do again upon return to Vegas.\nChoose your answer from:\n[a]. negative.\n[b]. positive.",
+                "min_new_tokens": 80,
+                "max_new_tokens": 80
+            },
+            "prompt_len": 98,
+            "response_len": 80
+        },
+        {
+            "id": "t0.818195",
+            "response": "A: Yes, \"Informed\" can be considered a valid answer in this context. When Skylar whispers the secret very softly into Kendall's ear, Kendall would likely feel informed since they have received new information from Skylar. However, it is essential to note that Kendall may also experience other emotions such as surprise, curiosity, or excitement, depending on the content and significance of the secret.",
+            "input": {
+                "text": "You are an AI assistant. Provide a detailed answer so user don\u2019t need to search outside to understand the answer.\n\nAvailable options:\n(I). Yes.\n(II). No.\nGiven those answer options, answer the question: Skylar tilted Kendall's head back to whisper the secret very softly.  Given the question \"How would Kendall feel as a result?\", is \"Informed\" a valid answer?\nA:",
+                "min_new_tokens": 84,
+                "max_new_tokens": 84
+            },
+            "prompt_len": 94,
+            "response_len": 84
+        },
+        {
+            "id": "t0.930694",
+            "response": "A human would choose \"military band\" to answer the question above because playing the bugle has a big role in military bands. Bugles are commonly used in military ceremonies and events, such as funerals, parades, and flag ceremonies. Military bands also often include other instruments, such as trumpets, but the bugle specifically has a significant role in military music. Therefore, \"military band\" is the most appropriate answer to the question.",
+            "input": {
+                "text": "\n\nPlease answer the following question: Question: What group may be one of the few where playing the bugle has a big role? Options: - trumpet - military base - military band - american army - music store  Explain why a human would choose \"military band\" to answer the question above:\nAnswer:",
+                "min_new_tokens": 90,
+                "max_new_tokens": 90
+            },
+            "prompt_len": 67,
+            "response_len": 90
+        },
+        {
+            "id": "t0.626000",
+            "response": "Hill village has more dangerous cycling conditions. The paragraph states that Hill village is located on a mountain and gets lots of rain, which can create slippery conditions. This increases the risk of loss of control for cyclists, especially those who ride brakeless and have to brake through the drivetrain. Additionally, descending any significant gradient in Hill village can be more difficult due to the need for a fast spin or use of brakes to slow down. In contrast, Low village has more sunny days, which implies better cycling conditions.",
+            "input": {
+                "text": "You are an AI assistant. User will you give you a task. Your goal is to complete the task as faithfully as you can. While performing the task think step-by-step and justify your steps.\n\nQuestion: Please answer correctly the following question related to the paragraph below.   Which village has more dangerous cycling conditions?  Two villages are inhabited by lots of people that ride bicycles. Hill village is located on a mountain and gets lots of rain, and Low village is situated in a valley, and has more sunny days.  Hint: In slippery conditions some riders prefer to ride fixed because they believe the transmission provides increased feedback on back tire grip. However, there is also an increased risk of loss of control in such conditions. This is especially so when taking into account the large number of riders who ride brakeless. These riders must brake entirely through the drivetrain. Ideally this is done by resisting the forward motion of the pedals, shedding speed while the bike is still moving. Alternatively, though far less efficiently, one can brake by stopping the motion of the pedals in mid-rotation, causing the rear wheel to lock in place, allowing the bicycle to skid and slow down from kinetic friction (see below).[22]  Descending any significant gradient is more difficult as the rider must spin the cranks at high speed (sometimes at 170 rpm or more), or use the brakes to slow down. Some consider that the enforced fast spin when descending increases suppleness or flexibility, which is said to improve pedalling performance on any type of bicycle; however the performance boost is negligible compared to the benefits of riding a free wheel.[23]\nAnswer:",
+                "min_new_tokens": 104,
+                "max_new_tokens": 104
+            },
+            "prompt_len": 340,
+            "response_len": 104
+        },
+        {
+            "id": "flan.1649386",
+            "response": "According to the article, there was only one touchdown pass mentioned that was made in the first half of the game. It was a 6-yard touchdown pass from Carson Palmer to Darren McFadden, which was the only touchdown scored by the Raiders in the game. The article also mentioned a 6-yard touchdown pass from Peyton Manning to Joel Dreessen, but it did not specify if it was the shortest touchdown pass made in the game. Therefore, it is unclear what the two shortest touchdown passes made were based on the information provided in the article.",
+            "input": {
+                "text": "You are an AI assistant. You will be given a task. You must generate a detailed and long answer.\n\nHoping to add to a seven-game winning streak, the Broncos traveled to the O.co Coliseum for an AFC West rematch with the Oakland Raiders. The Broncos jumped out to a 13-0 lead, with quarterback Peyton Manning throwing a 6-yard touchdown pass to tight end Joel Dreessen, followed by field goals of 43 and 34 from placekicker Matt Prater, with the latter field goal occurring early in the second quarter. The Raiders got on the scoreboard late in the first half, with quarterback Carson Palmer throwing a 6-yard touchdown pass to running back Darren McFadden. The Broncos added to their lead in the third quarter, with a 20-yard field goal by Prater, a 1-yard touchdown run by running back Knowshon Moreno and a 33-yard field goal by Prater. A 56-yard touchdown pass from Palmer to wide receiver Darrius Heyward-Bey (with a failed two-point conversion attempt) was the only scoring play of the fourth quarter, and the Broncos ran out the final 5:36 of the game. With the win, the Broncos earned their first season sweep of the Raiders since 2006, and also swept their division rivals on the road for the third time in four seasons.\n\nAnswer this question based on the article: What are the two shortest touchdown passes made?",
+                "min_new_tokens": 114,
+                "max_new_tokens": 114
+            },
+            "prompt_len": 304,
+            "response_len": 114
+        },
+        {
+            "id": "t0.30348",
+            "response": "The title \"Dalbergia pseudobaronii\" belongs to the category of plant. This is because \"Dalbergia pseudobaronii\" is the scientific name of a species of plant, which is a type of rosewood tree found in Southeast Asia. The name is composed of the genus name \"Dalbergia\" and the species name \"pseudobaronii\". Scientific names are used to classify and identify living organisms, and in this case, \"Dalbergia pseudobaronii\" is the name given to this particular species of plant. Therefore, it falls under the category of plant.",
+            "input": {
+                "text": "You are an AI assistant. User will you give you a task. Your goal is to complete the task as faithfully as you can. While performing the task think step-by-step and justify your steps.\n\nQuestion: \"Dalbergia pseudobaronii\", given a list of categories: company, educational institution, artist, athlete, office holder, mean of transportation, building, natural place, village, animal, plant, album, film or written work, what category does the title belong to?\nAnswer:",
+                "min_new_tokens": 126,
+                "max_new_tokens": 126
+            },
+            "prompt_len": 107,
+            "response_len": 126
+        },
+        {
+            "id": "flan.2392323",
+            "response": "Will.i.am, the singer and entrepreneur, has revealed his new smartwatch during an interview with Alan Carr on Friday night's Chatty Man show. The device features Bluetooth and will run Twitter, Instagram and Facebook, and has a curved display. It is likely to run on existing software, possibly Android or Tizen, and may have a camera. The watch does not need to be linked to a phone, but stores music, suggesting it has a substantial amount of storage, and may have Wi-Fi capabilities and NFC. It is also likely to have a SIM card and may support 3G or 4G. Prices for current smartwatches range from \u00a3109 to \u00a3299, and Will.i.am's watch may retail for a similar price.",
+            "input": {
+                "text": "You are an AI assistant. You will be given a task. You must generate a detailed and long answer.\n\nBy. Victoria Woollaston. He\u2019s had number one albums, streamed music from the surface of Mars and is now entering the smartwatch market alongside the likes of Samsung and Motorola. Singer and entrepreneur Will.i.am revealed his wrist-worn device during an interview with Alan Carr on Friday night\u2019s Chatty Man show. He didn\u2019t reveal full specifications, but said it has Bluetooth and will run Twitter, Instagram and Facebook. But after poor sales and criticism about wearables, will it be enough to make the tech fashionable? Scroll down for video. Singer and entrepreneur will.i.am revealed his wrist-worn device, pictured, during an interview with Alan Carr on Friday night's Chatty Man show. He didn't reveal full specifications, but said it has Bluetooth and will run Twitter, Instagram and Facebook. Will.i.am\u2019s watch was shown as having a curved display. He didn\u2019t reveal what operating system his device runs on, but the fact it. features established apps including Instagram and Twitter, this. suggests it will run on an existing software, likely to be Android. The. presence of Instagram also hints that the device will have a camera. As the watch. doesn\u2019t link with a phone, but stores music, it suggests the watch will. have a substantial amount of storage - which will need to be a minimum. of 4GB to be useful. If the watch has Bluetooth connectivity, it\u2019s likely to also have Wi-Fi capabilities and may even add NFC. Due to the fact it can make calls, the watch is also likely to have a SIM card and may additionally support 3G, or even 4G. If it does come with a data plan, the storage may be reduced if music can be streamed from the cloud. During the show, will.i.am told Alan Carr: 'I don\u2019t carry my phone anymore, this is my phone. \u2018A lot of these smartwatches need phones - mine doesn\u2019t need a phone. 'I started the company myself, I funded it, I used my own money to develop it. So, it\u2019s a phone. It has all my music in it so I can work out with it, without wires using Bluetooth headphones. It\u2019s got Twitter, Instagram, Facebook.\u2019 The following night, will.i.am used the watch to call Cheryl Cole during the final of talent show The Voice - although the call quality was poor and cut out shortly afterwards. Samsung, Sony and Motorola have all released smartwatches - but each device has featured a flat screen. By comparison, Will.i.am\u2019s watch has a curved display. He didn\u2019t reveal what operating system his device runs on, but the fact it. features established apps including Instagram and Twitter, suggests it will run on existing software, likely to be Android. It may even run the Tizen system seen recently on Samsung's Gear watch. During the show, will.i.am, pictured, told Alan Carr, pictured right: 'I don't carry my phone anymore, this is my phone. A lot of these smartwatches need phones - mine doesn't need a phone. I started the company myself, I funded it, I used my own money to develop it' Samsung\u2019s Galaxy Gear launched in September last year and was heavily criticised for its chunky design and poor battery life. It was also slammed for being too restrictive because it only worked with select Samsung devices. Some analysts claimed the watch was rushed out to make sure it was one of the first on the market, beating Apple and Google to their still rumoured devices. In November, Samsung declared it was the bestselling smartwatch ever, quoting sales figures of 800,000 - yet industry sources claimed this number was closer to 50,000 and the higher figure was actually the number of watches that had been shipped. Windows Phone, for example, has fewer apps and Apple's iOS is a proprietary software used only on its own devices. That is, of course, unless Will.i.am\u2019s also developed a bespoke OS and custom-made versions of these apps. The presence of Instagram hints that the device will have a camera. Will.i.am recently announced plans to release a camera accessory that will \u2018dramatically enhance the clarity and definition of iPhone photographs\u2019 called the i.am+. It is said to be capable of raising the quality of photos from 8MP to 14MP and will.i.am\u2019s watch may either run with an 8MP camera, or work with this accessory. As the watch doesn\u2019t link with a. phone, but stores music, it suggests the watch will have a substantial. amount of storage. This which will need to be a minimum of 4GB to be useful. If the watch has Bluetooth connectivity, it\u2019s likely to also have Wi-Fi capabilities and may even add NFC. Due to the fact it can make calls, the watch is also likely to have a SIM card and may additionally support 3G, or even 4G. Samsung, Sony and Motorola have all released smartwatches running Android - but each device has featured a flat screen. By comparison, will.i.am's watch, pictured, has a curved display. He didn't reveal what operating system his device runs on, but the fact it features established apps suggests it will run on existing software. The following night, will.i.am used the watch to call Cheryl Cole, pictured, during the final of talent show The Voice - although the call quality was poor and cut out shortly afterwards. Prices for current smartwatches range from \u00a3109 to \u00a3299 and will.i.am's watch may retail for similar. Aside from music, Will.i.am has a strong background in science and technology. In. 2011, Intel named will.i.am as director of creative innovation and his. role was to help develop the firm\u2019s range of phones, tablets and. laptops. A year later he. made history by streaming a song from the surface of Mars in conjunction. with Nasa\u2019s Jet Propulsion Laboratory in California. The song was. called Reaching for the Stars. Will.i.am's device will rival the likes of Samsung's range of Gear smartwatches and Motorola's Moto 360, pictured. Prices range from \u00a3109 to \u00a3299 for current smartwatches and will.i.am's watch may retail for similar. He also has plans to launch his own car company. Samsung\u2019s Galaxy Gear launched in September last year and was heavily criticised for its chunky design and poor battery life. It was also slammed for being too restrictive because it only worked with select Samsung devices. Some. analysts claimed the watch was rushed out to make sure it was one of. the first on the market, beating Apple and Google to their still. rumoured devices. In. November, Samsung declared it was the bestselling smartwatch ever,. quoting sales figures of 800,000 - yet industry sources claimed this. number was closer to 50,000 and the higher figure was actually the. number of watches that had been shipped.\n\nWrite highlights for this article.",
+                "min_new_tokens": 155,
+                "max_new_tokens": 155
+            },
+            "prompt_len": 1500,
+            "response_len": 155
+        },
+        {
+            "id": "t0.687797",
+            "response": "Based on the review provided, I would rate it as \u2605\u2605. Here are the reasons for my rating:\n\n- The reviewer has expressed annoyance with the service, which indicates a negative experience.\n- The reviewer has mentioned a specific issue with the service, which is that they are unable to finish an episode and are being dropped halfway through. This is a significant problem that would likely frustrate many users.\n- The reviewer has also mentioned that they are unable to fast forward, which is another limitation of the service.\n- Finally, the reviewer has expressed a desire to download episodes, which suggests that they are not satisfied with the current options available to them.\n\nOverall, while the review is not entirely negative, it does highlight some significant issues with the service that would likely impact the user experience. As such, I believe a \u2605\u2605 rating is appropriate.",
+            "input": {
+                "text": "You are an AI assistant. User will you give you a task. Your goal is to complete the task as faithfully as you can. While performing the task think step-by-step and justify your steps.\n\nAnswer the following question: What would be the \u2605-rating of this review (\u2605 being the lowest and \u2605\u2605\u2605\u2605\u2605 being the highest)? \"Annoying. Cant finish episode. Drops me half way through ted talks and wont let me fast forward. Why cant I download episodes.\"\nAnswer:",
+                "min_new_tokens": 181,
+                "max_new_tokens": 181
+            },
+            "prompt_len": 111,
+            "response_len": 181
+        },
+        {
+            "id": "niv.210579",
+            "response": "Step 1: Understand the task\nThe task requires writing an incorrect answer to the given question that might look similar to the correct answer and should be closely related to the content of the paragraph to make it challenging for students to distinguish between correct and incorrect answers.\n\nStep 2: Identify the correct answer\nThe correct answer is associated with the Bobo Doll Experiment, which took place in 1961.\n\nStep 3: Write an incorrect answer\nIncorrect Answer: Bandura was working with children in 1958.\n\nStep 4: Explain the process\nIn order to come up with an incorrect answer, I took the year of the Bobo Doll Experiment (1961) and subtracted a few years (3 years) to make it look similar yet incorrect. This would pose a challenge for students to distinguish between the correct and incorrect answers, as both are closely related to the content of the paragraph and the question.",
+            "input": {
+                "text": "You are an AI assistant, who knows every language and how to translate one language to another. Given a task, you explain in simple steps what the task is asking, any guidelines that it provides. You solve the task and show how you used the guidelines to solve the task.\n\nQ: In this task, you need to write an incorrect answer to the given question. Along with the question, you are also given the correct answer(s) and the associated paragraph. An incorrect answer should be closely related to the content of the paragraph and/or the question but will not truthfully answer the question. Your incorrect answers should be similar to the given correct answer such that it will pose a challenge for students to distinguish the two. A good incorrect answer should prevent those who skip the paragraph from answering the question. The incorrect answer should not be trivial, in the sense that they should not be easily eliminated without reading the paragraph.\nParagraph- Sent 1: Albert Bandura OC (/baen'dU@r@/; born December 4, 1925) is a psychologist who is the David Starr Jordan Professor Emeritus of Social Science in Psychology at Stanford University.\nSent 2: For almost six decades, he has been responsible for contributions to the field of education and to many fields of psychology, including social cognitive theory, therapy and personality psychology, and was also influential in the transition between behaviorism and cognitive psychology.\nSent 3: He is known as the originator of social learning theory and the theoretical construct of self-efficacy, and is also responsible for the influential 1961 Bobo doll experiment.\nSent 4: Social learning theory is how people learn through observing others.\nSent 5: An example of social learning theory would be the students imitating the teacher.\nSent 6: Self-efficacy is \"The belief in one's capabilities to organize and execute the courses of action required to manage prospective situations.\"Sent 7: To paraphrase, self-efficiacy is believing in yourself to take action.\nSent 8: The Bobo Doll Experiment was how Albert Bandura studied aggression and non-aggression in children.\nSent 9: A 2002 survey ranked Bandura as the fourth most-frequently cited psychologist of all time, behind B. F. Skinner, Sigmund Freud, and Jean Piaget, and as the most cited living one.\nSent 10: Bandura is widely described as the greatest living psychologist, and as one of the most influential psychologists of all time.\nSent 11: In 1974 Bandura was elected to be the Eighty-Second President of the American Psychological Association (APA).\nSent 12: He was one of the youngest president-elects in the history of the APA at the age of 48.\nSent 13: Bandura served as a member of the APA Board of Scientific Affairs from 1968 to 1970 and is well known as a member of the editorial board of nine psychology journals including the Journal of Personality and Social Psychology from 1963 to 1972.\nSent 14: At the age of 82, Bandura was awarded the Grawemeyer Award for psychology. \nQuestion: When was Bandura working with children?.\nA:",
+                "min_new_tokens": 185,
+                "max_new_tokens": 185
+            },
+            "prompt_len": 651,
+            "response_len": 185
+        },
+        {
+            "id": "t0.1119681",
+            "response": "The following key details about Stefan Edberg can be extracted from the given bio:\n\n1. He was born on January 19, 1966.\n2. He is a former Swedish professional tennis player.\n3. He was ranked world no. 1 in both singles and doubles.\n4. He was a major proponent of the serve-and-volley style of tennis.\n5. He won six grand slam singles titles and three grand slam men's doubles titles between 1985 and 1996.\n6. He won the Masters Grand Prix and was a part of the Swedish Davis Cup-winning team four times.\n7. He won four Masters Series titles, four Championship Series titles, and the unofficial Olympic tournament in 1984.\n8. He was ranked in the singles top 10 for ten successive years, 9 years in the top 5.\n9. He is considered one of the greatest players of his era.\n10. He began coaching Roger Federer in January 2014.",
+            "input": {
+                "text": "You are an AI assistant. User will you give you a task. Your goal is to complete the task as faithfully as you can. While performing the task think step-by-step and justify your steps.\n\nWhat key details about stefan edberg  can be extracted from the following bio?  Bio: stefan bengt edberg -lrb- ; born 19 january 1966 -rrb- is a swedish former world no. 1 professional tennis player -lrb- in both singles and doubles -rrb- . a major proponent of the serve-and-volley style of tennis , he won six grand slam singles titles and three grand slam men 's doubles titles between 1985 and 1996 . he also won the masters grand prix and was a part of the swedish davis cup-winning-team four times . in addition he won four masters series titles , four championship series titles and the unofficial olympic tournament 1984 , was ranked in the singles top 10 for ten successive years , 9 years in the top 5 , and is considered one of the greatest players of his era . edberg began coaching roger federer in january 2014 .\nAnswer:",
+                "min_new_tokens": 200,
+                "max_new_tokens": 200
+            },
+            "prompt_len": 248,
+            "response_len": 200
+        },
+        {
+            "id": "t0.143559",
+            "response": "Based on the review provided, it seems that the customer was satisfied with the product. The title of the review states that the book is an \"excellent collection\" of examples of differing styles of graphic design, which suggests that the customer found the book to be of high quality. Additionally, the customer notes that the book contains a wide variety of graphic designs, including some images, which further supports the idea that the book is comprehensive and well-done.\n\nWhile the customer does mention some criticisms of the book, such as the fact that the thoughts expressed are meandering and that the artist seems more interested in form than content, these criticisms are relatively minor and do not detract from the overall positive impression that the customer has of the book. In fact, the customer specifically states that if you are a designer or can appreciate graphic design, then you will enjoy this book, which further reinforces the idea that the customer was satisfied with the product.\n\nOverall, based on the review provided, it seems that the customer was satisfied with the book and would recommend it to others who are interested in graphic design.",
+            "input": {
+                "text": "You are an AI assistant. You will be given a task. You must generate a detailed and long answer.\n\nPlease answer the following question: Here is a review left by a customer on a product. Would you say he was satisfied or dissatisfied? Title: An excellent collection of examples of differing styles of graphic design Review: This book is a collection of thoughts expressed in a wide variety of graphic designs, including some images. However, most of the pages are occupied by lettering that is sometimes squeezed, rounded, meandering, linear, circular, large, small, solid, bordered and connected. The thoughts are meandering, while there are some occasional general themes, it would appear that the artist was more interested in the form rather than the content of his expression. If you are a designer or can appreciate graphic design then you will enjoy this book.\nA:",
+                "min_new_tokens": 224,
+                "max_new_tokens": 224
+            },
+            "prompt_len": 177,
+            "response_len": 224
+        },
+        {
+            "id": "flan.1002408",
+            "response": "The two statements are similar in structure and meaning, but there are some differences in the characters involved. In the first statement, Linden is asking to interrogate Mills, but Skinner intervenes and says he will talk to Danette instead. In the second statement, Linden is asking to interrogate Skinner, but Mills intervenes and says he will only talk to Danette.\n\nIn both cases, there is a request for an interrogation or questioning of a particular character. However, in both cases, another character steps in and redirects the conversation to a different person. This suggests that there may be some reluctance or resistance to the original request, and that the characters involved may be trying to avoid the interrogation or questioning.\n\nThe fact that both statements involve the same character, Elias Koteas, playing different roles (Skinner in the first statement, Mills in the second) may also be significant. It could suggest that Koteas' characters are somehow connected or involved in the same situation, and that their actions are part of a larger plot or story arc.\n\nOverall, while the two statements have similar meanings, there are some subtle differences in the characters and their actions that may be important for understanding the context and implications of the situation.",
+            "input": {
+                "text": "You are an AI assistant. You will be given a task. You must generate a detailed and long answer.\n\nSame meaning?\nLinden asks to interrogate Mills , but Skinner ( Elias Koteas ) says he 'll just talk to Danette .\nLinden asks to interrogate Skinner but Mills ( Elias Koteas ) says he 'll only talk to Danette .",
+                "min_new_tokens": 257,
+                "max_new_tokens": 257
+            },
+            "prompt_len": 84,
+            "response_len": 257
+        },
+        {
+            "id": "flan.973125",
+            "response": "Title: Drew Peterson Arrested for the Death of His Third Wife\n\nOnce upon a time, there was a man named Drew Peterson. Drew was married four times. His first two wives left him, but the story didn't end there, and things got tricky with his third and fourth wives. His third wife, Kathleen Savio, was found dead in 2004. At first, people thought it was an accident, but later, some people started to think that maybe Drew had something to do with her death.\n\nThen, in 2007, Drew's fourth wife, Stacy, disappeared, and no one knew where she was. Because of this, people started looking more closely at what happened to Kathleen, Drew's third wife. They thought that maybe Drew had hurt her too.\n\nSo, the police decided to put Drew in handcuffs and chains and take him to a place called jail. When people asked Drew about the handcuffs and chains, he said, \"I got the bling. Can't complain.\" That means he was trying to say he didn't care about the handcuffs and chains because they were like fancy jewelry.\n\nDrew said, through his special helper called an attorney, that he didn't do anything wrong to either his third or fourth wife. An attorney is someone who helps people with problems related to the law.\n\nIn the end, the police will have to work hard to find out the truth about what happened to both of these missing wives. They will have to listen to stories, look for clues, and use their detective skills to put the puzzle pieces together.",
+            "input": {
+                "text": "You are a helpful assistant, who always provide explanation. Think like you are answering to a five year old.\n\nNEW: Peterson to media on handcuffs, chains: \"I got the bling. Can't complain\" Drew Peterson arrested in the death of his third wife, Kathleen Savio. Renewed interest in Savio's death came after Peterson's fourth wife disappeared. Peterson, through his attorney, denies any wrongdoing in either case.\n\nWrite an article based on these highlights.",
+                "min_new_tokens": 327,
+                "max_new_tokens": 327
+            },
+            "prompt_len": 100,
+            "response_len": 327
+        },
+        {
+            "id": "flan.2258133",
+            "response": "like a disadvantage for England. However, it is important to note that Hales' absence does not necessarily mean that England will be unable to perform well in the 50-over game. \n\nTo complete the passage, I will continue by discussing the potential impact of Hales' absence on England's batting lineup. \n\nFirstly, Hales' unbeaten 116 in the World Twenty20 tournament showcased his ability to score big runs and play match-winning innings. His aggressive batting style and ability to hit boundaries at will made him a valuable asset for England. Without Hales, England might lack a player who can consistently provide explosive starts at the top of the order.\n\nHowever, it is worth considering that Hales' technique has been criticized for being too loose for the 50-over game. This suggests that his absence might actually provide an opportunity for another player with a more solid technique to step up and contribute to the team's success. \n\nAdditionally, England has a talented pool of batsmen to choose from, including players like Joe Root, Eoin Morgan, and Jos Buttler, who have proven themselves in the limited-overs format. These players have the ability to anchor the innings and build partnerships, which can be crucial in setting up a competitive total.\n\nFurthermore, Hales' absence might also allow England to experiment with their batting order and try out different combinations. This could potentially lead to the discovery of new talents and provide the team with more flexibility in their approach.\n\nIn conclusion, while Hales' absence may be seen as a disadvantage for England in the 50-over game, it also presents an opportunity for other players to step up and contribute to the team's success. With a talented batting lineup and the potential for experimentation, England has the ability to overcome this challenge and perform well in the absence of Hales.",
+            "input": {
+                "text": "You are an AI assistant. User will you give you a task. Your goal is to complete the task as faithfully as you can. While performing the task think step-by-step and justify your steps.\n\nComplete the passage.\n\nSri Lanka felt the full force of Alex Hales bat again but it was not quite enough for England to gain victory over the World Twenty20 champions at the Kia Oval because of the enduring unorthodox brilliance of Lasith Malinga. It was an unbeaten 116 from Hales that enabled England to become the only team to defeat Sri Lanka in that world tournament in Bangladesh in March. He appeared poised to do the same in the first big match of the Peter Moores era. Hales smashed 66 off 41 balls to lift England within reach of their formidable target of 184. But  Malinga, still the best \u2018death bowler\u2019 in the world, deceived him with a perfect slower ball to  earn Sri Lanka the spoils.\n\nThe fact they will attempt to do so without Hales, whose technique is still considered too loose for the 50-over game, might be something",
+                "min_new_tokens": 377,
+                "max_new_tokens": 377
+            },
+            "prompt_len": 236,
+            "response_len": 377
+        }
+    ],
+    "metadata": {
+        "name": "openorca-subset",
+        "version": "0.0.6"
+    },
+    "license": "MIT License\n\nCopyright (c) [year] [fullname]\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+}

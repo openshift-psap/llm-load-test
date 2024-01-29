@@ -1,68 +1,49 @@
 # llm-load-test
 
-This tool is designed to load test large language models via gRPC. It uses [ghz](https://github.com/bojand/ghz/) under the hood, and supports all ghz options.
+This tool is designed to load test large language models 
 
 ## Requirements
 
-- Python 3.x
-- `boto3` Python library (for S3 interactions)
+- Python 3.9 or newer
 
 ## Usage
 
-1. **Running the Tool**:
-    ```
-    python load_test.py --config <config_file_path>
-    ```
+**Running the Tool**:
+```
+usage: load_test.py [-h] [-c CONFIG] [-log {warn,warning,info,debug}]
 
-    - `-v, --verbose`: Enables verbose (debug-level) logging.
-    - `-c, --config`: Specifies the path to the configuration file (default is `config.yaml`).
+optional arguments:
+  -h, --help            show this help message and exit
+  -c CONFIG, --config CONFIG
+                        config YAML file name
+  -log {warn,warning,info,debug}, --log_level {warn,warning,info,debug}
+                        Provide logging level. Example --log_level debug, default=warning
+```
 
 ## Configuration Options
 
-The tool's behavior can be customized using a YAML configuration file. Here's a breakdown of the available sections and their meanings:
-
-- **`output_dir`**: Directory where temporary output files will be saved.
-- **`warmup`**: Indicates whether a warmup phase should be executed before the actual load test.
-- **`storage`**:
-  - `type`: Type of storage (`local` or `s3`).
-  - `s3_params`: (If `type` is `s3`) Parameters for S3 storage.
-    - `s3_host`: S3 host.
-    - `s3_use_https`: Use HTTPS for S3 (true/false).
-    - `s3_access_key`: Access key for S3.
-    - `s3_secret_key`: Secret key for S3.
-    - `s3_bucket`: S3 bucket name.
-    - `s3_result_path`: Path in the S3 bucket to store results.
-    - `s3_region`: S3 region.
-- **`load_generator`**:
-  - `type`: Type of load generator (e.g., `ghz`).
-  - `ghz_params`: Parameters specific to the `ghz` load generator.
-    - `host`: Host address.
-    - `skipTLS`: Skip TLS verification (true/false).
-    - `proto`: Path to the `.proto` file.
-    - `call`: gRPC call.
-    - `metadata`: Additional headers attached to the gRPC request.
-    - `concurrency`: Concurrency level.
-    - `total`: Total number of requests (ignored).
-    - `duration`: Duration of the test.
-    - `timeout`: Request timeout.
-  - `multiplexed`: Indicates if multiplexed testing should be used.
-  - `threads`: Number of threads.
-  - `input_dataset`: 
-    - `filename`: Name of the input dataset file.
-    - `max_size`: Maximum size of the dataset to use.
-- **`metadata`**: Optional metadata that you want inserted into the output `.json` and/or attached to the S3 objects. For example:
-  - `runtime`
-  - `model`
-  - `gpu_type`
-  - `gpu_count`
-  - `shards`
-  - `model replicas`
+The tool's behavior can be customized using a YAML configuration file. Take a look at `config.yaml` for an example. More documentation on this should be added in the future.
 
 
-3. **Results**:
-    The tool will produce test results as output by `ghz`. 
+**Results**:
+The tool will produce a results summary logged to stdout, and detailed test results in json format.
+The json output will have an array of results with one element per request sent during the test. For example, here is the detailed information for one request in the array:
 
-    In the case of multiplexed tests, all concurrent ghz instances output will be concatenated into one json file. Some additional files are added to the output directory for debugging purposes, including the ghz config files and the individual ghz output 
+```
+{
+    "start": 1705614329.536056, 
+    "end": 1705614332.6319733, 
+    "tt_ack": 77.5759220123291, 
+    "ttft": 113.14225196838379, 
+    "tpot": 13.47473795924868, 
+    "response_time": 3.095917224884033, 
+    "output_tokens": 225, 
+    "worker_id": 0, 
+    "input_tokens": 129, 
+    "response_string": "...", 
+    "input_string": "..."}
+```
+
 
 ## Contributing
 

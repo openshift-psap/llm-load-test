@@ -1,44 +1,24 @@
-# Where to put temporary output files
-output_dir: "./output"
+output:
+  format: "json" # Maybe add option for pickle?
+  dir: "./output/"
+  file: "output.json"
 warmup: false
-storage:
+storage: # TODO
   type: local
-  #  type: s3
-  #  s3_params:
-  #    s3_host: ""
-  #    s3_use_https: true
-  #    s3_access_key: ""
-  #    s3_secret_key": ""
-  #    s3_bucket: "watsonx-llm-load-test-data"
-  #    s3_result_path: "mpt-7b-instruct2"
-  #    s3_region: "us-east-1"
-load_generator:
-  type: "ghz"
-  ghz_params:
-    host: "llama-2-7b-chat-hf-isvc-predictor-kserve-demo.apps.dagray-watsonx-beaker.nvidia.eng.rdu2.redhat.com:443"
-    skipTLS: true
-    proto: "./protos/nlpservice.proto"
-    call: "caikit.runtime.Nlp.NlpService/TextGenerationTaskPredict"
-    # metadata is additional headers attached to the grpc request
-    metadata:
-      mm-model-id: "Llama-2-7b-chat-hf"
-    concurrency: 4
-    total: 2000 # ignored
-    duration: "1m"
-    timeout: "240s"
-  multiplexed: true
-  threads: 2
-  input_dataset:
-    filename: "openorca-subset-006.json"
-    max_size: 32
-metadata:
-  pt2_compile: "false"
-  replicas: 2
-  platform_type: "ocp"
-  model_serving_stack: "kserve"
-  max_batch_size: 256
-  nodes: 1
-  instance_type: "beaker-2xa100"
-  instance_gpu_count: 2
-  runtime_version: "quay.io/opendatahub/caikit-tgis-serving:stable-4d0134e"
-  model_version: "flan-t5-large"
+dataset:
+  file: "datasets/openorca_large_subset_010.jsonl"
+  max_queries: 1000
+  max_input_tokens: 1024
+  max_output_tokens: 256
+load_options:
+  type: constant #Future options: loadgen, stair-step
+  concurrency: 4
+  duration: 20 # In seconds. Maybe in future support "100s" "10m", etc...
+plugin: "caikit_client_plugin"
+plugin_options:
+  interface: "http" # Some plugins like caikit-nlp-client should support grpc/http
+  streaming: True
+  model_name: "model-70b-chat"
+  route: "https://route.to.host"
+extra_metadata:
+  replicas: 1

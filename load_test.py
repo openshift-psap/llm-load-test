@@ -3,17 +3,18 @@ import logging.handlers
 import multiprocessing as mp
 import sys
 import time
-import utils
 
+import logging_utils
+import utils
 from dataset import Dataset
 from user import User
-import logging_utils
+
 
 def run_main_process(procs, concurrency, duration, dataset, dataset_q, stop_q):
     logging.info("Test from main process")
 
     # Initialize the dataset_queue with 4*concurrency requests
-    for query in dataset.get_next_n_queries(4*concurrency):
+    for query in dataset.get_next_n_queries(4 * concurrency):
         dataset_q.put(query)
 
     # Start processes
@@ -25,9 +26,9 @@ def run_main_process(procs, concurrency, duration, dataset, dataset_q, stop_q):
     current_time = start_time
     while (current_time - start_time) < duration:
         # Keep the dataset queue full for duration
-        if dataset_q.qsize() < (2*concurrency):
-            logging.debug("Adding %d entries to dataset queue", 2*concurrency)
-            for query in dataset.get_next_n_queries(2*concurrency):
+        if dataset_q.qsize() < (2 * concurrency):
+            logging.debug("Adding %d entries to dataset queue", 2 * concurrency)
+            for query in dataset.get_next_n_queries(2 * concurrency):
                 dataset_q.put(query)
         time.sleep(0.1)
         current_time = time.time()
@@ -45,6 +46,7 @@ def run_main_process(procs, concurrency, duration, dataset, dataset_q, stop_q):
 
     return
 
+
 def gather_results(results_pipes):
     # Receive all results from each processes results_pipe
     logging.debug("Receiving results from user processes")
@@ -53,6 +55,7 @@ def gather_results(results_pipes):
         user_results = results_pipe.recv()
         results_list.extend(user_results)
     return results_list
+
 
 def exit_gracefully(procs, logger_q, log_reader_thread, code):
     logging.debug("Calling join() on all user processes")
@@ -66,11 +69,11 @@ def exit_gracefully(procs, logger_q, log_reader_thread, code):
 
     exit(code)
 
-    
+
 def main(args):
     args = utils.parse_args(args)
 
-    mp_ctx = mp.get_context('spawn')
+    mp_ctx = mp.get_context("spawn")
     logger_q = mp_ctx.Queue()
     log_reader_thread = logging_utils.init_logging(args.log_level, logger_q)
 
@@ -90,20 +93,21 @@ def main(args):
         logging.error("Exiting due to invalid input")
         exit_gracefully(procs, logger_q, log_reader_thread, 1)
 
-    logging.debug("Creating dataset with configuration %s", config['dataset'])
-    dataset = Dataset(**config['dataset'])
-
+    logging.debug("Creating dataset with configuration %s", config["dataset"])
+    dataset = Dataset(**config["dataset"])
 
     logging.debug("Creating %s Users and corresponding processes", concurrency)
     for idx in range(concurrency):
         send_results, recv_results = mp_ctx.Pipe()
-        user = User(idx,
-                    dataset_q=dataset_q,
-                    stop_q=stop_q,
-                    results_pipe=send_results,
-                    plugin=plugin,
-                    logger_q=logger_q,
-                    log_level=args.log_level)
+        user = User(
+            idx,
+            dataset_q=dataset_q,
+            stop_q=stop_q,
+            results_pipe=send_results,
+            plugin=plugin,
+            logger_q=logger_q,
+            log_level=args.log_level,
+        )
         procs.append(mp_ctx.Process(target=user.run_user_process))
         results_pipes.append(recv_results)
 
@@ -117,7 +121,5 @@ def main(args):
     exit_gracefully(procs, logger_q, log_reader_thread, 0)
 
 
-
 if __name__ == "__main__":
     main(sys.argv[1:])
-    

@@ -1,6 +1,7 @@
 caikit-nlp-client
 deprecation
 flake8
+isort
 numpy
 pandas
 pyyaml

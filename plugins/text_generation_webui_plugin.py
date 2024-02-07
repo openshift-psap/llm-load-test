@@ -1,10 +1,12 @@
-
-import time
 import json
 import logging
+import time
+
 import requests
 import urllib3
+
 from plugins import plugin
+
 urllib3.disable_warnings()
 """
 Example plugin config.yaml:
@@ -19,6 +21,7 @@ required_args = ["route", "streaming"]
 
 logger = logging.getLogger("user")
 
+
 class TextGenerationWebUIPlugin(plugin.Plugin):
     def __init__(self, args):
         self._parse_args(args)
@@ -31,18 +34,16 @@ class TextGenerationWebUIPlugin(plugin.Plugin):
         if args["streaming"]:
             self.request_func = self.streaming_request_http
         else:
-            logger.error("option streaming: %s not yet implemented", args['streaming'])
+            logger.error("option streaming: %s not yet implemented", args["streaming"])
 
-        self.route = args["route"] 
+        self.route = args["route"]
 
     def streaming_request_http(self, query, user_id):
-        headers = {
-            "Content-Type": "application/json"
-        }
+        headers = {"Content-Type": "application/json"}
 
         data = {
-            "prompt": query['text'],
-            "max_tokens": query['max_new_tokens'], #min tokens??
+            "prompt": query["text"],
+            "max_tokens": query["max_new_tokens"],  # min tokens??
             "temperature": 1.0,
             "top_p": 0.9,
             "seed": 10,
@@ -51,22 +52,26 @@ class TextGenerationWebUIPlugin(plugin.Plugin):
 
         chunks = []
         ack_time = 0
-        first_token_time=0
+        first_token_time = 0
         start_time = time.time()
 
         # TODO add configurable timeout to requests
-        response = requests.post(self.route, headers=headers, json=data, verify=False, stream=True)
+        response = requests.post(
+            self.route, headers=headers, json=data, verify=False, stream=True
+        )
         logger.debug("response: %s", response)
         for line in response.iter_lines():
             _, found, data = line.partition(b"data:")
             if found:
                 try:
                     message = json.loads(data)
-                    chunk = message['choices'][0]['text']
+                    chunk = message["choices"][0]["text"]
                 except json.JSONDecodeError:
                     logger.error("response line could not be json decoded: %s", line)
                 except KeyError:
-                    logger.error("KeyError, unexpected response format in line: %s", line)
+                    logger.error(
+                        "KeyError, unexpected response format in line: %s", line
+                    )
             else:
                 continue
 
@@ -77,16 +82,11 @@ class TextGenerationWebUIPlugin(plugin.Plugin):
                 continue
             # First non empty chunk is the first token
             if not first_token_time and chunk != "":
-                first_token_time=time.time()
+                first_token_time = time.time()
             chunks.append(chunk)
-
 
         end_time = time.time()
 
-        return self._calculate_results_stream(start_time,
-                                              ack_time,
-                                              first_token_time,
-                                              end_time,
-                                              chunks,
-                                              user_id,
-                                              query)
+        return self._calculate_results_stream(
+            start_time, ack_time, first_token_time, end_time, chunks, user_id, query
+        )

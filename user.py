@@ -1,8 +1,11 @@
 import logging
 import time
 
+
 class User:
-    def __init__(self, user_id, dataset_q, stop_q, results_pipe, plugin, logger_q, log_level):
+    def __init__(
+        self, user_id, dataset_q, stop_q, results_pipe, plugin, logger_q, log_level
+    ):
         self.user_id = user_id
         self.plugin = plugin
         self.dataset_q = dataset_q
@@ -11,7 +14,7 @@ class User:
         self.results_pipe = results_pipe
         self.logger_q = logger_q
         self.log_level = log_level
-        # Must get reset in user process to use the logger created in _init_user_process_logging 
+        # Must get reset in user process to use the logger created in _init_user_process_logging
         self.logger = logging.getLogger("user")
 
     def make_request(self):
@@ -27,7 +30,7 @@ class User:
         root.handlers.clear()
         root.addHandler(qh)
 
-        self.logger  = logging.getLogger("user")
+        self.logger = logging.getLogger("user")
         return logging.getLogger("user")
 
     def run_user_process(self):

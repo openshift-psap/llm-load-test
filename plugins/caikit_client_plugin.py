@@ -6,6 +6,7 @@ import urllib3
 from caikit_nlp_client import GrpcClient, HttpClient
 
 from plugins import plugin
+from result import RequestResult
 
 urllib3.disable_warnings()
 
@@ -27,6 +28,9 @@ logger = logging.getLogger("user")
 required_args = ["model_name", "route", "interface", "streaming"]
 
 
+# TODO:
+# - Add error handling to requests
+# - Add configurable timeout for requests
 class CaikitClientPlugin(plugin.Plugin):
     def __init__(self, args):
         self._parse_args(args)
@@ -57,58 +61,65 @@ class CaikitClientPlugin(plugin.Plugin):
     def request_grpc(self, query, user_id):
         grpc_client = GrpcClient(self.host, self.port, verify=False)
 
-        num_tokens = query["max_new_tokens"]
+        result = RequestResult(user_id, query.get("text"), query.get("input_tokens"))
 
-        start_time = time.time()
+        result.start_time = time.time()
         response = grpc_client.generate_text(
             self.model_name,
             query["text"],
             min_new_tokens=query["min_new_tokens"],
-            max_new_tokens=query["max_new_tokens"]
+            max_new_tokens=query["max_new_tokens"],
             # timeout=240 #Not supported, may need to contribute to caikit-nlp-client
         )
-        logger.debug("Response: %s", json.dumps(response))
-        end_time = time.time()
 
-        return self._calculate_results(
-            start_time, end_time, response, num_tokens, user_id, query
-        )
+        logger.debug("Response: %s", json.dumps(response))
+        result.end_time = time.time()
+
+        result.output_tokens = query["max_new_tokens"]
+        result.output_text = response
+
+        result.calculate_results()
+        return result
 
     def streaming_request_grpc(self, query, user_id):
         grpc_client = GrpcClient(self.host, self.port, verify=False)
 
+        result = RequestResult(user_id, query.get("text"), query.get("input_tokens"))
+
         tokens = []
-        ack_time = 0
-        first_token_time = 0
-        start_time = time.time()
+        result.start_time = time.time()
+
         for token in grpc_client.generate_text_stream(
             self.model_name,
             query["text"],
             min_new_tokens=query["min_new_tokens"],
-            max_new_tokens=query["max_new_tokens"]
+            max_new_tokens=query["max_new_tokens"],
             # timeout=240
         ):
             # First chunk is not a token, just an acknowledgement of connection
-            if not ack_time:
-                ack_time = time.time()
+            if not result.ack_time:
+                result.ack_time = time.time()
             # First non empty chunk is the first token
-            if not first_token_time and token != "":
-                first_token_time = time.time()
+            if not result.first_token_time and token != "":
+                result.first_token_time = time.time()
             tokens.append(token)
             logger.debug("Token: %s", token)
 
-        end_time = time.time()
+        result.end_time = time.time()
+        result.output_text = "".join(tokens)
+        result.output_tokens = len(tokens)
 
-        return self._calculate_results_stream(
-            start_time, ack_time, first_token_time, end_time, tokens, user_id, query
-        )
+        result.calculate_results()
+
+        return result
 
     def request_http(self, query, user_id):
         http_client = HttpClient(self.url, verify=False)
 
-        num_tokens = query["max_new_tokens"]
+        result = RequestResult(user_id, query.get("text"), query.get("input_tokens"))
 
-        start_time = time.time()
+        result.start_time = time.time()
+
         response = http_client.generate_text(
             self.model_name,
             query["text"],
@@ -117,19 +128,21 @@ class CaikitClientPlugin(plugin.Plugin):
             timeout=240,
         )
         logger.debug("Response: %s", json.dumps(response))
-        end_time = time.time()
+        result.end_time = time.time()
 
-        return self._calculate_results(
-            start_time, end_time, response, num_tokens, user_id, query
-        )
+        result.output_tokens = query["max_new_tokens"]
+        result.output_text = response
+
+        result.calculate_results()
+        return result
 
     def streaming_request_http(self, query, user_id):
         http_client = HttpClient(self.url, verify=False)
 
+        result = RequestResult(user_id, query.get("text"), query.get("input_tokens"))
+
         tokens = []
-        ack_time = 0
-        first_token_time = 0
-        start_time = time.time()
+        result.start_time = time.time()
         for token in http_client.generate_text_stream(
             self.model_name,
             query["text"],
@@ -138,16 +151,18 @@ class CaikitClientPlugin(plugin.Plugin):
             timeout=240,
         ):
             # First chunk is not a token, just an acknowledgement of connection
-            if not ack_time:
-                ack_time = time.time()
+            if not result.ack_time:
+                result.ack_time = time.time()
             # First non empty chunk is the first token
-            if not first_token_time and token != "":
-                first_token_time = time.time()
+            if not result.first_token_time and token != "":
+                result.first_token_time = time.time()
             tokens.append(token)
             logger.debug("Token: %s", token)
 
-        end_time = time.time()
+        result.end_time = time.time()
 
-        return self._calculate_results_stream(
-            start_time, ack_time, first_token_time, end_time, tokens, user_id, query
-        )
+        result.output_text = "".join(tokens)
+        result.output_tokens = len(tokens)
+
+        result.calculate_results()
+        return result

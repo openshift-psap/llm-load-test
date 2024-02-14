@@ -29,8 +29,7 @@ import json
 
 
 def lines_of_json_to_list_of_dicts(input_file):
-    """
-    """
+    """ """
     json_lines = []
     with open(input_file, encoding="utf-8") as ds_file:
         for line in ds_file:
@@ -42,14 +41,12 @@ def lines_of_json_to_list_of_dicts(input_file):
 
 
 def sort_list_of_dicts_by_key(dict_list, key):
-    """
-    """
+    """ """
     return sorted(dict_list, key=lambda d: d[key])
 
 
 def list_of_dicts_to_json(dict_list, output_file, version):
-    """
-    """
+    """ """
     output_object = {"metadata": {"version": version}, "dataset": dict_list}
     with open(output_file, "w", encoding="utf-8") as outfile:
         # Preserve order from dict_list
@@ -60,5 +57,5 @@ GOLD_DATASET_FILENAME = "awgold_v2.4.2_tasks-202300113-185050.json"
 OUTPUT_FILENAME = "sorted_dataset.json"
 
 unsorted_queries = lines_of_json_to_list_of_dicts(GOLD_DATASET_FILENAME)
-sorted_queries = sort_list_of_dicts_by_key(unsorted_queries, 'op_token_count')
+sorted_queries = sort_list_of_dicts_by_key(unsorted_queries, "op_token_count")
 list_of_dicts_to_json(sorted_queries, OUTPUT_FILENAME, version=GOLD_DATASET_FILENAME)

@@ -1,6 +1,6 @@
 # llm-load-test
 
-This tool is designed to load test large language models 
+This tool is designed to load test large language models running in different runtimes / behind different APIs. 
 
 ## Requirements
 

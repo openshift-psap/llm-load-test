@@ -1,13 +1,12 @@
 import argparse
 import json
 import logging
-import sys
 from pathlib import Path
 
 import pandas as pd
 import yaml
 
-from plugins import caikit_client_plugin, text_generation_webui_plugin
+from plugins import caikit_client_plugin, openAPI_plugin
 
 
 def parse_args(args):
@@ -50,9 +49,7 @@ def parse_config(config):
 
     plugin_type = config.get("plugin")
     if plugin_type == "text_generation_webui_plugin":
-        plugin = text_generation_webui_plugin.TextGenerationWebUIPlugin(
-            config.get("plugin_options")
-        )
+        plugin = openAPI_plugin.OpenAPIPlugin(config.get("plugin_options"))
     elif plugin_type == "caikit_client_plugin":
         plugin = caikit_client_plugin.CaikitClientPlugin(config.get("plugin_options"))
     else:

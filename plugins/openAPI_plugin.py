@@ -13,7 +13,7 @@ Example plugin config.yaml:
 
 plugin: "text_generation_webui_plugin"
 plugin_options:
-  streaming: True
+  streaming: True/False
   route: "http://127.0.0.1:5000/v1/completions"
 """
 
@@ -22,7 +22,7 @@ required_args = ["route", "streaming"]
 logger = logging.getLogger("user")
 
 
-class TextGenerationWebUIPlugin(plugin.Plugin):
+class OpenAPIPlugin(plugin.Plugin):
     def __init__(self, args):
         self._parse_args(args)
 
@@ -34,9 +34,30 @@ class TextGenerationWebUIPlugin(plugin.Plugin):
         if args["streaming"]:
             self.request_func = self.streaming_request_http
         else:
-            logger.error("option streaming: %s not yet implemented", args["streaming"])
+            self.request_func = self.request_http
 
         self.route = args["route"]
+
+    def request_http(self, query, user_id):
+        start_time = time.time()
+        num_tokens = query["max_new_tokens"]
+
+        headers = {"Content-Type": "application/json"}
+
+        data = {
+            "prompt": query["text"],
+            "max_tokens": query["max_new_tokens"],  # min tokens??
+            "temperature": 1.0,
+            "top_p": 0.9,
+            "seed": 10,
+        }
+        response = requests.post(self.route, headers=headers, json=data, verify=False)
+        logger.debug("response: %s", response)
+        end_time = time.time()
+
+        return self._calculate_results(
+            start_time, end_time, response, num_tokens, user_id, query
+        )
 
     def streaming_request_http(self, query, user_id):
         headers = {"Content-Type": "application/json"}

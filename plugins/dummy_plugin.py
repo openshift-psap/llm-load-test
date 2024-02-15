@@ -1,6 +1,7 @@
 import time
 
 from plugins import plugin
+from result import RequestResult
 
 """
 Example plugin config.yaml:
@@ -22,28 +23,41 @@ class DummyPlugin(plugin.Plugin):
             self.request_func = self.request_http
 
     def request_http(self, query, user_id):
-        response = query.get("text")
-        num_tokens = query["max_new_tokens"]
+        result = RequestResult(user_id, query.get("text"), query.get("input_tokens"))
+        result.start_time = time.time()
 
-        start_time = time.time()
-        time.sleep(2)
-        end_time = time.time()
+        # Fake response is just the input backwards
+        result.output_text = query.get("text")[::-1]
+        result.output_tokens = query["max_new_tokens"]
 
-        return self._calculate_results(
-            start_time, end_time, response, num_tokens, user_id, query
-        )
+        time.sleep(1)
+
+        result.end_time = time.time()
+
+        result.calculate_results()
+
+        return result
 
     def streaming_request_http(self, query, user_id):
-        start_time = time.time()
-        ack_time = 0
-        first_token_time = 0
+        result = RequestResult(user_id, query.get("text"), query.get("input_tokens"))
+        result.start_time = time.time()
+        time.sleep(0.1)
 
-        ack_time = time.time()
+        result.ack_time = time.time()
+        time.sleep(0.1)
+
+        result.first_token_time = time.time()
         time.sleep(1)
-        first_token_time = time.time()
-        time.sleep(1)
-        end_time = time.time()
-        chunks = query.get("text", "").split(" ")
-        return self._calculate_results_stream(
-            start_time, ack_time, first_token_time, end_time, chunks, user_id, query
-        )
+
+        result.end_time = time.time()
+
+        # Fake response is just the input backwards
+        tokens = query.get("text", "")[::-1].split(" ")
+
+        # Response received, return
+        result.end_time = time.time()
+        result.output_text = "".join(tokens)
+        result.output_tokens = len(tokens)
+
+        result.calculate_results()
+        return result

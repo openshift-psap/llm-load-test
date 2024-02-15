@@ -7,7 +7,8 @@ from pathlib import Path
 import pandas as pd
 import yaml
 
-from plugins import caikit_client_plugin, text_generation_webui_plugin
+from plugins import (caikit_client_plugin, dummy_plugin, hf_tgi_plugin,
+                     text_generation_webui_plugin)
 
 
 def parse_args(args):
@@ -55,6 +56,10 @@ def parse_config(config):
         )
     elif plugin_type == "caikit_client_plugin":
         plugin = caikit_client_plugin.CaikitClientPlugin(config.get("plugin_options"))
+    elif plugin_type == "hf_tgi_plugin":
+        plugin = hf_tgi_plugin.HFTGIPlugin(config.get("plugin_options"))
+    elif plugin_type == "dummy_plugin":
+        plugin = dummy_plugin.DummyPlugin(config.get("plugin_options"))
     else:
         logging.error("Unknown plugin type %s", plugin_type)
         raise ValueError(f"Unknown plugin type {plugin_type}")
@@ -82,7 +87,12 @@ def write_output(config, results_list):
         logging.warning("Output path %s does not exist, creating it!", path)
         path.mkdir(parents=True, exist_ok=True)
 
-    outfile = path / Path(output_options.get("file"))
+    concurrency, duration, _ = parse_config(config)
+    outfile_name = output_options.get("file").format(
+        concurrency=concurrency, duration=duration
+    )
+    outfile = path / Path(outfile_name)
+    results_list = [result.asdict() for result in results_list]
     output_obj = {"results": results_list, "config": config}
     with outfile.open("w") as f:
         json.dump(output_obj, f)
@@ -92,9 +102,17 @@ def write_output(config, results_list):
     # TODO, should this be output using logging?
     df = pd.DataFrame(results_list)
     df.head()
+
     with pd.option_context("display.max_rows", None, "display.max_columns", None):
         print(df)
     print(f"\n---\nFull results in {outfile}. Results summary:")
+
+    error_count = len(df[~df["error_text"].isnull()])
+    req_count = len(df)
+    print(f"Error count: {error_count} of {req_count} total requests")
+
+    # Ignore errors for summary results
+    df = df[df["error_text"].isnull()]
     if "ttft" in df:
         print(
             df[
@@ -115,7 +133,11 @@ def write_output(config, results_list):
             )
         )
 
-    load_options = config.get("load_options")
-    duration = load_options.get("duration")
-    throughput = df["output_tokens"].sum() / duration
-    print(f"Total throughput across all users: {throughput} tokens / sec")
+    ### CALCULATE REAL DURATION NOT TARGET DURATION
+    true_end = df["end_time"].max()
+    true_start = df["start_time"].min()
+    true_duration = true_end - true_start
+    throughput = df["output_tokens"].sum() / true_duration
+    print(
+        f"Total throughput across all users: {throughput} tokens / sec, for duration {true_duration}"
+    )

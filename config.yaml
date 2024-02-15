@@ -2,7 +2,10 @@ output:
   format: "json" # Maybe add option for pickle?
   dir: "./output/"
   file: "output.json"
-warmup: false
+warmup: True
+warmup_options:
+  requests: 11
+  timeout_sec: 20
 storage: # TODO
   type: local
 dataset:
@@ -19,6 +22,6 @@ plugin_options:
   interface: "http" # Some plugins like caikit-nlp-client should support grpc/http
   streaming: True
   model_name: "model-70b-chat"
-  route: "https://route.to.host"
+  host: "https://route.to.host"
 extra_metadata:
   replicas: 1

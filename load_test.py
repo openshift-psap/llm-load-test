@@ -10,7 +10,7 @@ from dataset import Dataset
 from user import User
 
 
-def run_main_process(procs, concurrency, duration, dataset, dataset_q, stop_q):
+def run_main_process(concurrency, duration, dataset, dataset_q, stop_q):
     logging.info("Test from main process")
 
     # Initialize the dataset_queue with 4*concurrency requests
@@ -43,7 +43,6 @@ def run_main_process(procs, concurrency, duration, dataset, dataset_q, stop_q):
 
 
 def run_warmup(
-    procs,
     dataset,
     dataset_q,
     results_pipes,
@@ -73,9 +72,9 @@ def run_warmup(
         )
         current_time = time.time()
         if (current_time - start_time) > warmup_timeout:
-            logging.error("Warmup timed out before receiving all responses")
+            logging.error("Warmup timed out (%s seconds) before receiving all responses", warmup_timeout)
             return False
-        time.sleep(0.5)
+        time.sleep(2)
 
     # Signal end of warmup
     warmup_q.put(None)
@@ -176,14 +175,16 @@ def main(args):
 
     if config.get("warmup"):
         logging.info("Running warmup")
+        warmup_options = config.get("warmup_options", {})
+        warmup_reqs = warmup_options.get("requests", 10)
+        warmup_timeout = warmup_options.get("timeout_sec", 120)
         warmup_passed = run_warmup(
-            procs,
             dataset,
             dataset_q,
             results_pipes,
             warmup_q,
-            warmup_reqs=10,
-            warmup_timeout=60,
+            warmup_reqs=warmup_reqs,
+            warmup_timeout=warmup_timeout,
         )
         if not warmup_passed:
             exit_gracefully(procs, warmup_q, stop_q, logger_q, log_reader_thread, 1)
@@ -191,7 +192,7 @@ def main(args):
             time.sleep(2)
 
     logging.debug("Running main process")
-    run_main_process(procs, concurrency, duration, dataset, dataset_q, stop_q)
+    run_main_process(concurrency, duration, dataset, dataset_q, stop_q)
 
     results_list = gather_results(results_pipes)
 

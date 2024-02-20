@@ -1,14 +1,18 @@
 import argparse
 import json
 import logging
-import sys
 from pathlib import Path
 
 import pandas as pd
 import yaml
 
-from plugins import (caikit_client_plugin, dummy_plugin, hf_tgi_plugin,
-                     text_generation_webui_plugin)
+from plugins import (
+    caikit_client_plugin,
+    dummy_plugin,
+    hf_tgi_plugin,
+    text_generation_webui_plugin,
+    tgis_grpc_plugin,
+)
 
 
 def parse_args(args):
@@ -56,6 +60,8 @@ def parse_config(config):
         )
     elif plugin_type == "caikit_client_plugin":
         plugin = caikit_client_plugin.CaikitClientPlugin(config.get("plugin_options"))
+    elif plugin_type == "tgis_grpc_plugin":
+        plugin = tgis_grpc_plugin.TGISGRPCPlugin(config.get("plugin_options"))
     elif plugin_type == "hf_tgi_plugin":
         plugin = hf_tgi_plugin.HFTGIPlugin(config.get("plugin_options"))
     elif plugin_type == "dummy_plugin":

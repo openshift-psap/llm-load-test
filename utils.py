@@ -3,6 +3,7 @@ import json
 import logging
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import yaml
 
@@ -13,6 +14,17 @@ from plugins import (
     text_generation_webui_plugin,
     tgis_grpc_plugin,
 )
+
+
+class customEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.int64):
+            return int(obj)
+        if isinstance(obj, np.floating):
+            return float(obj)
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return super(customEncoder, self).default(obj)
 
 
 def parse_args(args):
@@ -99,9 +111,11 @@ def write_output(config, results_list):
     )
     outfile = path / Path(outfile_name)
     results_list = [result.asdict() for result in results_list]
-    output_obj = {"results": results_list, "config": config}
-    with outfile.open("w") as f:
-        json.dump(output_obj, f)
+    output_obj = {
+        "results": results_list,
+        "config": config,
+        "summary": {},
+    }
 
     logging.info("Length of results: %d", len(results_list))
 
@@ -120,24 +134,40 @@ def write_output(config, results_list):
     # Ignore errors for summary results
     df = df[df["error_text"].isnull()]
     if "ttft" in df:
-        print(
-            df[
-                [
-                    "tt_ack",
-                    "ttft",
-                    "tpot",
-                    "response_time",
-                    "output_tokens",
-                    "input_tokens",
-                ]
-            ].mean(numeric_only=True)
-        )
+        summary_df = df[
+            [
+                "tt_ack",
+                "ttft",
+                "tpot",
+                "response_time",
+                "output_tokens",
+                "input_tokens",
+            ]
+        ].mean(numeric_only=True)
     else:
-        print(
-            df[["tpot", "response_time", "output_tokens", "input_tokens"]].mean(
-                numeric_only=True
-            )
-        )
+        summary_df = df[
+            ["tpot", "response_time", "output_tokens", "input_tokens"]
+        ].mean(numeric_only=True)
+    print(summary_df)
+
+    # Time per output token summary
+    output_obj = get_summary(df, output_obj, "tpot")
+
+    if "ttft" in df:
+        # Time to first token summary
+        output_obj = get_summary(df, output_obj, "ttft")
+
+        # Time to ack summary
+        output_obj = get_summary(df, output_obj, "tt_ack")
+
+    # response time summary
+    output_obj = get_summary(df, output_obj, "response_time")
+
+    # output tokens summary
+    output_obj = get_summary(df, output_obj, "output_tokens")
+
+    # input tokens summary
+    output_obj = get_summary(df, output_obj, "input_tokens")
 
     ### CALCULATE REAL DURATION NOT TARGET DURATION
     true_end = df["end_time"].max()
@@ -147,3 +177,25 @@ def write_output(config, results_list):
     print(
         f"Total throughput across all users: {throughput} tokens / sec, for duration {true_duration}"
     )
+
+    output_obj["summary"]["throughput"] = throughput
+    output_obj["summary"]["total_requests"] = req_count
+    output_obj["summary"]["total_failures"] = error_count
+    output_obj["summary"]["failure_rate"] = error_count / req_count * 100
+
+    json_out = json.dumps(output_obj, cls=customEncoder, indent=2)
+    with outfile.open("w") as f:
+        f.write(json_out)
+
+
+def get_summary(df: pd.DataFrame, output_obj: dict, summary_key: str):
+    output_obj["summary"][summary_key] = {}
+    output_obj["summary"][summary_key]["min"] = df[summary_key].min()
+    output_obj["summary"][summary_key]["max"] = df[summary_key].max()
+    output_obj["summary"][summary_key]["median"] = df[summary_key].median()
+    output_obj["summary"][summary_key]["mean"] = df[summary_key].mean()
+    output_obj["summary"][summary_key]["percentile_80"] = df[summary_key].quantile(0.80)
+    output_obj["summary"][summary_key]["percentile_90"] = df[summary_key].quantile(0.90)
+    output_obj["summary"][summary_key]["percentile_95"] = df[summary_key].quantile(0.95)
+    output_obj["summary"][summary_key]["percentile_99"] = df[summary_key].quantile(0.99)
+    return output_obj

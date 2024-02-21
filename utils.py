@@ -183,7 +183,7 @@ def write_output(config, results_list):
     output_obj["summary"]["total_failures"] = error_count
     output_obj["summary"]["failure_rate"] = error_count / req_count * 100
 
-    json_out = json.dumps(output_obj, cls=customEncoder)
+    json_out = json.dumps(output_obj, cls=customEncoder, indent=2)
     with outfile.open("w") as f:
         f.write(json_out)
 

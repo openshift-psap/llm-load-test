@@ -6,13 +6,8 @@ from pathlib import Path
 import pandas as pd
 import yaml
 
-from plugins import (
-    caikit_client_plugin,
-    dummy_plugin,
-    hf_tgi_plugin,
-    text_generation_webui_plugin,
-    tgis_grpc_plugin,
-)
+from plugins import (caikit_client_plugin, dummy_plugin, hf_tgi_plugin,
+                     text_generation_webui_plugin, tgis_grpc_plugin)
 
 
 def parse_args(args):
@@ -100,8 +95,6 @@ def write_output(config, results_list):
     outfile = path / Path(outfile_name)
     results_list = [result.asdict() for result in results_list]
     output_obj = {"results": results_list, "config": config}
-    with outfile.open("w") as f:
-        json.dump(output_obj, f)
 
     logging.info("Length of results: %d", len(results_list))
 
@@ -120,24 +113,21 @@ def write_output(config, results_list):
     # Ignore errors for summary results
     df = df[df["error_text"].isnull()]
     if "ttft" in df:
-        print(
-            df[
-                [
-                    "tt_ack",
-                    "ttft",
-                    "tpot",
-                    "response_time",
-                    "output_tokens",
-                    "input_tokens",
-                ]
-            ].mean(numeric_only=True)
-        )
+        summary_df = df[
+            [
+                "tt_ack",
+                "ttft",
+                "tpot",
+                "response_time",
+                "output_tokens",
+                "input_tokens",
+            ]
+        ].mean(numeric_only=True)
     else:
-        print(
-            df[["tpot", "response_time", "output_tokens", "input_tokens"]].mean(
-                numeric_only=True
-            )
-        )
+        summary_df = df[
+            ["tpot", "response_time", "output_tokens", "input_tokens"]
+        ].mean(numeric_only=True)
+    print(summary_df)
 
     ### CALCULATE REAL DURATION NOT TARGET DURATION
     true_end = df["end_time"].max()
@@ -147,3 +137,10 @@ def write_output(config, results_list):
     print(
         f"Total throughput across all users: {throughput} tokens / sec, for duration {true_duration}"
     )
+    summary_df_dict = summary_df.to_dict()
+    summary_df_dict["throughput"] = throughput
+    summary_df_dict["total_requests"] = req_count
+    summary_df_dict["failure_rate"] = error_count / req_count * 100
+    output_obj["summary"] = summary_df_dict
+    with outfile.open("w") as f:
+        json.dump(output_obj, f)

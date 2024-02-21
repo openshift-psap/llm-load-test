@@ -151,14 +151,14 @@ def write_output(config, results_list):
     print(summary_df)
 
     # Time per output token summary
-    output_obj = get_summary(df, output_obj, "tpot", "TPOT")
+    output_obj = get_summary(df, output_obj, "tpot")
 
     if "ttft" in df:
         # Time to first token summary
-        output_obj = get_summary(df, output_obj, "ttft", "TTFT")
+        output_obj = get_summary(df, output_obj, "ttft")
 
         # Time to ack summary
-        output_obj = get_summary(df, output_obj, "tt_ack", "TT_ACK")
+        output_obj = get_summary(df, output_obj, "tt_ack")
 
     # response time summary
     output_obj = get_summary(df, output_obj, "response_time")
@@ -188,18 +188,14 @@ def write_output(config, results_list):
         f.write(json_out)
 
 
-def get_summary(
-    df: pd.DataFrame, output_obj: dict, summary_key: str, new_key: str = None
-):
-    if not new_key:
-        new_key = summary_key
-    output_obj["summary"][new_key] = {}
-    output_obj["summary"][new_key]["min"] = df[summary_key].min()
-    output_obj["summary"][new_key]["max"] = df[summary_key].max()
-    output_obj["summary"][new_key]["median"] = df[summary_key].median()
-    output_obj["summary"][new_key]["mean"] = df[summary_key].mean()
-    output_obj["summary"][new_key]["percentile_80"] = df[summary_key].quantile(0.80)
-    output_obj["summary"][new_key]["percentile_90"] = df[summary_key].quantile(0.90)
-    output_obj["summary"][new_key]["percentile_95"] = df[summary_key].quantile(0.95)
-    output_obj["summary"][new_key]["percentile_99"] = df[summary_key].quantile(0.99)
+def get_summary(df: pd.DataFrame, output_obj: dict, summary_key: str):
+    output_obj["summary"][summary_key] = {}
+    output_obj["summary"][summary_key]["min"] = df[summary_key].min()
+    output_obj["summary"][summary_key]["max"] = df[summary_key].max()
+    output_obj["summary"][summary_key]["median"] = df[summary_key].median()
+    output_obj["summary"][summary_key]["mean"] = df[summary_key].mean()
+    output_obj["summary"][summary_key]["percentile_80"] = df[summary_key].quantile(0.80)
+    output_obj["summary"][summary_key]["percentile_90"] = df[summary_key].quantile(0.90)
+    output_obj["summary"][summary_key]["percentile_95"] = df[summary_key].quantile(0.95)
+    output_obj["summary"][summary_key]["percentile_99"] = df[summary_key].quantile(0.99)
     return output_obj

@@ -149,7 +149,10 @@ def main(args):
         exit_gracefully(procs, warmup_q, stop_q, logger_q, log_reader_thread, 1)
 
     logging.debug("Creating dataset with configuration %s", config["dataset"])
-    dataset = Dataset(**config["dataset"])
+
+    # Get model_name if set for prompt formatting
+    model_name = config.get("plugin_options", {}).get("model_name", "")
+    dataset = Dataset(model_name=model_name, **config["dataset"])
 
     warmup = config.get("warmup")
     if not warmup:

@@ -25,7 +25,7 @@ plugin_options:
 
 logger = logging.getLogger("user")
 
-required_args = ["model_name", "route", "interface", "streaming"]
+required_args = ["model_name", "host", "port", "interface", "streaming"]
 
 
 # TODO:

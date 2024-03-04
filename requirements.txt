@@ -1,4 +1,4 @@
-caikit-nlp-client
+caikit-nlp-client==0.0.8
 deprecation
 flake8
 isort

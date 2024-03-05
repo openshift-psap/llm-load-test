@@ -18,7 +18,6 @@ class Dataset:
                 max_sequence_tokens=max_sequence_tokens,
             )
         ]
-        random.Random(dataset_seed).shuffle(self.dataset_list)
         self.index = 0
 
     def get_next_n_queries(self, n):
@@ -40,10 +39,12 @@ def initialize_dataset(
     prompt_format = get_format_string(model_name)
     with open(filename, "r", encoding="utf-8") as file:
         total_queries = 0
-        for idx, line in enumerate(file):
-            if idx == 0:
-                # skip the first line, it contains metadata
-                continue
+
+        # [1:] to skip the first line, it contains metadata
+        lines = file.readlines()[1:]
+        random.Random(dataset_seed).shuffle(lines)
+
+        for line in lines:
             # Load each line as a JSON object
             try:
                 json_object = json.loads(line.strip())
@@ -55,6 +56,7 @@ def initialize_dataset(
                 output_tokens = int(json_object["tok_output_length"])
                 prompt = json_object["question"]
                 system_prompt = json_object["system_prompt"]
+                input_id = json_object["index"]
                 sequence_tokens = input_tokens + output_tokens
             except KeyError as e:
                 logging.error(
@@ -67,8 +69,9 @@ def initialize_dataset(
                 and input_tokens > min_input_tokens
                 and sequence_tokens < max_sequence_tokens):
                 input_data = {
-                    "input": prompt_format.format(prompt=prompt, 
+                    "text": prompt_format.format(prompt=prompt, 
                                                   system_prompt=system_prompt),
+                    "input_id": input_id,
                     "input_tokens": input_tokens,
                     "output_tokens": output_tokens,
                     "min_new_tokens": output_tokens,

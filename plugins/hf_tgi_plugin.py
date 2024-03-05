@@ -48,7 +48,7 @@ class HFTGIPlugin(plugin.Plugin):
             },
         }
 
-        result = RequestResult(user_id, query.get("text"), query.get("input_tokens"))
+        result = RequestResult(user_id, query.get("input_id"), query.get("input_tokens"))
 
         tokens = []
         result.start_time = time.time()

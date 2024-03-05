@@ -50,7 +50,7 @@ class TGISGRPCPlugin(plugin.Plugin):
             grpc_channel
         )
 
-        result = RequestResult(user_id, query.get("text"), query.get("input_tokens"))
+        result = RequestResult(user_id, query.get("input_id"), query.get("input_tokens"))
         request = generation_pb2_grpc.generation__pb2.BatchedGenerationRequest(
             model_id=self.model_name,
             requests=[
@@ -80,7 +80,7 @@ class TGISGRPCPlugin(plugin.Plugin):
         generation_service_stub = generation_pb2_grpc.GenerationServiceStub(
             grpc_channel
         )
-        result = RequestResult(user_id, query.get("text"), query.get("input_tokens"))
+        result = RequestResult(user_id, query.get("input_id"), query.get("input_tokens"))
         tokens = []
         request = generation_pb2_grpc.generation__pb2.SingleGenerationRequest(
             model_id=self.model_name,

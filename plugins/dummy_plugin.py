@@ -23,7 +23,7 @@ class DummyPlugin(plugin.Plugin):
             self.request_func = self.request_http
 
     def request_http(self, query, user_id):
-        result = RequestResult(user_id, query.get("text"), query.get("input_tokens"))
+        result = RequestResult(user_id, query.get("input_id"), query.get("input_tokens"))
         result.start_time = time.time()
 
         # Fake response is just the input backwards
@@ -39,7 +39,7 @@ class DummyPlugin(plugin.Plugin):
         return result
 
     def streaming_request_http(self, query, user_id):
-        result = RequestResult(user_id, query.get("text"), query.get("input_tokens"))
+        result = RequestResult(user_id, query.get("input_id"), query.get("input_tokens"))
         result.start_time = time.time()
         time.sleep(0.1)
 

@@ -61,7 +61,7 @@ class CaikitClientPlugin(plugin.Plugin):
     def request_grpc(self, query, user_id):
         grpc_client = GrpcClient(self.host, self.port, verify=False)
 
-        result = RequestResult(user_id, query.get("text"), query.get("input_tokens"))
+        result = RequestResult(user_id, query.get("input_id"), query.get("input_tokens"))
 
         result.start_time = time.time()
         response = grpc_client.generate_text(
@@ -84,7 +84,7 @@ class CaikitClientPlugin(plugin.Plugin):
     def streaming_request_grpc(self, query, user_id):
         grpc_client = GrpcClient(self.host, self.port, verify=False)
 
-        result = RequestResult(user_id, query.get("text"), query.get("input_tokens"))
+        result = RequestResult(user_id, query.get("input_id"), query.get("input_tokens"))
 
         tokens = []
         result.start_time = time.time()
@@ -116,7 +116,7 @@ class CaikitClientPlugin(plugin.Plugin):
     def request_http(self, query, user_id):
         http_client = HttpClient(self.url, verify=False)
 
-        result = RequestResult(user_id, query.get("text"), query.get("input_tokens"))
+        result = RequestResult(user_id, query.get("input_id"), query.get("input_tokens"))
 
         result.start_time = time.time()
 
@@ -139,7 +139,7 @@ class CaikitClientPlugin(plugin.Plugin):
     def streaming_request_http(self, query, user_id):
         http_client = HttpClient(self.url, verify=False)
 
-        result = RequestResult(user_id, query.get("text"), query.get("input_tokens"))
+        result = RequestResult(user_id, query.get("input_id"), query.get("input_tokens"))
 
         tokens = []
         result.start_time = time.time()

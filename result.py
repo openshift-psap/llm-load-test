@@ -13,6 +13,7 @@ class RequestResult:
         self.tt_ack = None
         self.ttft = None
         self.tpot = None
+        self.stop_reason = None
         self.error_code = None
         self.error_text = None
 

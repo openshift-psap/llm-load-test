@@ -76,8 +76,18 @@ class TGISGRPCPlugin(plugin.Plugin):
             return result
             
         result.end_time = time.time()
-        result.output_tokens = query["output_tokens"]
-        result.output_text = response.responses[0].text
+        
+        # Only doing one prompt per requests
+        response = response.responses[0]
+        result.input_tokens = response.input_token_count
+        result.stop_reason = response.stop_reason
+        result.output_text = response.text
+
+        if response.generated_token_count:
+            result.output_tokens = response.generated_token_count
+        else:
+            result.output_tokens = query["output_tokens"]
+
 
         result.calculate_results()
         return result
@@ -106,26 +116,37 @@ class TGISGRPCPlugin(plugin.Plugin):
             ),
         )
         result.start_time = time.time()
-        
+
         try:
             resp_stream = generation_service_stub.GenerateStream(request=request)
             for resp in resp_stream:
                 # the first response is not a token, just an acknowledgement
                 if not result.ack_time and not resp.tokens:
                     result.ack_time = time.time()
+                    if resp.input_token_count:
+                        result.input_tokens = resp.input_token_count
                 if resp.tokens:
                     if not result.first_token_time and resp.tokens[0].text != "":
                         result.first_token_time = time.time()
-                    tokens.append(resp.tokens[0].text)
+                    tokens.append(resp.text)
+                if resp.stop_reason:
+                    # Last resp
+                    result.stop_reason = resp.stop_reason
+                    result.output_tokens = resp.generated_token_count
         except grpc.RpcError as err:
             result.end_time = time.time()
             result.error_text = err.details()
             result.error_code = err.code().value[0]
             return result
-            
+
         result.end_time = time.time()
         result.output_text = "".join(tokens)
-        result.output_tokens = len(tokens)
+
+        if not result.input_tokens:
+            result.input_tokens = query.get("input_tokens")
+
+        if not result.output_tokens:
+            result.output_tokens = len(tokens)
 
         result.calculate_results()
         return result

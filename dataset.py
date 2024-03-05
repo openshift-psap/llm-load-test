@@ -6,11 +6,20 @@ dataset_seed = 1337
 
 
 class Dataset:
-    def __init__(self, model_name, file, max_queries, min_input_tokens, max_input_tokens, max_output_tokens, max_sequence_tokens):
+    def __init__(self,
+                 file,
+                 model_name="",
+                 max_queries=3000,
+                 min_input_tokens=0,
+                 max_input_tokens=16000,
+                 max_output_tokens=4096,
+                 max_sequence_tokens=32000
+                 ):
+        logging.info("Initializing dataset with %s", locals())
         self.dataset_list = [input for input in
             initialize_dataset(
-                model_name,
                 file,
+                model_name=model_name,
                 max_queries=max_queries,
                 min_input_tokens=min_input_tokens,
                 max_input_tokens=max_input_tokens,
@@ -28,12 +37,13 @@ class Dataset:
 
 
 def initialize_dataset(
-    model_name, filename,
-    max_queries=1000, 
-    min_input_tokens=0, 
-    max_input_tokens=1024, 
-    max_output_tokens=1024, 
-    max_sequence_tokens=4096
+    filename,
+    model_name="",
+    max_queries=3000,
+    min_input_tokens=0,
+    max_input_tokens=16000,
+    max_output_tokens=4096,
+    max_sequence_tokens=32000
 ):
     
     prompt_format = get_format_string(model_name)

@@ -42,16 +42,17 @@ class HFTGIPlugin(plugin.Plugin):
         data = {
             "inputs": query["text"],
             "parameters": {
-                "max_new_tokens": query["max_new_tokens"],
+                "max_new_tokens": query["output_tokens"],
                 "temperature": 1.0,  # Just an example
                 "details": False,
             },
         }
 
-        result = RequestResult(user_id, query.get("text"), query.get("input_tokens"))
+        result = RequestResult(user_id, query.get("input_id"), query.get("input_tokens"))
 
         tokens = []
         result.start_time = time.time()
+        response = None
         try:
             response = requests.post(
                 self.host, headers=headers, json=data, verify=False, stream=True

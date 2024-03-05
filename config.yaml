@@ -9,19 +9,22 @@ warmup_options:
 storage: # TODO
   type: local
 dataset:
-  file: "datasets/openorca_large_subset_010.jsonl"
+  file: "datasets/openorca_large_subset_011.jsonl"
   max_queries: 1000
+  min_input_tokens: 0
   max_input_tokens: 1024
   max_output_tokens: 256
+  max_sequence_tokens: 1024
 load_options:
   type: constant #Future options: loadgen, stair-step
-  concurrency: 4
+  concurrency: 2
   duration: 20 # In seconds. Maybe in future support "100s" "10m", etc...
-plugin: "caikit_client_plugin"
+plugin: "tgis_grpc_plugin"
 plugin_options:
-  interface: "http" # Some plugins like caikit-nlp-client should support grpc/http
+  #interface: "grpc" # Some plugins like caikit-nlp-client should support grpc/http
   streaming: True
-  model_name: "model-70b-chat"
-  host: "https://route.to.host"
+  model_name: "flan-t5-small"
+  host: "route.to.host"
+  port: 8033
 extra_metadata:
   replicas: 1

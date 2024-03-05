@@ -1,7 +1,7 @@
 class RequestResult:
-    def __init__(self, user_id, input_text, input_tokens):
+    def __init__(self, user_id, input_id, input_tokens):
         self.user_id = user_id
-        self.input_text = input_text
+        self.input_id = input_id
         self.input_tokens = input_tokens
         self.output_text = None
         self.output_tokens = None
@@ -13,6 +13,7 @@ class RequestResult:
         self.tt_ack = None
         self.ttft = None
         self.tpot = None
+        self.stop_reason = None
         self.error_code = None
         self.error_text = None
 

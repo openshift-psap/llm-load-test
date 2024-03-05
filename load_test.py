@@ -141,63 +141,70 @@ def main(args):
     #### Parse config
     logging.debug("Parsing YAML config file %s", args.config)
     concurrency, duration, plugin = 0, 0, None
-    config = utils.yaml_load(args.config)
     try:
+        config = utils.yaml_load(args.config)
         concurrency, duration, plugin = utils.parse_config(config)
-    except ValueError:
-        logging.error("Exiting due to invalid input")
+    except Exception as e:
+        logging.error("Exiting due to invalid input: %s", e)
         exit_gracefully(procs, warmup_q, stop_q, logger_q, log_reader_thread, 1)
 
-    logging.debug("Creating dataset with configuration %s", config["dataset"])
-    dataset = Dataset(**config["dataset"])
+    try:
+        logging.debug("Creating dataset with configuration %s", config["dataset"])
+        # Get model_name if set for prompt formatting
+        model_name = config.get("plugin_options", {}).get("model_name", "")
+        dataset = Dataset(model_name=model_name, **config["dataset"])
 
-    warmup = config.get("warmup")
-    if not warmup:
-        warmup_q = None
-    logging.debug("Creating %s Users and corresponding processes", concurrency)
-    for idx in range(concurrency):
-        send_results, recv_results = mp_ctx.Pipe()
-        user = User(
-            idx,
-            dataset_q=dataset_q,
-            warmup_q=warmup_q,
-            stop_q=stop_q,
-            results_pipe=send_results,
-            plugin=plugin,
-            logger_q=logger_q,
-            log_level=args.log_level,
-        )
-        proc = mp_ctx.Process(target=user.run_user_process)
-        procs.append(proc)
-        logging.info("Starting %s", proc)
-        proc.start()
-        results_pipes.append(recv_results)
+        warmup = config.get("warmup")
+        if not warmup:
+            warmup_q = None
+        logging.debug("Creating %s Users and corresponding processes", concurrency)
+        for idx in range(concurrency):
+            send_results, recv_results = mp_ctx.Pipe()
+            user = User(
+                idx,
+                dataset_q=dataset_q,
+                warmup_q=warmup_q,
+                stop_q=stop_q,
+                results_pipe=send_results,
+                plugin=plugin,
+                logger_q=logger_q,
+                log_level=args.log_level,
+            )
+            proc = mp_ctx.Process(target=user.run_user_process)
+            procs.append(proc)
+            logging.info("Starting %s", proc)
+            proc.start()
+            results_pipes.append(recv_results)
 
-    if config.get("warmup"):
-        logging.info("Running warmup")
-        warmup_options = config.get("warmup_options", {})
-        warmup_reqs = warmup_options.get("requests", 10)
-        warmup_timeout = warmup_options.get("timeout_sec", 120)
-        warmup_passed = run_warmup(
-            dataset,
-            dataset_q,
-            results_pipes,
-            warmup_q,
-            warmup_reqs=warmup_reqs,
-            warmup_timeout=warmup_timeout,
-        )
-        if not warmup_passed:
-            exit_gracefully(procs, warmup_q, stop_q, logger_q, log_reader_thread, 1)
-        else:
-            time.sleep(2)
+        if config.get("warmup"):
+            logging.info("Running warmup")
+            warmup_options = config.get("warmup_options", {})
+            warmup_reqs = warmup_options.get("requests", 10)
+            warmup_timeout = warmup_options.get("timeout_sec", 120)
+            warmup_passed = run_warmup(
+                dataset,
+                dataset_q,
+                results_pipes,
+                warmup_q,
+                warmup_reqs=warmup_reqs,
+                warmup_timeout=warmup_timeout,
+            )
+            if not warmup_passed:
+                exit_gracefully(procs, warmup_q, stop_q, logger_q, log_reader_thread, 1)
+            else:
+                time.sleep(2)
 
-    logging.debug("Running main process")
-    run_main_process(concurrency, duration, dataset, dataset_q, stop_q)
+        logging.debug("Running main process")
+        run_main_process(concurrency, duration, dataset, dataset_q, stop_q)
 
-    results_list = gather_results(results_pipes)
+        results_list = gather_results(results_pipes)
 
-    utils.write_output(config, results_list)
+        utils.write_output(config, results_list)
 
+    except Exception as e:
+        logging.error("Unexpected exception in main process: %s", e)
+        exit_gracefully(procs, warmup_q, stop_q, logger_q, log_reader_thread, 1)
+        
     exit_gracefully(procs, warmup_q, stop_q, logger_q, log_reader_thread, 0)
 
 

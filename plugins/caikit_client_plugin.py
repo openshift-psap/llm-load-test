@@ -25,7 +25,7 @@ plugin_options:
 
 logger = logging.getLogger("user")
 
-required_args = ["model_name", "route", "interface", "streaming"]
+required_args = ["model_name", "host", "port", "interface", "streaming"]
 
 
 # TODO:
@@ -61,21 +61,21 @@ class CaikitClientPlugin(plugin.Plugin):
     def request_grpc(self, query, user_id):
         grpc_client = GrpcClient(self.host, self.port, verify=False)
 
-        result = RequestResult(user_id, query.get("text"), query.get("input_tokens"))
+        result = RequestResult(user_id, query.get("input_id"), query.get("input_tokens"))
 
         result.start_time = time.time()
         response = grpc_client.generate_text(
             self.model_name,
             query["text"],
-            min_new_tokens=query["min_new_tokens"],
-            max_new_tokens=query["max_new_tokens"],
+            min_new_tokens=query["output_tokens"],
+            max_new_tokens=query["output_tokens"],
             # timeout=240 #Not supported, may need to contribute to caikit-nlp-client
         )
 
         logger.debug("Response: %s", json.dumps(response))
         result.end_time = time.time()
 
-        result.output_tokens = query["max_new_tokens"]
+        result.output_tokens = query["output_tokens"]
         result.output_text = response
 
         result.calculate_results()
@@ -84,7 +84,7 @@ class CaikitClientPlugin(plugin.Plugin):
     def streaming_request_grpc(self, query, user_id):
         grpc_client = GrpcClient(self.host, self.port, verify=False)
 
-        result = RequestResult(user_id, query.get("text"), query.get("input_tokens"))
+        result = RequestResult(user_id, query.get("input_id"), query.get("input_tokens"))
 
         tokens = []
         result.start_time = time.time()
@@ -92,8 +92,8 @@ class CaikitClientPlugin(plugin.Plugin):
         for token in grpc_client.generate_text_stream(
             self.model_name,
             query["text"],
-            min_new_tokens=query["min_new_tokens"],
-            max_new_tokens=query["max_new_tokens"],
+            min_new_tokens=query["output_tokens"],
+            max_new_tokens=query["output_tokens"],
             # timeout=240
         ):
             # First chunk is not a token, just an acknowledgement of connection
@@ -116,21 +116,21 @@ class CaikitClientPlugin(plugin.Plugin):
     def request_http(self, query, user_id):
         http_client = HttpClient(self.url, verify=False)
 
-        result = RequestResult(user_id, query.get("text"), query.get("input_tokens"))
+        result = RequestResult(user_id, query.get("input_id"), query.get("input_tokens"))
 
         result.start_time = time.time()
 
         response = http_client.generate_text(
             self.model_name,
             query["text"],
-            min_new_tokens=query["min_new_tokens"],
-            max_new_tokens=query["max_new_tokens"],
+            min_new_tokens=query["output_tokens"],
+            max_new_tokens=query["output_tokens"],
             timeout=240,
         )
         logger.debug("Response: %s", json.dumps(response))
         result.end_time = time.time()
 
-        result.output_tokens = query["max_new_tokens"]
+        result.output_tokens = query["output_tokens"]
         result.output_text = response
 
         result.calculate_results()
@@ -139,15 +139,15 @@ class CaikitClientPlugin(plugin.Plugin):
     def streaming_request_http(self, query, user_id):
         http_client = HttpClient(self.url, verify=False)
 
-        result = RequestResult(user_id, query.get("text"), query.get("input_tokens"))
+        result = RequestResult(user_id, query.get("input_id"), query.get("input_tokens"))
 
         tokens = []
         result.start_time = time.time()
         for token in http_client.generate_text_stream(
             self.model_name,
             query["text"],
-            min_new_tokens=query["min_new_tokens"],
-            max_new_tokens=query["max_new_tokens"],
+            min_new_tokens=query["output_tokens"],
+            max_new_tokens=query["output_tokens"],
             timeout=240,
         ):
             # First chunk is not a token, just an acknowledgement of connection

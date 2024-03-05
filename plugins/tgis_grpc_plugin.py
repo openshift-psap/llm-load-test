@@ -67,7 +67,14 @@ class TGISGRPCPlugin(plugin.Plugin):
             ),
         )
         result.start_time = time.time()
-        response = generation_service_stub.Generate(request=request)
+        try:
+            response = generation_service_stub.Generate(request=request)
+        except grpc.RpcError as err:
+            result.end_time = time.time()
+            result.error_text = err.details()
+            result.error_code = err.code().value[0]
+            return result
+            
         result.end_time = time.time()
         result.output_tokens = query["output_tokens"]
         result.output_text = response.responses[0].text
@@ -99,16 +106,23 @@ class TGISGRPCPlugin(plugin.Plugin):
             ),
         )
         result.start_time = time.time()
-        resp_stream = generation_service_stub.GenerateStream(request=request)
-        for resp in resp_stream:
-            # the first response is not a token, just an acknowledgement
-            if not result.ack_time and not resp.tokens:
-                result.ack_time = time.time()
-            if resp.tokens:
-                if not result.first_token_time and resp.tokens[0].text != "":
-                    result.first_token_time = time.time()
-                tokens.append(resp.tokens[0].text)
-
+        
+        try:
+            resp_stream = generation_service_stub.GenerateStream(request=request)
+            for resp in resp_stream:
+                # the first response is not a token, just an acknowledgement
+                if not result.ack_time and not resp.tokens:
+                    result.ack_time = time.time()
+                if resp.tokens:
+                    if not result.first_token_time and resp.tokens[0].text != "":
+                        result.first_token_time = time.time()
+                    tokens.append(resp.tokens[0].text)
+        except grpc.RpcError as err:
+            result.end_time = time.time()
+            result.error_text = err.details()
+            result.error_code = err.code().value[0]
+            return result
+            
         result.end_time = time.time()
         result.output_text = "".join(tokens)
         result.output_tokens = len(tokens)

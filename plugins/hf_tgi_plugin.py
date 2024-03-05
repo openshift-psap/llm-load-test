@@ -52,6 +52,7 @@ class HFTGIPlugin(plugin.Plugin):
 
         tokens = []
         result.start_time = time.time()
+        response = None
         try:
             response = requests.post(
                 self.host, headers=headers, json=data, verify=False, stream=True

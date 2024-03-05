@@ -28,7 +28,7 @@ class DummyPlugin(plugin.Plugin):
 
         # Fake response is just the input backwards
         result.output_text = query.get("text")[::-1]
-        result.output_tokens = query["max_new_tokens"]
+        result.output_tokens = query["output_tokens"]
 
         time.sleep(1)
 

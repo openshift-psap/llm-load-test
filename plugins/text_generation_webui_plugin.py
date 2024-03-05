@@ -48,7 +48,7 @@ class TextGenerationWebUIPlugin(plugin.Plugin):
 
         data = {
             "prompt": query["text"],
-            "max_tokens": query["max_new_tokens"],  # min tokens??
+            "max_tokens": query["output_tokens"],  # min tokens??
             "temperature": 1.0,
             "top_p": 0.9,
             "seed": 10,

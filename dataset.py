@@ -74,10 +74,7 @@ def initialize_dataset(
                     "input_id": input_id,
                     "input_tokens": input_tokens,
                     "output_tokens": output_tokens,
-                    "min_new_tokens": output_tokens,
-                    "max_new_tokens": output_tokens
                 }
-                # TODO: Remove min/max new tokens, leave this up to the plugin
                 total_queries = total_queries + 1
                 yield input_data
                 if total_queries >= max_queries:

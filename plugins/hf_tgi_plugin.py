@@ -42,7 +42,7 @@ class HFTGIPlugin(plugin.Plugin):
         data = {
             "inputs": query["text"],
             "parameters": {
-                "max_new_tokens": query["max_new_tokens"],
+                "max_new_tokens": query["output_tokens"],
                 "temperature": 1.0,  # Just an example
                 "details": False,
             },

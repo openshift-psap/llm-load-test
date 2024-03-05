@@ -61,15 +61,15 @@ class TGISGRPCPlugin(plugin.Plugin):
             params=generation_pb2_grpc.generation__pb2.Parameters(
                 method=generation_pb2_grpc.generation__pb2.GREEDY,
                 stopping=generation_pb2_grpc.generation__pb2.StoppingCriteria(
-                    max_new_tokens=query["max_new_tokens"],
-                    min_new_tokens=query["min_new_tokens"],
+                    max_new_tokens=query["output_tokens"],
+                    min_new_tokens=query["output_tokens"],
                 ),
             ),
         )
         result.start_time = time.time()
         response = generation_service_stub.Generate(request=request)
         result.end_time = time.time()
-        result.output_tokens = query["max_new_tokens"]
+        result.output_tokens = query["output_tokens"]
         result.output_text = response.responses[0].text
 
         result.calculate_results()
@@ -90,8 +90,8 @@ class TGISGRPCPlugin(plugin.Plugin):
             params=generation_pb2_grpc.generation__pb2.Parameters(
                 method=generation_pb2_grpc.generation__pb2.GREEDY,
                 stopping=generation_pb2_grpc.generation__pb2.StoppingCriteria(
-                    max_new_tokens=query["max_new_tokens"],
-                    min_new_tokens=query["min_new_tokens"],
+                    max_new_tokens=query["output_tokens"],
+                    min_new_tokens=query["output_tokens"],
                 ),
                 response=generation_pb2_grpc.generation__pb2.ResponseOptions(
                     generated_tokens=True

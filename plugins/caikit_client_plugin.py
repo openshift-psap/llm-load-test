@@ -67,15 +67,15 @@ class CaikitClientPlugin(plugin.Plugin):
         response = grpc_client.generate_text(
             self.model_name,
             query["text"],
-            min_new_tokens=query["min_new_tokens"],
-            max_new_tokens=query["max_new_tokens"],
+            min_new_tokens=query["output_tokens"],
+            max_new_tokens=query["output_tokens"],
             # timeout=240 #Not supported, may need to contribute to caikit-nlp-client
         )
 
         logger.debug("Response: %s", json.dumps(response))
         result.end_time = time.time()
 
-        result.output_tokens = query["max_new_tokens"]
+        result.output_tokens = query["output_tokens"]
         result.output_text = response
 
         result.calculate_results()
@@ -92,8 +92,8 @@ class CaikitClientPlugin(plugin.Plugin):
         for token in grpc_client.generate_text_stream(
             self.model_name,
             query["text"],
-            min_new_tokens=query["min_new_tokens"],
-            max_new_tokens=query["max_new_tokens"],
+            min_new_tokens=query["output_tokens"],
+            max_new_tokens=query["output_tokens"],
             # timeout=240
         ):
             # First chunk is not a token, just an acknowledgement of connection
@@ -123,14 +123,14 @@ class CaikitClientPlugin(plugin.Plugin):
         response = http_client.generate_text(
             self.model_name,
             query["text"],
-            min_new_tokens=query["min_new_tokens"],
-            max_new_tokens=query["max_new_tokens"],
+            min_new_tokens=query["output_tokens"],
+            max_new_tokens=query["output_tokens"],
             timeout=240,
         )
         logger.debug("Response: %s", json.dumps(response))
         result.end_time = time.time()
 
-        result.output_tokens = query["max_new_tokens"]
+        result.output_tokens = query["output_tokens"]
         result.output_text = response
 
         result.calculate_results()
@@ -146,8 +146,8 @@ class CaikitClientPlugin(plugin.Plugin):
         for token in http_client.generate_text_stream(
             self.model_name,
             query["text"],
-            min_new_tokens=query["min_new_tokens"],
-            max_new_tokens=query["max_new_tokens"],
+            min_new_tokens=query["output_tokens"],
+            max_new_tokens=query["output_tokens"],
             timeout=240,
         ):
             # First chunk is not a token, just an acknowledgement of connection

@@ -3,6 +3,8 @@ import json
 import logging
 from pathlib import Path
 
+import os
+os.environ['OPENBLAS_NUM_THREADS'] = '1'
 import numpy as np
 import pandas as pd
 import yaml

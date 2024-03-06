@@ -59,9 +59,8 @@ def parse_args(args):
 
 
 def parse_config(config):
-    logger = logging.getLogger()
-    logger.info("dataset config: %s", config["dataset"])
-    logger.info("load_options config: %s", config["load_options"])
+    logging.info("dataset config: %s", config["dataset"])
+    logging.info("load_options config: %s", config["load_options"])
 
     load_options = config.get("load_options")
     concurrency = load_options.get("concurrency")

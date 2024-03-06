@@ -14,16 +14,16 @@ def run_main_process(concurrency, duration, dataset, dataset_q, stop_q):
     logging.info("Test from main process")
 
     # Initialize the dataset_queue with 4*concurrency requests
-    for query in dataset.get_next_n_queries(4 * concurrency):
+    for query in dataset.get_next_n_queries(2 * concurrency):
         dataset_q.put(query)
 
     start_time = time.time()
     current_time = start_time
     while (current_time - start_time) < duration:
         # Keep the dataset queue full for duration
-        if dataset_q.qsize() < (2 * concurrency):
-            logging.debug("Adding %d entries to dataset queue", 2 * concurrency)
-            for query in dataset.get_next_n_queries(2 * concurrency):
+        if dataset_q.qsize() < int(0.5*concurrency + 1):
+            logging.info("Adding %d entries to dataset queue", concurrency)
+            for query in dataset.get_next_n_queries(concurrency):
                 dataset_q.put(query)
         time.sleep(0.1)
         current_time = time.time()
@@ -37,7 +37,6 @@ def run_main_process(concurrency, duration, dataset, dataset_q, stop_q):
     while not dataset_q.empty():
         logging.debug("Removing element from dataset_q")
         dataset_q.get()
-    dataset_q.close()
 
     return
 
@@ -201,10 +200,14 @@ def main(args):
 
         utils.write_output(config, results_list)
 
+        while not dataset_q.empty():
+            logging.warning("Removing more elements from dataset_q after gathering results!")
+            dataset_q.get()
+
     except Exception as e:
         logging.error("Unexpected exception in main process: %s", e)
         exit_gracefully(procs, warmup_q, stop_q, logger_q, log_reader_thread, 1)
-        
+
     exit_gracefully(procs, warmup_q, stop_q, logger_q, log_reader_thread, 0)
 
 

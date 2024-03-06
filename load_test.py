@@ -103,13 +103,18 @@ def gather_results(results_pipes):
     return results_list
 
 
-def exit_gracefully(procs, warmup_q, stop_q, logger_q, log_reader_thread, code):
+def exit_gracefully(procs, warmup_q, dataset_q, stop_q, logger_q, log_reader_thread, code):
     # Signal users to stop sending requests
     if warmup_q is not None and warmup_q.empty():
         warmup_q.put(None)
 
     if stop_q.empty():
         stop_q.put(None)
+
+    if dataset_q is not None and not dataset_q.empty():
+        logging.warning("Removing more elements from dataset_q after gathering results!")
+        while not dataset_q.empty():
+            dataset_q.get()
 
     logging.debug("Calling join() on all user processes")
     for proc in procs:
@@ -120,7 +125,7 @@ def exit_gracefully(procs, warmup_q, stop_q, logger_q, log_reader_thread, code):
     logger_q.put(None)
     log_reader_thread.join()
 
-    exit(code)
+    sys.exit(code)
 
 
 def main(args):
@@ -145,7 +150,7 @@ def main(args):
         concurrency, duration, plugin = utils.parse_config(config)
     except Exception as e:
         logging.error("Exiting due to invalid input: %s", e)
-        exit_gracefully(procs, warmup_q, stop_q, logger_q, log_reader_thread, 1)
+        exit_gracefully(procs, warmup_q, dataset_q, stop_q, logger_q, log_reader_thread, 1)
 
     try:
         logging.debug("Creating dataset with configuration %s", config["dataset"])
@@ -189,7 +194,7 @@ def main(args):
                 warmup_timeout=warmup_timeout,
             )
             if not warmup_passed:
-                exit_gracefully(procs, warmup_q, stop_q, logger_q, log_reader_thread, 1)
+                exit_gracefully(procs, warmup_q, dataset_q, stop_q, logger_q, log_reader_thread, 1)
             else:
                 time.sleep(2)
 
@@ -200,15 +205,11 @@ def main(args):
 
         utils.write_output(config, results_list)
 
-        while not dataset_q.empty():
-            logging.warning("Removing more elements from dataset_q after gathering results!")
-            dataset_q.get()
-
     except Exception as e:
         logging.error("Unexpected exception in main process: %s", e)
-        exit_gracefully(procs, warmup_q, stop_q, logger_q, log_reader_thread, 1)
+        exit_gracefully(procs, warmup_q, dataset_q, stop_q, logger_q, log_reader_thread, 1)
 
-    exit_gracefully(procs, warmup_q, stop_q, logger_q, log_reader_thread, 0)
+    exit_gracefully(procs, warmup_q, dataset_q, stop_q, logger_q, log_reader_thread, 0)
 
 
 if __name__ == "__main__":

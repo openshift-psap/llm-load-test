@@ -12,6 +12,7 @@ class RequestResult:
         self.response_time = None
         self.tt_ack = None
         self.ttft = None
+        self.itl = None
         self.tpot = None
         self.stop_reason = None
         self.error_code = None
@@ -36,10 +37,10 @@ class RequestResult:
                 self.ttft = 1000 * (
                     self.first_token_time - self.start_time
                 )  # Time to first token in ms
-                self.tpot = (1000 * (self.end_time - self.first_token_time)) / (
+                self.itl = (1000 * (self.end_time - self.first_token_time)) / (
                     self.output_tokens - 1
-                )  # Time per output token in ms
-            else:
-                self.tpot = (
-                    self.response_time / self.output_tokens
-                )  # Time per output token in ms
+                )  # Inter-token latency in ms. Distinct from TPOT as it excludes the first token time.
+            
+            self.tpot = (
+                self.response_time / self.output_tokens
+            )  # Time per output token in ms

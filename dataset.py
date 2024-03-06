@@ -12,6 +12,7 @@ class Dataset:
                  max_queries=3000,
                  min_input_tokens=0,
                  max_input_tokens=16000,
+                 min_output_tokens=0,
                  max_output_tokens=4096,
                  max_sequence_tokens=32000
                  ):
@@ -23,6 +24,7 @@ class Dataset:
                 max_queries=max_queries,
                 min_input_tokens=min_input_tokens,
                 max_input_tokens=max_input_tokens,
+                min_output_tokens=min_output_tokens,
                 max_output_tokens=max_output_tokens,
                 max_sequence_tokens=max_sequence_tokens,
             )
@@ -42,6 +44,7 @@ def initialize_dataset(
     max_queries=3000,
     min_input_tokens=0,
     max_input_tokens=16000,
+    min_output_tokens=0,
     max_output_tokens=4096,
     max_sequence_tokens=32000
 ):
@@ -67,17 +70,20 @@ def initialize_dataset(
                 prompt = json_object["question"]
                 system_prompt = json_object["system_prompt"]
                 input_id = json_object["index"]
-                sequence_tokens = input_tokens + output_tokens
             except KeyError as e:
                 logging.error(
                     "Unexpected format in dataset file %s, KeyError: %s, \n %s", filename, e, json_object
                 )
                 continue
                 # TODO exit or just skip here?
-            if (output_tokens < max_output_tokens
-                and input_tokens < max_input_tokens
-                and input_tokens > min_input_tokens
-                and sequence_tokens < max_sequence_tokens):
+            token_lengths_ok = filter_token_lengths(input_tokens,
+                         output_tokens,
+                         min_input_tokens,
+                         max_input_tokens,
+                         min_output_tokens, 
+                         max_output_tokens, 
+                         max_sequence_tokens)
+            if (token_lengths_ok):
                 input_data = {
                     "text": prompt_format.format(prompt=prompt, 
                                                   system_prompt=system_prompt),
@@ -89,6 +95,23 @@ def initialize_dataset(
                 yield input_data
                 if total_queries >= max_queries:
                     break
+
+def filter_token_lengths(input_tokens,
+                         output_tokens,
+                         min_input_tokens,
+                         max_input_tokens,
+                         min_output_tokens, 
+                         max_output_tokens, 
+                         max_sequence_tokens):
+    
+    sequence_tokens = input_tokens + output_tokens
+    return (output_tokens > min_output_tokens
+                and output_tokens < max_output_tokens
+                and input_tokens < max_input_tokens
+                and input_tokens > min_input_tokens
+                and sequence_tokens < max_sequence_tokens)
+
+
 
 def get_format_string(model_name):
     known_system_prompts = {

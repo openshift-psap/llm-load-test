@@ -134,11 +134,14 @@ def write_output(config, results_list):
 
     # Ignore errors for summary results
     df = df[df["error_text"].isnull()]
+
     if "ttft" in df:
+        # Streaming
         summary_df = df[
             [
                 "tt_ack",
                 "ttft",
+                "itl",
                 "tpot",
                 "response_time",
                 "output_tokens",
@@ -146,6 +149,7 @@ def write_output(config, results_list):
             ]
         ].mean(numeric_only=True)
     else:
+        # Non-streaming, no TTFT or ITL
         summary_df = df[
             ["tpot", "response_time", "output_tokens", "input_tokens"]
         ].mean(numeric_only=True)
@@ -157,6 +161,9 @@ def write_output(config, results_list):
     if "ttft" in df:
         # Time to first token summary
         output_obj = get_summary(df, output_obj, "ttft")
+
+        # Inter-token latency summary
+        output_obj = get_summary(df, output_obj, "itl")
 
         # Time to ack summary
         output_obj = get_summary(df, output_obj, "tt_ack")

@@ -44,13 +44,15 @@ class TGISGRPCPlugin(plugin.Plugin):
         else:
             self.request_func = self.make_request
 
-    def make_request(self, query: dict, user_id: int):
+    def make_request(self, query: dict, user_id: int, test_end_time: float = 0):
         grpc_channel = grpc.insecure_channel(self.connection)
         generation_service_stub = generation_pb2_grpc.GenerationServiceStub(
             grpc_channel
         )
 
-        result = RequestResult(user_id, query.get("input_id"), query.get("input_tokens"))
+        result = RequestResult(
+            user_id, query.get("input_id"), query.get("input_tokens")
+        )
         request = generation_pb2_grpc.generation__pb2.BatchedGenerationRequest(
             model_id=self.model_name,
             requests=[
@@ -74,9 +76,9 @@ class TGISGRPCPlugin(plugin.Plugin):
             result.error_text = err.details()
             result.error_code = err.code().value[0]
             return result
-            
+
         result.end_time = time.time()
-        
+
         # Only doing one prompt per requests
         response = response.responses[0]
         result.input_tokens = response.input_token_count
@@ -84,20 +86,24 @@ class TGISGRPCPlugin(plugin.Plugin):
         result.output_text = response.text
 
         if response.generated_token_count:
-            result.output_tokens = response.generated_token_count
+            # For non-streaming requests we are keeping output_tokens_before_timeout and output_tokens same.
+            result.output_tokens_before_timeout = (
+                result.output_tokens
+            ) = response.generated_token_count
         else:
             result.output_tokens = query["output_tokens"]
-
 
         result.calculate_results()
         return result
 
-    def make_request_stream(self, query: dict, user_id: int):
+    def make_request_stream(self, query: dict, user_id: int, test_end_time: float):
         grpc_channel = grpc.insecure_channel(self.connection)
         generation_service_stub = generation_pb2_grpc.GenerationServiceStub(
             grpc_channel
         )
-        result = RequestResult(user_id, query.get("input_id"), query.get("input_tokens"))
+        result = RequestResult(
+            user_id, query.get("input_id"), query.get("input_tokens")
+        )
         tokens = []
         request = generation_pb2_grpc.generation__pb2.SingleGenerationRequest(
             model_id=self.model_name,
@@ -128,11 +134,22 @@ class TGISGRPCPlugin(plugin.Plugin):
                 if resp.tokens:
                     if not result.first_token_time and resp.tokens[0].text != "":
                         result.first_token_time = time.time()
+                    # If the current token time is outside the test duration, record the total tokens received before
+                    # the current token.
+                    if (
+                        not result.output_tokens_before_timeout
+                        and time.time() > test_end_time
+                    ):
+                        result.output_tokens_before_timeout = len(tokens)
                     tokens.append(resp.text)
                 if resp.stop_reason:
                     # Last resp
                     result.stop_reason = resp.stop_reason
                     result.output_tokens = resp.generated_token_count
+                    # If test duration timeout didn't happen before the last token is received, total tokens before the
+                    # timeout will be equal to the total tokens in the response.
+                    if not result.output_tokens_before_timeout:
+                        result.output_tokens_before_timeout = result.output_tokens
         except grpc.RpcError as err:
             result.end_time = time.time()
             result.error_text = err.details()

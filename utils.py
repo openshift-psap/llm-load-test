@@ -4,10 +4,12 @@ import logging
 from pathlib import Path
 
 import os
-os.environ['OPENBLAS_NUM_THREADS'] = '1'
+
 import numpy as np
 import pandas as pd
 import yaml
+
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
 
 from plugins import (
     caikit_client_plugin,
@@ -145,28 +147,40 @@ def write_output(config, results_list):
                 "tpot",
                 "response_time",
                 "output_tokens",
+                "output_tokens_before_timeout",
                 "input_tokens",
             ]
         ].mean(numeric_only=True)
     else:
         # Non-streaming, no TTFT or ITL
         summary_df = df[
-            ["tpot", "response_time", "output_tokens", "input_tokens"]
+            [
+                "tpot",
+                "response_time",
+                "output_tokens",
+                "output_tokens_before_timeout",
+                "input_tokens",
+            ]
         ].mean(numeric_only=True)
     print(summary_df)
 
+    # Only consider requests that were completed within the duration of the test for
+    # calculating the summary statistics on tpot, ttft, itl, tt_ack
+    df_test_duration = df[df["output_tokens"] == df["output_tokens_before_timeout"]]
+    req_completed_within_test_duration = len(df_test_duration)
+
     # Time per output token summary
-    output_obj = get_summary(df, output_obj, "tpot")
+    output_obj = get_summary(df_test_duration, output_obj, "tpot")
 
     if "ttft" in df:
         # Time to first token summary
-        output_obj = get_summary(df, output_obj, "ttft")
+        output_obj = get_summary(df_test_duration, output_obj, "ttft")
 
         # Inter-token latency summary
-        output_obj = get_summary(df, output_obj, "itl")
+        output_obj = get_summary(df_test_duration, output_obj, "itl")
 
         # Time to ack summary
-        output_obj = get_summary(df, output_obj, "tt_ack")
+        output_obj = get_summary(df_test_duration, output_obj, "tt_ack")
 
     # response time summary
     output_obj = get_summary(df, output_obj, "response_time")
@@ -174,20 +188,33 @@ def write_output(config, results_list):
     # output tokens summary
     output_obj = get_summary(df, output_obj, "output_tokens")
 
+    # output tokens summary
+    output_obj = get_summary(df, output_obj, "output_tokens_before_timeout")
+
     # input tokens summary
     output_obj = get_summary(df, output_obj, "input_tokens")
 
     ### CALCULATE REAL DURATION NOT TARGET DURATION
     true_end = df["end_time"].max()
     true_start = df["start_time"].min()
-    true_duration = true_end - true_start
-    throughput = df["output_tokens"].sum() / true_duration
+    full_duration = true_end - true_start
+    throughput_full_duration = df["output_tokens"].sum() / full_duration
     print(
-        f"Total throughput across all users: {throughput} tokens / sec, for duration {true_duration}"
+        f"Total true throughput across all users: {throughput_full_duration} tokens / sec, for duration {full_duration}"
     )
 
+    throughput = df["output_tokens_before_timeout"].sum() / duration
+    print(
+        f"Total throughput across all users bounded by the test duration: {throughput} tokens / sec, for duration {duration}"
+    )
+
+    output_obj["summary"]["throughput_full_duration"] = throughput_full_duration
+    output_obj["summary"]["full_duration"] = full_duration
     output_obj["summary"]["throughput"] = throughput
     output_obj["summary"]["total_requests"] = req_count
+    output_obj["summary"][
+        "req_completed_within_test_duration"
+    ] = req_completed_within_test_duration
     output_obj["summary"]["total_failures"] = error_count
     output_obj["summary"]["failure_rate"] = error_count / req_count * 100
 

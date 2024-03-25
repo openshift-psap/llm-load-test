@@ -35,7 +35,7 @@ class HFTGIPlugin(plugin.Plugin):
 
         self.host = args["host"] + endpoint
 
-    def streaming_request_http(self, query, user_id):
+    def streaming_request_http(self, query, user_id, test_end_time: float=0):
 
         headers = {"Content-Type": "application/json"}
 
@@ -112,6 +112,9 @@ class HFTGIPlugin(plugin.Plugin):
         result.end_time = time.time()
         result.output_text = "".join(tokens)
         result.output_tokens = len(tokens)
+
+        # TODO: Calculate correct output tokens before test timeout duration for streaming requests
+        result.output_tokens_before_timeout = result.output_tokens
 
         result.calculate_results()
         return result

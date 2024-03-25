@@ -5,6 +5,7 @@ class RequestResult:
         self.input_tokens = input_tokens
         self.output_text = None
         self.output_tokens = None
+        self.output_tokens_before_timeout = None
         self.start_time = None
         self.ack_time = None
         self.first_token_time = None

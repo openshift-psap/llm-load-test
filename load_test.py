@@ -173,6 +173,7 @@ def main(args):
                 plugin=plugin,
                 logger_q=logger_q,
                 log_level=args.log_level,
+                run_duration=duration,
             )
             proc = mp_ctx.Process(target=user.run_user_process)
             procs.append(proc)

@@ -58,7 +58,7 @@ class CaikitClientPlugin(plugin.Plugin):
         else:
             logger.error("Interface %s not yet implemented", args["interface"])
 
-    def request_grpc(self, query, user_id):
+    def request_grpc(self, query, user_id, test_end_time: float=0):
         grpc_client = GrpcClient(self.host, self.port, verify=False)
 
         result = RequestResult(user_id, query.get("input_id"), query.get("input_tokens"))
@@ -76,12 +76,13 @@ class CaikitClientPlugin(plugin.Plugin):
         result.end_time = time.time()
 
         result.output_tokens = query["output_tokens"]
+        result.output_tokens_before_timeout = result.output_tokens
         result.output_text = response
 
         result.calculate_results()
         return result
 
-    def streaming_request_grpc(self, query, user_id):
+    def streaming_request_grpc(self, query, user_id, test_end_time: float=0):
         grpc_client = GrpcClient(self.host, self.port, verify=False)
 
         result = RequestResult(user_id, query.get("input_id"), query.get("input_tokens"))
@@ -109,6 +110,9 @@ class CaikitClientPlugin(plugin.Plugin):
         result.output_text = "".join(tokens)
         result.output_tokens = len(tokens)
 
+        # TODO: Calculate correct output tokens before test timeout duration for streaming requests
+        result.output_tokens_before_timeout = result.output_tokens
+
         result.calculate_results()
 
         return result
@@ -131,6 +135,7 @@ class CaikitClientPlugin(plugin.Plugin):
         result.end_time = time.time()
 
         result.output_tokens = query["output_tokens"]
+        result.output_tokens_before_timeout = result.output_tokens
         result.output_text = response
 
         result.calculate_results()
@@ -163,6 +168,8 @@ class CaikitClientPlugin(plugin.Plugin):
 
         result.output_text = "".join(tokens)
         result.output_tokens = len(tokens)
+        # TODO: Calculate correct output tokens before test timeout duration for streaming requests
+        result.output_tokens_before_timeout = result.output_tokens
 
         result.calculate_results()
         return result

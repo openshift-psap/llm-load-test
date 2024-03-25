@@ -14,6 +14,7 @@ class User:
         plugin,
         logger_q,
         log_level,
+        run_duration,
     ):
         self.user_id = user_id
         self.plugin = plugin
@@ -26,8 +27,9 @@ class User:
         self.log_level = log_level
         # Must get reset in user process to use the logger created in _init_user_process_logging
         self.logger = logging.getLogger("user")
+        self.run_duration = run_duration
 
-    def make_request(self):
+    def make_request(self, test_end_time=0):
         try:
             query = self.dataset_q.get(timeout=2)
         except queue.Empty:
@@ -39,7 +41,7 @@ class User:
             return None
 
         self.logger.info("User %s making request", self.user_id)
-        result = self.plugin.request_func(query, self.user_id)
+        result = self.plugin.request_func(query, self.user_id, test_end_time)
         return result
 
     def _init_user_process_logging(self):
@@ -68,8 +70,9 @@ class User:
                     self.results_list = []
             self.logger.info("User %s done warmup", self.user_id)
 
+        test_end_time = time.time() + self.run_duration
         while self.stop_q.empty():
-            result = self.make_request()
+            result = self.make_request(test_end_time)
             # make_request will return None after 2 seconds if dataset_q is empty
             # to ensure that users don't get stuck waiting for requests indefinitely
             if result is not None:

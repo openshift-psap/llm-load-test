@@ -15,6 +15,7 @@ from plugins import (
     caikit_client_plugin,
     dummy_plugin,
     hf_tgi_plugin,
+    vllm_plugin,
     text_generation_webui_plugin,
     tgis_grpc_plugin,
 )
@@ -79,6 +80,8 @@ def parse_config(config):
         plugin = tgis_grpc_plugin.TGISGRPCPlugin(config.get("plugin_options"))
     elif plugin_type == "hf_tgi_plugin":
         plugin = hf_tgi_plugin.HFTGIPlugin(config.get("plugin_options"))
+    elif plugin_type == "vllm_plugin":
+        plugin = vllm_plugin.VLLMPlugin(config.get("plugin_options"))
     elif plugin_type == "dummy_plugin":
         plugin = dummy_plugin.DummyPlugin(config.get("plugin_options"))
     else:

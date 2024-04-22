@@ -205,9 +205,9 @@ def main(args):
         results_list = gather_results(results_pipes)
 
         utils.write_output(config, results_list)
-
-    except Exception as e:
-        logging.error("Unexpected exception in main process: %s", e)
+        
+    except Exception:
+        logging.exception("Unexpected exception in main process")
         exit_gracefully(procs, warmup_q, dataset_q, stop_q, logger_q, log_reader_thread, 1)
 
     exit_gracefully(procs, warmup_q, dataset_q, stop_q, logger_q, log_reader_thread, 0)

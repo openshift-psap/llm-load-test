@@ -15,7 +15,7 @@ from plugins import (
     caikit_client_plugin,
     dummy_plugin,
     hf_tgi_plugin,
-    text_generation_webui_plugin,
+    openai_plugin,
     tgis_grpc_plugin,
 )
 
@@ -69,8 +69,8 @@ def parse_config(config):
     duration = load_options.get("duration")
 
     plugin_type = config.get("plugin")
-    if plugin_type == "text_generation_webui_plugin":
-        plugin = text_generation_webui_plugin.TextGenerationWebUIPlugin(
+    if plugin_type == "openai_plugin":
+        plugin = openai_plugin.OpenAIPlugin(
             config.get("plugin_options")
         )
     elif plugin_type == "caikit_client_plugin":

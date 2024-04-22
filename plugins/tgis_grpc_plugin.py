@@ -160,9 +160,11 @@ class TGISGRPCPlugin(plugin.Plugin):
         result.output_text = "".join(tokens)
 
         if not result.input_tokens:
+            logger.warning("Input token count not found in response, using dataset input_tokens")
             result.input_tokens = query.get("input_tokens")
 
         if not result.output_tokens:
+            logger.warning("Output token count not found in response, using dataset expected output tokens")
             result.output_tokens = len(tokens)
 
         result.calculate_results()

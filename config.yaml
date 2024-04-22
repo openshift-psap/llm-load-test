@@ -22,6 +22,7 @@ load_options:
 plugin: "tgis_grpc_plugin"
 plugin_options:
   #interface: "grpc" # Some plugins like caikit-nlp-client should support grpc/http
+  use_tls: False # Use True if querying an SSL grpc endpoint over https
   streaming: True
   model_name: "flan-t5-small"
   host: "route.to.host"

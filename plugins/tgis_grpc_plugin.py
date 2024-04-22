@@ -2,6 +2,8 @@ import logging
 import time
 
 import grpc
+import ssl
+import sys
 
 import generation_pb2_grpc
 from plugins import plugin
@@ -18,6 +20,7 @@ Example plugin config.yaml:
 
 plugin: "tgis_grpc_plugin"
 plugin_options:
+  use_tls: True/False
   streaming: True/False
   model_name: "Llama-2-7b-hf"
   host: "localhost"
@@ -38,14 +41,38 @@ class TGISGRPCPlugin(plugin.Plugin):
         self.model_name = args["model_name"]
         self.host = args["host"]
         self.port = args["port"]
+        self.use_tls = bool(args["use_tls"])
 
         if args["streaming"]:
             self.request_func = self.make_request_stream
         else:
             self.request_func = self.make_request
 
+    def get_server_certificate(self, host: str, port: int) -> str:
+        if sys.version_info >= (3, 10):
+            # ssl.get_server_certificate supports TLS SNI only above 3.10
+            # https://github.com/python/cpython/pull/16820
+            return ssl.get_server_certificate((host, port))
+        context = ssl.SSLContext()
+        with socket.create_connection((host, port)) as sock, context.wrap_socket(
+            sock, server_hostname=host
+        ) as ssock:
+            cert_der = ssock.getpeercert(binary_form=True)
+        assert cert_der
+        return ssl.DER_cert_to_PEM_cert(cert_der)
+
+    def channel_credentials(self):
+        cert = self.get_server_certificate(self.host, self.port).encode()
+        credentials_kwargs: dict[str, bytes] = {}
+        credentials_kwargs.update(root_certificates=cert)
+        return grpc.ssl_channel_credentials(**credentials_kwargs)
+
     def make_request(self, query: dict, user_id: int, test_end_time: float = 0):
-        grpc_channel = grpc.insecure_channel(self.connection)
+        if self.use_tls:
+            grpc_channel = grpc.secure_channel(self.connection, self.channel_credentials())
+        else:
+            grpc_channel = grpc.insecure_channel(self.connection)
+
         generation_service_stub = generation_pb2_grpc.GenerationServiceStub(
             grpc_channel
         )
@@ -97,7 +124,11 @@ class TGISGRPCPlugin(plugin.Plugin):
         return result
 
     def make_request_stream(self, query: dict, user_id: int, test_end_time: float):
-        grpc_channel = grpc.insecure_channel(self.connection)
+        if self.use_tls:
+            grpc_channel = grpc.secure_channel(self.connection, self.channel_credentials())
+        else:
+            grpc_channel = grpc.insecure_channel(self.connection)
+
         generation_service_stub = generation_pb2_grpc.GenerationServiceStub(
             grpc_channel
         )

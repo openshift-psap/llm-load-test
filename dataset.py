@@ -29,6 +29,8 @@ class Dataset:
                 max_sequence_tokens=max_sequence_tokens,
             )
         ]
+        if len(self.dataset_list) < 4:
+            logging.warning("Total dataset is %s elements, check filters!", len(self.dataset_list))
         self.index = 0
 
     def get_next_n_queries(self, n):

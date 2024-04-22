@@ -50,9 +50,9 @@ class HFTGIPlugin(plugin.Plugin):
 
         result = RequestResult(user_id, query.get("input_id"), query.get("input_tokens"))
 
-        tokens = []
-        result.start_time = time.time()
+        tokens = []        
         response = None
+        result.start_time = time.time()
         try:
             response = requests.post(
                 self.host, headers=headers, json=data, verify=False, stream=True
@@ -100,8 +100,6 @@ class HFTGIPlugin(plugin.Plugin):
             # First chunk is not a token, just an acknowledgement of connection
             if not result.ack_time:
                 result.ack_time = time.time()
-                tokens.append(token)
-                continue
 
             # First non empty chunk is the first token
             if not result.first_token_time and token != "":

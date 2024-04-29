@@ -1,4 +1,10 @@
 [flake8]
-per-file-ignores =
-    # line too long
-    *py: E501,
+extend-ignore =
+    H101,
+    E501
+exclude =
+    .git,
+    .github,
+    __pycache__,
+    generation_pb2.py,
+    generation_pb2_grpc.py

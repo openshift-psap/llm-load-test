@@ -1,21 +1,19 @@
-# pylint: disable=too-few-public-methods,empty-docstring,too-many-arguments
-
-"""
-"""
+"""Main s3 storage class."""
 
 import logging
 
 import boto3
+
 import botocore.exceptions
 
 
 class S3Storage:
-    """ """
+    """Class definition."""
 
     def __init__(
         self, region, bucket, access_key=None, secret_key=None, s3_endpoint=None
     ):
-        """ """
+        """Init class object."""
         try:
             session = boto3.Session(profile_name="default")
             self.region = region
@@ -30,7 +28,7 @@ class S3Storage:
         self.bucket = bucket
 
     def list_buckets(self):
-        """ """
+        """List buckets."""
         bucket_list = []
         try:
             response = self.s3_client.list_buckets()
@@ -45,7 +43,7 @@ class S3Storage:
         return bucket_list
 
     def upload_object_with_metadata(self, object_name, body, metadata):
-        """ """
+        """Upload object with metadata."""
         try:
             # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.put_object
             self.s3_client.put_object(
@@ -59,7 +57,7 @@ class S3Storage:
             return
 
     def upload_file_with_metadata(self, filename, object_name, metadata):
-        """ """
+        """Upload file with metadata."""
         try:
             with open(filename, encoding="utf-8") as file:
                 contents = file.read()
@@ -75,7 +73,7 @@ class S3Storage:
             return
 
     def list_objects_paginated(self, prefix, delimiter):
-        """ """
+        """Get the objects."""
         obj_list = []
         try:
             paginator = self.s3_client.get_paginator("list_objects")
@@ -96,7 +94,7 @@ class S3Storage:
         return obj_list
 
     def retrieve_all_obj_metadata(self):
-        """ """
+        """Get all the objects metadata."""
         metadata = {}
         paginator = self.s3_client.get_paginator("list_objects_v2")
         page_iterator = paginator.paginate(Bucket=self.bucket)
@@ -111,7 +109,7 @@ class S3Storage:
         return metadata
 
     def retrieve_object_body(self, key):
-        """ """
+        """Get the object body."""
         try:
             res = self.s3_client.get_object(Bucket=self.bucket, Key=key)
             content = res.get("Body").read().decode("utf-8")
@@ -122,7 +120,7 @@ class S3Storage:
         return content
 
     def retrieve_object_metadata(self, key):
-        """ """
+        """Retrieve the objects metadata."""
         try:
             metadata = self.s3_client.head_object(Bucket=self.bucket, Key=key)
         except botocore.exceptions.ClientError as err:

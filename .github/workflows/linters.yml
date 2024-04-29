@@ -1,0 +1,41 @@
+---
+name: linters
+on:
+  pull_request:
+  push:
+  # Run the functional tests every 8 hours.
+  # This will help to identify faster if
+  # there is a CI failure related to a
+  # change in any dependency.
+  schedule:
+    - cron: '0 */8 * * *'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 4
+      matrix:
+        python-version: [3.9]
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Run a commitlint
+        uses: wagoid/commitlint-github-action@v2
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install jq libyaml-dev git build-essential findutils -y
+          sudo python3 -m pip install -r test-requirements.txt
+          sudo python3 -m pip install --upgrade --ignore-installed PyYAML
+          sudo python3 -m pip install --upgrade pip
+          sudo python3 -m pip install --upgrade virtualenv
+          sudo python3 -m pip install --upgrade setuptools
+      - name: Run Linters
+        run: |
+          tox -e linters

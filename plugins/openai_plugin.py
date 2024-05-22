@@ -17,9 +17,10 @@ plugin_options:
   streaming: True/False
   host: "http://127.0.0.1:5000/v1/completions"
   model_name: "/mnt/model/"
+  endpoint: "/v1/completions" # "/v1/chat/completions"
 """
 
-required_args = ["host", "streaming"]
+required_args = ["host", "streaming", "endpoint"]
 
 logger = logging.getLogger("user")
 
@@ -39,7 +40,8 @@ class OpenAIPlugin(plugin.Plugin):
         else:
             self.request_func = self.request_http
 
-        self.host = args.get("host") + "/v1/completions"
+        self.host = args.get("host") + args.get("endpoint")
+
         self.model_name = args.get("model_name")
 
     def request_http(self, query: dict, user_id: int, test_end_time: float = 0):
@@ -50,15 +52,23 @@ class OpenAIPlugin(plugin.Plugin):
 
         headers = {"Content-Type": "application/json"}
 
-        data = {
-            "prompt": query["text"],
-            "max_tokens": query["output_tokens"],
-            "min_tokens": query["output_tokens"],
-            "temperature": 1.0,
-            "top_p": 0.9,
-            "seed": 10,
-        }
-
+        if "/v1/chat/completions" in self.host:
+            data = {
+                "messages": [
+                    {"role": "user", "content": query["text"]}
+                ],
+                "max_tokens": query["output_tokens"],
+                "temperature": 0.1,
+            }
+        else:
+            data = {
+                "prompt": query["text"],
+                "max_tokens": query["output_tokens"],
+                "min_tokens": query["output_tokens"],
+                "temperature": 1.0,
+                "top_p": 0.9,
+                "seed": 10,
+            }
         if self.model_name is not None:
             data["model"] = self.model_name
 
@@ -89,7 +99,11 @@ class OpenAIPlugin(plugin.Plugin):
             message = json.loads(response.text)
             error = message.get("error")
             if error is None:
-                result.output_text = message["choices"][0]["text"]
+                if "/v1/chat/completions" in self.host:
+                    result.output_text = message["choices"][0]['delta']['content']
+                else:
+                    result.output_text = message["choices"][0]["text"]
+
                 result.output_tokens = message["usage"]["completion_tokens"]
                 result.input_tokens = message["usage"]["prompt_tokens"]
                 result.stop_reason =  message["choices"][0]["finish_reason"]
@@ -114,15 +128,25 @@ class OpenAIPlugin(plugin.Plugin):
     def streaming_request_http(self, query: dict, user_id: int, test_end_time: float):
         headers = {"Content-Type": "application/json"}
 
-        data = {
-            "prompt": query["text"],
-            "max_tokens": query["output_tokens"],
-            "min_tokens": query["output_tokens"],
-            "temperature": 1.0,
-            "top_p": 0.9,
-            "seed": 10,
-            "stream": True,
-        }
+        if "/v1/chat/completions" in self.host:
+            data = {
+                "messages": [
+                    {"role": "user", "content": query["text"]}
+                ],
+                "max_tokens": query["output_tokens"],
+                "temperature": 0.1,
+                "stream": True,
+            }
+        else:
+            data = {
+                "prompt": query["text"],
+                "max_tokens": query["output_tokens"],
+                "min_tokens": query["output_tokens"],
+                "temperature": 0.1,
+                "top_p": 0.9,
+                "seed": 10,
+            }
+
         # some runtimes only serve one model, won't check this.
         if self.model_name is not None:
             data["model"] = self.model_name
@@ -161,9 +185,14 @@ class OpenAIPlugin(plugin.Plugin):
                 try:
                     message = json.loads(data)
                     logger.debug("Message: %s", message)
+                    if "/v1/chat/completions" in self.host and not message["choices"][0]['delta'].get('content'):
+                        message["choices"][0]['delta']['content']=""
                     error = message.get("error")
                     if error is None:
-                        token = message["choices"][0]["text"]
+                        if "/v1/chat/completions" in self.host:
+                            token = message["choices"][0]['delta']['content']
+                        else:
+                            token = message["choices"][0]["text"]
                         logger.debug("Token: %s", token)
                     else:
                         result.error_code = response.status_code

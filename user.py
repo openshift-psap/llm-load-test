@@ -1,9 +1,13 @@
+"""User definition."""
+
 import logging
 import queue
 import time
 
 
 class User:
+    """Define a user."""
+
     def __init__(
         self,
         user_id,
@@ -16,6 +20,7 @@ class User:
         log_level,
         run_duration,
     ):
+        """Initialize object."""
         self.user_id = user_id
         self.plugin = plugin
         self.dataset_q = dataset_q
@@ -30,6 +35,7 @@ class User:
         self.run_duration = run_duration
 
     def make_request(self, test_end_time=0):
+        """Make a request."""
         try:
             query = self.dataset_q.get(timeout=2)
         except queue.Empty:
@@ -45,6 +51,7 @@ class User:
         return result
 
     def _init_user_process_logging(self):
+        """Init logging."""
         qh = logging.handlers.QueueHandler(self.logger_q)
         root = logging.getLogger()
         root.setLevel(self.log_level)
@@ -55,6 +62,7 @@ class User:
         return logging.getLogger("user")
 
     def run_user_process(self):
+        """Run a process."""
         self._init_user_process_logging()
 
         if self.warmup_q is not None:

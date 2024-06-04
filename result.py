@@ -1,5 +1,11 @@
+"""Main result class."""
+
+
 class RequestResult:
+    """Request result class."""
+
     def __init__(self, user_id, input_id, input_tokens):
+        """Init method."""
         self.user_id = user_id
         self.input_id = input_id
         self.input_tokens = input_tokens
@@ -20,12 +26,14 @@ class RequestResult:
         self.error_text = None
 
     def asdict(self):
+        """Return a dictionary."""
         # Maybe later we will want to only include some fields in the results,
         # but for now, this just puts all object fields in a dict.
         return vars(self)
 
     # Fill in calculated fields like response_time, tt_ack, ttft, tpot.
     def calculate_results(self):
+        """Calculate the results."""
         # Only calculate results if response is error-free.
         if self.error_code is None and self.error_text is None:
             # response_time in seconds
@@ -41,7 +49,7 @@ class RequestResult:
                 self.itl = (1000 * (self.end_time - self.first_token_time)) / (
                     self.output_tokens - 1
                 )  # Inter-token latency in ms. Distinct from TPOT as it excludes the first token time.
-            
+
             self.tpot = (
                 self.response_time / self.output_tokens
             )  # Time per output token in ms

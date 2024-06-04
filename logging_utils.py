@@ -1,8 +1,11 @@
+"""Main logging class."""
+
 import logging
 import threading
 
 
 def logger_thread(q):
+    """Get the logger thread."""
     while True:
         record = q.get()
         if record is None:
@@ -12,6 +15,7 @@ def logger_thread(q):
 
 
 def init_logging(log_level, logger_q):
+    """Initialize the logger."""
     logging_format = (
         "%(asctime)s %(levelname)-8s %(name)s %(processName)-10s %(message)s"
     )

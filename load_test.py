@@ -1,16 +1,21 @@
+"""Main llm-load-test CLI entrypoint."""
+
 import logging
 import logging.handlers
 import multiprocessing as mp
 import sys
 import time
+from user import User
+
+from dataset import Dataset
 
 import logging_utils
+
 import utils
-from dataset import Dataset
-from user import User
 
 
 def run_main_process(concurrency, duration, dataset, dataset_q, stop_q):
+    """Run the main process."""
     logging.info("Test from main process")
 
     # Initialize the dataset_queue with 4*concurrency requests
@@ -49,7 +54,7 @@ def run_warmup(
     warmup_reqs=10,
     warmup_timeout=60,
 ):
-
+    """Run the warmup tasks."""
     # Put requests in warmup queue
     for query in dataset.get_next_n_queries(warmup_reqs):
         dataset_q.put(query)
@@ -94,6 +99,7 @@ def run_warmup(
 
 
 def gather_results(results_pipes):
+    """Get the results."""
     # Receive all results from each processes results_pipe
     logging.debug("Receiving results from user processes")
     results_list = []
@@ -104,6 +110,7 @@ def gather_results(results_pipes):
 
 
 def exit_gracefully(procs, warmup_q, dataset_q, stop_q, logger_q, log_reader_thread, code):
+    """Exit gracefully."""
     # Signal users to stop sending requests
     if warmup_q is not None and warmup_q.empty():
         warmup_q.put(None)
@@ -129,20 +136,21 @@ def exit_gracefully(procs, warmup_q, dataset_q, stop_q, logger_q, log_reader_thr
 
 
 def main(args):
+    """Load test CLI entrypoint."""
     args = utils.parse_args(args)
 
     mp_ctx = mp.get_context("spawn")
     logger_q = mp_ctx.Queue()
     log_reader_thread = logging_utils.init_logging(args.log_level, logger_q)
 
-    ## Create processes and their Users
+    # Create processes and their Users
     stop_q = mp_ctx.Queue(1)
     dataset_q = mp_ctx.Queue()
     warmup_q = mp_ctx.Queue(1)
     procs = []
     results_pipes = []
 
-    #### Parse config
+    # Parse config
     logging.debug("Parsing YAML config file %s", args.config)
     concurrency, duration, plugin = 0, 0, None
     try:
@@ -205,7 +213,7 @@ def main(args):
         results_list = gather_results(results_pipes)
 
         utils.write_output(config, results_list)
-        
+
     except Exception:
         logging.exception("Unexpected exception in main process")
         exit_gracefully(procs, warmup_q, dataset_q, stop_q, logger_q, log_reader_thread, 1)

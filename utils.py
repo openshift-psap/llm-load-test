@@ -1,15 +1,14 @@
+"""Utils functions for various tasks."""
+
 import argparse
 import json
 import logging
+import os
 from pathlib import Path
 
-import os
-
 import numpy as np
-import pandas as pd
-import yaml
 
-os.environ["OPENBLAS_NUM_THREADS"] = "1"
+import pandas as pd
 
 from plugins import (
     caikit_client_plugin,
@@ -19,9 +18,16 @@ from plugins import (
     tgis_grpc_plugin,
 )
 
+import yaml
+
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+
 
 class customEncoder(json.JSONEncoder):
+    """Return an encoder."""
+
     def default(self, obj):
+        """Get default object."""
         if isinstance(obj, np.int64):
             return int(obj)
         if isinstance(obj, np.floating):
@@ -32,6 +38,7 @@ class customEncoder(json.JSONEncoder):
 
 
 def parse_args(args):
+    """Parse the CLI parameters."""
     log_levels = {
         "warn": logging.WARNING,
         "warning": logging.WARNING,
@@ -61,6 +68,7 @@ def parse_args(args):
 
 
 def parse_config(config):
+    """Parse the config file."""
     logging.info("dataset config: %s", config["dataset"])
     logging.info("load_options config: %s", config["load_options"])
 
@@ -89,6 +97,7 @@ def parse_config(config):
 
 
 def yaml_load(file):
+    """Load a yaml file."""
     if not Path(file).is_file():
         raise FileNotFoundError(file)
     with open(file, "r", encoding="utf-8") as stream:
@@ -99,6 +108,7 @@ def yaml_load(file):
 
 
 def write_output(config, results_list):
+    """Write the results."""
     output_options = config.get("output")
     output_path = output_options.get("dir")
 
@@ -194,7 +204,7 @@ def write_output(config, results_list):
     # input tokens summary
     output_obj = get_summary(df, output_obj, "input_tokens")
 
-    ### CALCULATE REAL DURATION NOT TARGET DURATION
+    # CALCULATE REAL DURATION NOT TARGET DURATION
     true_end = df["end_time"].max()
     true_start = df["start_time"].min()
     full_duration = true_end - true_start
@@ -224,6 +234,7 @@ def write_output(config, results_list):
 
 
 def get_summary(df: pd.DataFrame, output_obj: dict, summary_key: str):
+    """Get the summary."""
     output_obj["summary"][summary_key] = {}
     output_obj["summary"][summary_key]["min"] = df[summary_key].min()
     output_obj["summary"][summary_key]["max"] = df[summary_key].max()

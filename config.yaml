@@ -19,13 +19,13 @@ load_options:
   type: constant #Future options: loadgen, stair-step
   concurrency: 2
   duration: 20 # In seconds. Maybe in future support "100s" "10m", etc...
-plugin: "tgis_grpc_plugin"
+plugin: "azure_maap_plugin"
 plugin_options:
+  url: "https://phi-3-mini-128k-instruct-7.eastus2.inference.ml.azure.com/score"
+  key: ""
+  deployment: "phi-3-mini-128k-instruct-7"
+
   #interface: "grpc" # Some plugins like caikit-nlp-client should support grpc/http
-  use_tls: False # Use True if querying an SSL grpc endpoint over https
-  streaming: True
-  model_name: "flan-t5-small"
-  host: "route.to.host"
-  port: 8033
+  
 extra_metadata:
   replicas: 1

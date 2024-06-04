@@ -5,6 +5,7 @@ from pathlib import Path
 
 import os
 
+
 import numpy as np
 import pandas as pd
 import yaml
@@ -17,6 +18,7 @@ from plugins import (
     hf_tgi_plugin,
     openai_plugin,
     tgis_grpc_plugin,
+    azure_maap_plugin
 )
 
 
@@ -29,6 +31,7 @@ class customEncoder(json.JSONEncoder):
         if isinstance(obj, np.ndarray):
             return obj.tolist()
         return super(customEncoder, self).default(obj)
+
 
 
 def parse_args(args):
@@ -81,6 +84,8 @@ def parse_config(config):
         plugin = hf_tgi_plugin.HFTGIPlugin(config.get("plugin_options"))
     elif plugin_type == "dummy_plugin":
         plugin = dummy_plugin.DummyPlugin(config.get("plugin_options"))
+    elif plugin_type == "azure_maap_plugin":
+         plugin = azure_maap_plugin.AzureMaapPlugin(config.get("plugin_options"))
     else:
         logging.error("Unknown plugin type %s", plugin_type)
         raise ValueError(f"Unknown plugin type {plugin_type}")

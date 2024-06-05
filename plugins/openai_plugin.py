@@ -128,24 +128,18 @@ class OpenAIPlugin(plugin.Plugin):
     def streaming_request_http(self, query: dict, user_id: int, test_end_time: float):
         headers = {"Content-Type": "application/json"}
 
-        if "/v1/chat/completions" in self.host:
-            data = {
-                "messages": [
-                    {"role": "user", "content": query["text"]}
-                ],
+        data = {
                 "max_tokens": query["output_tokens"],
                 "temperature": 0.1,
                 "stream": True,
             }
+        if "/v1/chat/completions" in self.host:
+            data["messages"] = [
+                    {"role": "user", "content": query["text"]}
+                ]
         else:
-            data = {
-                "prompt": query["text"],
-                "max_tokens": query["output_tokens"],
-                "min_tokens": query["output_tokens"],
-                "temperature": 0.1,
-                "top_p": 0.9,
-                "seed": 10,
-            }
+            data["prompt"] = query["text"],
+            data["min_tokens"] = query["output_tokens"]
 
         # some runtimes only serve one model, won't check this.
         if self.model_name is not None:

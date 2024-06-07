@@ -224,14 +224,15 @@ class OpenAIPlugin(plugin.Plugin):
 
                 # Last token comes with finish_reason set.
                 if message.get("choices", [])[0].get("finish_reason", None):
-                    result.output_tokens = message["usage"]["completion_tokens"]
-                    result.input_tokens = message["usage"]["prompt_tokens"]
-                    result.stop_reason =  message["choices"][0]["finish_reason"]
+                    if message.get("usage"):
+                        result.output_tokens = message["usage"]["completion_tokens"]
+                        result.input_tokens = message["usage"]["prompt_tokens"]
+                        # If test duration timeout didn't happen before the last token is received, 
+                        # total tokens before the timeout will be equal to the total tokens in the response.
+                        if not result.output_tokens_before_timeout:
+                            result.output_tokens_before_timeout = result.output_tokens
 
-                    # If test duration timeout didn't happen before the last token is received, 
-                    # total tokens before the timeout will be equal to the total tokens in the response.
-                    if not result.output_tokens_before_timeout:
-                        result.output_tokens_before_timeout = result.output_tokens
+                    result.stop_reason =  message["choices"][0]["finish_reason"]
 
             except KeyError:
                 logging.exception("KeyError, unexpected response format in line: %s", line)

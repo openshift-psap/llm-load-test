@@ -223,12 +223,12 @@ class OpenAIPlugin(plugin.Plugin):
                 tokens.append(token)
 
                 # Last token comes with finish_reason set.
-                if message.get("choices", [])[0].get("finish_reason", None):
+                if message.get("choices", [{}])[0].get("finish_reason", None):
                     if message.get("usage"):
                         result.output_tokens = message["usage"]["completion_tokens"]
                         result.input_tokens = message["usage"]["prompt_tokens"]
 
-                    result.stop_reason =  message["choices"][0]["finish_reason"]
+                    result.stop_reason = message.get("choices", [{}])[0].get("finish_reason", None)
 
             except KeyError:
                 logging.exception("KeyError, unexpected response format in line: %s", line)

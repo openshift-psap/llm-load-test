@@ -2,7 +2,7 @@ output:
   format: "json" # Maybe add option for pickle?
   dir: "./output/"
   file: "output.json"
-warmup: True
+warmup: False
 warmup_options:
   requests: 11
   timeout_sec: 20
@@ -19,11 +19,12 @@ load_options:
   type: constant #Future options: loadgen, stair-step
   concurrency: 2
   duration: 20 # In seconds. Maybe in future support "100s" "10m", etc...
-plugin: "azure_maap_plugin"
+plugin: "azure_openai_plugin"
 plugin_options:
-  url: "https://phi-3-mini-128k-instruct-7.eastus2.inference.ml.azure.com/score"
-  key: ""
-  deployment: "phi-3-mini-128k-instruct-7"
+  url: "<YOUR ENDPOINT>"
+  key: "<YOUR KEY>"
+  deployment: "<YOUR DEPLOYMENT NAME>"
+  api_version: "2024-02-01"
 
   #interface: "grpc" # Some plugins like caikit-nlp-client should support grpc/http
   

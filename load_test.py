@@ -199,7 +199,7 @@ def main(args):
             else:
                 time.sleep(2)
 
-        logging.debug("Running main process")
+        logging.info("Running main process...")
         run_main_process(concurrency, duration, dataset, dataset_q, stop_q)
 
         results_list = gather_results(results_pipes)

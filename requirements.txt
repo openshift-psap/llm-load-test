@@ -7,3 +7,4 @@ pandas
 pyyaml
 pylint
 tiktoken
+openai

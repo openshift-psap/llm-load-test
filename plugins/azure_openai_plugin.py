@@ -15,13 +15,14 @@ Example plugin config.yaml:
 
 plugin: "azure_openai_plugin"
 plugin_options:
+    streaming: True/False
     url: "<YOUR ENDPOINT>"
     key: "<YOUR KEY>"
     deployment: "<YOUR DEPLOYMENT NAME>"
     api_version: "2024-02-01"
 """
 
-required_args = ["url", "key", "deployment"]
+required_args = ["url", "key", "deployment", "streaming"]
 
 logger = logging.getLogger("user")
 
@@ -42,6 +43,7 @@ class AzureOpenAIPlugin(plugin.Plugin):
         self.host = f"{args.get('url')}"
         self.key = args.get("key")
         self.model_name = args.get("deployment")
+        self.stream = args.get("streaming")
         if not args.get("api_version"):
             self.version = "2024-02-01"
         else:
@@ -70,7 +72,8 @@ class AzureOpenAIPlugin(plugin.Plugin):
                                                  messages=messages, 
                                                  max_tokens=query.get("output_tokens"), 
                                                  temperature=0.1, 
-                                                 top_p=0.6
+                                                 top_p=0.6,
+                                                 stream=self.stream
                                                  )
 
         except requests.exceptions.ConnectionError as err:
@@ -88,29 +91,68 @@ class AzureOpenAIPlugin(plugin.Plugin):
             logger.exception("HTTP error")
             return result
 
-        result.end_time = time.time()
+        tokens = []
+        result.start_time = time.time()
 
-        logger.debug(f"Response: {response}")
+        if self.stream:
 
-        try:
-            message = response.choices[0].message.content
-            if "output" in message:
-                message= message["output"]
+            logger.debug(f"Response: {response}")
+            for chunk in response:
+                token = chunk.choices[0].delta.content
+                logger.debug(f"Token: {token}")
+                try:
+                    # First chunk may not be a token, just a connection ack
+                    if token == '' or chunk.choices[0].delta.role in ['assistant', 'system']:
+                        result.ack_time = time.time()
+                    
+                    # First non empty token is the first token
+                    elif not result.first_token_time:
+                        result.first_token_time = time.time()
+                        tokens.append(token)
+
+                    # If the current token time is outside the test duration, record the total tokens received before
+                    # the current token.
+                    elif (not result.output_tokens_before_timeout and time.time() > test_end_time):
+                        result.output_tokens_before_timeout = len(tokens)
+                        tokens.append(token)
+
+                    else:
+                        tokens.append(token)
+                        
+                    logger.debug(f"Tokens: {tokens}")
+
+                except KeyError:
+                    logging.exception("KeyError, unexpected response format in chunk: %s", chunk)
+
+            # Full response received, return
+            result.end_time = time.time()
+            # result.output_text = "".join(tokens)
+            result.input_tokens = query.get("input_tokens")
+            result.output_tokens = len(tokens)
+            result.calculate_results()
+
+        else:
+            result.end_time = time.time()
             
-            result.output_text = str(message)
-            result.output_tokens = self.num_tokens_from_string(result.output_text)
-            result.input_tokens = self.num_tokens_from_string(query.get("text"))
-            result.stop_reason =  ""
-        except json.JSONDecodeError:
-            logger.exception("Response could not be json decoded: %s", response.text)
-            result.error_text = f"Response could not be json decoded {response.text}"
-        except KeyError:
-            logger.exception("KeyError, unexpected response format: %s", response.text)
-            result.error_text = f"KeyError, unexpected response format: {response.text}"
-
-        # For non-streaming requests we are keeping output_tokens_before_timeout and output_tokens same.
-        result.output_tokens_before_timeout = result.output_tokens
-        result.calculate_results()
+            try:
+                message = response.choices[0].message.content
+                if "output" in message:
+                    message= message["output"]
+                
+                result.output_text = str(message)
+                result.output_tokens = self.num_tokens_from_string(result.output_text)
+                result.input_tokens = self.num_tokens_from_string(query.get("text"))
+                result.stop_reason =  ""
+            except json.JSONDecodeError:
+                logger.exception("Response could not be json decoded: %s", response.text)
+                result.error_text = f"Response could not be json decoded {response.text}"
+            except KeyError:
+                logger.exception("KeyError, unexpected response format: %s", response.text)
+                result.error_text = f"KeyError, unexpected response format: {response.text}"
+        
+            # For non-streaming requests we are keeping output_tokens_before_timeout and output_tokens same.
+            result.output_tokens_before_timeout = result.output_tokens
+            result.calculate_results()
 
         return result
 

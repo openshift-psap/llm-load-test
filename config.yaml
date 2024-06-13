@@ -21,9 +21,10 @@ load_options:
   duration: 20 # In seconds. Maybe in future support "100s" "10m", etc...
 plugin: "azure_openai_plugin"
 plugin_options:
-  url: "<YOUR ENDPOINT>"
-  key: "<YOUR KEY>"
-  deployment: "<YOUR DEPLOYMENT NAME>"
+  streaming: True
+  url: "https://lllmops-aoai-sweden-c.openai.azure.com/"
+  key: "f94b89f443624a77a359cfa1b1f75afb"
+  deployment: "gpt4-deployment"
   api_version: "2024-02-01"
 
   #interface: "grpc" # Some plugins like caikit-nlp-client should support grpc/http

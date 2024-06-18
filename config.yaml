@@ -5,7 +5,7 @@ output:
 warmup: False
 warmup_options:
   requests: 11
-  timeout_sec: 20
+  timeout_sec: 900
 storage: # TODO
   type: local
 dataset:
@@ -19,15 +19,33 @@ load_options:
   type: constant #Future options: loadgen, stair-step
   concurrency: 2
   duration: 20 # In seconds. Maybe in future support "100s" "10m", etc...
+
+
+# Azure MaaP (Deploy with your own provisioned compute)
+#plugin: "azure_maap_plugin"
+#plugin_options:
+#  url: "https://phi-3-mini-128k-instruct-7.eastus2.inference.ml.azure.com/score"
+#  key: ""
+#  deployment: "phi-3-mini-128k-instruct-7"
+
+
+# Azure Serverless (MaaS)
+#plugin: "azure_serverless_plugin"
+#plugin_options:
+#  streaming: True
+#  url: "https://<endpoint URI>/v1/chat/completions"  #dont forget to include /v1/chat/completions 
+#  model_name: "Phi-3-medium-128k-instruct"
+#  key: "<key>"
+
+# Azure-OpenAI 
 plugin: "azure_openai_plugin"
 plugin_options:
   streaming: True
-  url: "https://lllmops-aoai-sweden-c.openai.azure.com/"
-  key: "f94b89f443624a77a359cfa1b1f75afb"
-  deployment: "gpt4-deployment"
-  api_version: "2024-02-01"
+  url: "https://aoai.openai.azure.com/"
+  key: "<key>"
+  deployment: "gpt-35-turbo"
+  api_version: "2023-03-15-preview"
 
-  #interface: "grpc" # Some plugins like caikit-nlp-client should support grpc/http
-  
+
 extra_metadata:
   replicas: 1

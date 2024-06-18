@@ -96,30 +96,32 @@ class AzureOpenAIPlugin(plugin.Plugin):
 
         if self.stream:
 
-            logger.debug(f"Response: {response}")
+            #logger.debug(f"Response: {response}")
             for chunk in response:
                 token = chunk.choices[0].delta.content
-                logger.debug(f"Token: {token}")
+                #logger.debug(f"Token: {token}")
                 try:
                     # First chunk may not be a token, just a connection ack
-                    if token == '' or chunk.choices[0].delta.role in ['assistant', 'system']:
+                    if not result.ack_time:
                         result.ack_time = time.time()
-                    
+
                     # First non empty token is the first token
-                    elif not result.first_token_time:
+                    if not result.first_token_time and token != "":
                         result.first_token_time = time.time()
-                        tokens.append(token)
 
                     # If the current token time is outside the test duration, record the total tokens received before
                     # the current token.
-                    elif (not result.output_tokens_before_timeout and time.time() > test_end_time):
+                    if (
+                        not result.output_tokens_before_timeout
+                        and time.time() > test_end_time
+                    ):
                         result.output_tokens_before_timeout = len(tokens)
-                        tokens.append(token)
 
-                    else:
-                        tokens.append(token)
+
+                    
+                    tokens.append(token)
                         
-                    logger.debug(f"Tokens: {tokens}")
+                    #logger.debug(f"Tokens: {tokens}")
 
                 except KeyError:
                     logging.exception("KeyError, unexpected response format in chunk: %s", chunk)

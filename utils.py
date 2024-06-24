@@ -137,8 +137,8 @@ def write_output(config, results_list):
     df = pd.DataFrame(results_list)
     df.head()
 
-    with pd.option_context("display.max_rows", None, "display.max_columns", None):
-        print(df)
+    #with pd.option_context("display.max_rows", None, "display.max_columns", None):
+    #    print(df)
     print(f"\n---\nFull results in {outfile}. Results summary:")
 
     error_count = len(df[~df["error_text"].isnull()])

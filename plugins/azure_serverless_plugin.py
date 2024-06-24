@@ -225,6 +225,8 @@ class AzureServerlessPlugin(plugin.Plugin):
                 if not result.first_token_time and token != "":
                     result.first_token_time = time.time()
 
+                tokens.append(token)
+                
                 # If the current token time is outside the test duration, record the total tokens received before
                 # the current token.
                 if (
@@ -232,7 +234,7 @@ class AzureServerlessPlugin(plugin.Plugin):
                 ):
                     result.output_tokens_before_timeout = len(tokens)
 
-                tokens.append(token)
+                
 
                 # Last token comes with finish_reason set.
                 if message.get("choices", [])[0].get("finish_reason", None):

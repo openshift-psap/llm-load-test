@@ -109,7 +109,8 @@ class AzureOpenAIPlugin(plugin.Plugin):
                     if not result.first_token_time and token != "":
                         result.first_token_time = time.time()
 
-                    # If the current token time is outside the test duration, record the total tokens received before
+                    # If the current token time is outside the test duration, record the total tokens received before               
+                    tokens.append(token)
                     # the current token.
                     if (
                         time.time() < test_end_time
@@ -118,7 +119,7 @@ class AzureOpenAIPlugin(plugin.Plugin):
 
 
                     
-                    tokens.append(token)
+                    
                         
                     #logger.debug(f"Tokens: {tokens}")
 

@@ -1,6 +1,6 @@
 # llm-load-test
 
-This tool is designed to load test large language models running in different runtimes / behind different APIs. 
+This tool is designed to load test large language models running in different runtimes / behind different APIs.
 
 ## Requirements
 
@@ -8,7 +8,21 @@ This tool is designed to load test large language models running in different ru
 
 ## Usage
 
+**Installation**:
+
+```
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
 **Running the Tool**:
+
+- Change/Update the configuration file `config.yaml` as needed for your test. Look at the appropriate plugin for the configuration options.
+- Run the tool with the following command: `python load_test.py -c config.yaml`
+
+**Command Line Options**:
+
 ```
 usage: load_test.py [-h] [-c CONFIG] [-log {warn,warning,info,debug}]
 
@@ -24,13 +38,13 @@ optional arguments:
 
 The tool's behavior can be customized using a YAML configuration file. Take a look at `config.yaml` for an example. More documentation on this should be added in the future.
 
-
 **Results**:
-The tool will produce a results summary logged to stdout, and detailed test results along with its summary in json format.
+The tool will produce a results summary logged to stdout, and detailed test results along with its summary in json format in `outpu/output.json`.
 The json output will have following:
-1. Array of results with one element per request sent during the test. 
+
+1. Array of results with one element per request sent during the test.
 2. Detailed summary report of the run.
-3. All the config metadata related to run 
+3. All the config metadata related to run
 
 For example:
 
@@ -132,7 +146,6 @@ For example:
 }
 ```
 
-
 ## Contributing
 
-Contributions to this tool are welcome! 
+Contributions to this tool are welcome!

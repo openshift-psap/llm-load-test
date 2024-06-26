@@ -2,7 +2,7 @@ output:
   format: "json" # Maybe add option for pickle?
   dir: "./output/"
   file: "output.json"
-warmup: True
+warmup: False
 warmup_options:
   requests: 11
   timeout_sec: 20
@@ -19,13 +19,12 @@ load_options:
   type: constant #Future options: loadgen, stair-step
   concurrency: 2
   duration: 20 # In seconds. Maybe in future support "100s" "10m", etc...
-plugin: "tgis_grpc_plugin"
+plugin: "openai_llama_plugin"
 plugin_options:
-  #interface: "grpc" # Some plugins like caikit-nlp-client should support grpc/http
+  endpoint: "/v1/completions"
   use_tls: False # Use True if querying an SSL grpc endpoint over https
-  streaming: True
-  model_name: "flan-t5-small"
-  host: "route.to.host"
-  port: 8033
+  streaming: False
+  model_name: "merlinite-7b-lab-Q4_K_M.gguf"
+  host: "http://127.0.0.1:8080"
 extra_metadata:
   replicas: 1

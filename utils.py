@@ -15,6 +15,7 @@ from plugins import (
     dummy_plugin,
     hf_tgi_plugin,
     openai_plugin,
+    openai_llama_plugin,
     tgis_grpc_plugin,
 )
 
@@ -81,6 +82,8 @@ def parse_config(config):
         plugin = openai_plugin.OpenAIPlugin(
             config.get("plugin_options")
         )
+    elif plugin_type == "openai_llama_plugin":
+        plugin = openai_llama_plugin.OpenAILlamaPlugin(config.get("plugin_options"))
     elif plugin_type == "caikit_client_plugin":
         plugin = caikit_client_plugin.CaikitClientPlugin(config.get("plugin_options"))
     elif plugin_type == "tgis_grpc_plugin":

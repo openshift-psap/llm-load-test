@@ -157,7 +157,7 @@ def main(args):
         config = utils.yaml_load(args.config)
         concurrency, duration, plugin = utils.parse_config(config)
     except Exception as e:
-        logging.error("Exiting due to invalid input: %s", e)
+        logging.error("Exiting due to invalid input: %s", repr(e))
         exit_gracefully(procs, warmup_q, dataset_q, stop_q, logger_q, log_reader_thread, 1)
 
     try:

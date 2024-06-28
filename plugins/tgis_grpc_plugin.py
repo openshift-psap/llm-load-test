@@ -12,7 +12,7 @@ from result import RequestResult
 
 logger = logging.getLogger("user")
 
-required_args = ["model_name", "host", "port", "streaming"]
+required_args = ["model_name", "host", "port", "streaming", "use_tls"]
 
 """
 This plugin currently only supports grpc requests for a standalone TGI server.

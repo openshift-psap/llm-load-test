@@ -8,6 +8,19 @@ This tool is designed to load test large language models running in different ru
 
 ## Usage
 
+
+**Generate Dataset**:
+
+```sh  
+python generate_random_text_dataset.py --tok_input_length 10 --tok_output_length 50 --N 100 --output_file random_text_dataset.jsonl  
+```  
+  
+- `--tok_input_length`: The length of the input.  
+- `--tok_output_length`: The length of the output.  
+- `--N`: The number of samples to generate.  
+- `--output_file`: The name of the output file (default is `random_text_dataset.jsonl`).  
+   
+
 **Running the Tool**:
 ```
 usage: load_test.py [-h] [-c CONFIG] [-log {warn,warning,info,debug}]
@@ -64,68 +77,81 @@ For example:
 ...
   },
   "summary": {
-    "tpot": {
-      "min": 27.586110933559148,
-      "max": 40.88755629279397,
-      "median": 38.5650954713167,
-      "mean": 36.610498448261545,
-      "percentile_80": 39.64898690651721,
-      "percentile_90": 40.02262306964303,
-      "percentile_95": 40.630858620320716,
-      "percentile_99": 40.88648535348555
+    "tpot": { #time per ouput_token
+      "min": 0.010512285232543946,
+      "max": 0.018693844079971312,
+      "median": 0.01216195583343506,
+      "mean": 0.012808671338217597,
+      "percentile_80": 0.012455177783966065,
+      "percentile_90": 0.01592913103103638,
+      "percentile_95": 0.017840550780296324,
+      "percentile_99": 0.018523185420036312
     },
-    "ttft": {
-      "min": 203.82094383239746,
-      "max": 1181.5788745880127,
-      "median": 431.65814876556396,
-      "mean": 473.4579073755365,
-      "percentile_80": 683.5222721099855,
-      "percentile_90": 764.7189617156984,
-      "percentile_95": 832.2112917900082,
-      "percentile_99": 1133.0137634277346
+    "ttft": { #time to first token
+      "min": 0.4043765068054199,
+      "max": 0.5446293354034424,
+      "median": 0.46433258056640625,
+      "mean": 0.4660029411315918,
+      "percentile_80": 0.51033935546875,
+      "percentile_90": 0.5210948467254639,
+      "percentile_95": 0.5295632600784301,
+      "percentile_99": 0.54161612033844
     },
-    "tt_ack": {
-      "min": 153.1047821044922,
-      "max": 526.094913482666,
-      "median": 162.1863842010498,
-      "mean": 185.01624935551695,
-      "percentile_80": 205.64818382263184,
-      "percentile_90": 209.48517322540283,
-      "percentile_95": 265.4685258865356,
-      "percentile_99": 439.9926090240484
+    "itl": { #input token latency
+      "min": 0.008117493672586566,
+      "max": 0.01664590356337964,
+      "median": 0.009861880810416522,
+      "mean": 0.010531313198552402,
+      "percentile_80": 0.010261738599844314,
+      "percentile_90": 0.013813444118403915,
+      "percentile_95": 0.015781731761280615,
+      "percentile_99": 0.016473069202959836
+    },
+    "tt_ack": { #time to ack
+      "min": 0.404374361038208,
+      "max": 0.544623851776123,
+      "median": 0.464330792427063,
+      "mean": 0.46600091457366943,
+      "percentile_80": 0.5103373527526855,
+      "percentile_90": 0.5210925340652466,
+      "percentile_95": 0.5295597910881042,
+      "percentile_99": 0.5416110396385193
     },
     "response_time": {
-      "min": 980.7870388031006,
-      "max": 6064.596891403198,
-      "median": 5120.97430229187,
-      "mean": 4604.336657022175,
-      "percentile_80": 5499.248218536377,
-      "percentile_90": 5687.238049507141,
-      "percentile_95": 5813.571393489838,
-      "percentile_99": 5972.328190803529
+      "min": 2.102457046508789,
+      "max": 3.7387688159942627,
+      "median": 2.3843793869018555,
+      "mean": 2.5091602653265,
+      "percentile_80": 2.4795608520507812,
+      "percentile_90": 2.992232322692871,
+      "percentile_95": 3.541854977607727,
+      "percentile_99": 3.6993860483169554
     },
     "output_tokens": {
-      "min": 21,
-      "max": 128,
-      "median": 128.0,
-      "mean": 114.0,
-      "percentile_80": 128.0,
-      "percentile_90": 128.0,
-      "percentile_95": 128.0,
-      "percentile_99": 128.0
+      "min": 200,
+      "max": 200,
+      "median": 200.0,
+      "mean": 200.0,
+      "percentile_80": 200.0,
+      "percentile_90": 200.0,
+      "percentile_95": 200.0,
+      "percentile_99": 200.0
     },
     "input_tokens": {
-      "min": 59,
-      "max": 990,
-      "median": 401.0,
-      "mean": 434.5,
-      "percentile_80": 734.8000000000001,
-      "percentile_90": 843.4000000000005,
-      "percentile_95": 955.4,
-      "percentile_99": 982.23
+      "min": 2000,
+      "max": 2000,
+      "median": 2000.0,
+      "mean": 2000.0,
+      "percentile_80": 2000.0,
+      "percentile_90": 2000.0,
+      "percentile_95": 2000.0,
+      "percentile_99": 2000.0
     },
-    "throughput": 185.12628986046127,
-    "total_requests": 38,
+    "output_tokens_throughput": 159.25729928295627,
+    "input_tokens_throughput": 1592.5729928295625,
+    "full_duration": 20.093270540237427,
+    "total_requests": 16,
+    "complete_request_per_sec": 0.7962864964147813,
     "total_failures": 0,
     "failure_rate": 0.0
   }

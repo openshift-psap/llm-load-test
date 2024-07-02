@@ -8,3 +8,4 @@ pyyaml
 pylint
 tiktoken
 openai
+wonderwords

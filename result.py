@@ -37,11 +37,11 @@ class RequestResult:
             if self.first_token_time is not None:
                 self.ttft =  (
                     self.first_token_time - self.start_time
-                )  # Time to first token in ms
+                )  # Time to first token in s
                 self.itl = ( (self.end_time - self.first_token_time)) / (
                     self.output_tokens - 1
-                )  # Inter-token latency in ms. Distinct from TPOT as it excludes the first token time.
+                )  # Inter-token latency in s. Distinct from TPOT as it excludes the first token time.
             
             self.tpot = (
                 self.response_time / self.output_tokens
-            )  # Time per output token in ms
+            )  # Time per output token in s

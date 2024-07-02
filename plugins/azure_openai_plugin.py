@@ -91,10 +91,10 @@ class AzureOpenAIPlugin(plugin.Plugin):
             logger.exception("HTTP error")
             return result
 
-        tokens = []
-        result.start_time = time.time()
+        
 
         if self.stream:
+            tokens = []
 
             #logger.debug(f"Response: {response}")
             for chunk in response:
@@ -110,7 +110,8 @@ class AzureOpenAIPlugin(plugin.Plugin):
                         result.first_token_time = time.time()
 
                     # If the current token time is outside the test duration, record the total tokens received before               
-                    tokens.append(token)
+                    if token:
+                        tokens.append(token)
                     # the current token.
                     if (
                         time.time() < test_end_time
@@ -128,7 +129,7 @@ class AzureOpenAIPlugin(plugin.Plugin):
 
             # Full response received, return
             result.end_time = time.time()
-            # result.output_text = "".join(tokens)
+            result.output_text = "".join(tokens)
             result.input_tokens = query.get("input_tokens")
             result.output_tokens = len(tokens)
             result.calculate_results()

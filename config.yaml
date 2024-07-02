@@ -9,12 +9,14 @@ warmup_options:
 storage: # TODO
   type: local
 dataset:
-  file: "datasets/openorca_large_subset_011.jsonl"
-  max_queries: 1000
+  file: "datasets/openorca_large_subset_011.jsonl" # or you can auto-generate using datasets/generate_dataset.py
+  #use below params to filter the dataset
+  max_queries: 1000 
   min_input_tokens: 0
-  max_input_tokens: 1024
-  max_output_tokens: 256
-  max_sequence_tokens: 1024
+  max_input_tokens: 10000
+  max_output_tokens: 512
+  max_sequence_tokens: 10000
+  
 load_options:
   type: constant #Future options: loadgen, stair-step
   concurrency: 2
@@ -41,7 +43,7 @@ load_options:
 plugin: "azure_openai_plugin"
 plugin_options:
   streaming: True
-  url: "https://aoai.openai.azure.com/"
+  url: "https://<endpoint>.openai.azure.com/"
   key: "<key>"
   deployment: "gpt-35-turbo"
   api_version: "2023-03-15-preview"

@@ -211,21 +211,25 @@ def write_output(config, results_list):
     full_duration = true_end - true_start
     throughput_full_duration = df["output_tokens"].sum() / full_duration
     print(
-        f"Total true throughput across all users: {throughput_full_duration} tokens / sec, for duration {full_duration}"
+        f"Total true output-tokens throughput: {throughput_full_duration} output tokens / sec, for duration {full_duration}"
     )
 
-    throughput = df["output_tokens_before_timeout"].sum() / duration
+    in_throughput_full_duration = df["input_tokens"].sum() / full_duration
     print(
-        f"Total throughput across all users bounded by the test duration: {throughput} tokens / sec, for duration {duration}"
+        f"Total true input-tokens throughput: {in_throughput_full_duration} input tokens / sec, for duration {full_duration}"
     )
 
-    output_obj["summary"]["throughput_full_duration"] = throughput_full_duration
+    req_throughput_full_duration = (req_count - error_count) / full_duration
+   
+    print(
+        f" Completed Request throughput: {req_throughput_full_duration } request / sec, for duration {full_duration}"
+    )
+
+    output_obj["summary"]["output_tokens_throughput"] = throughput_full_duration
+    output_obj["summary"]["input_tokens_throughput"] = in_throughput_full_duration
     output_obj["summary"]["full_duration"] = full_duration
-    output_obj["summary"]["throughput"] = throughput
     output_obj["summary"]["total_requests"] = req_count
-    output_obj["summary"][
-        "req_completed_within_test_duration"
-    ] = req_completed_within_test_duration
+    output_obj["summary"]["complete_request_per_sec"] = req_throughput_full_duration
     output_obj["summary"]["total_failures"] = error_count
     output_obj["summary"]["failure_rate"] = error_count / req_count * 100
 

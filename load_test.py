@@ -210,8 +210,10 @@ def main(args):
         logging.debug("Running main process")
         run_main_process(concurrency, duration, dataset, dataset_q, stop_q)
 
+        # Result_list has all the agregated results
         results_list = gather_results(results_pipes)
-
+        # Now we include the results from the metadata inclusions as part of the results
+        
         utils.write_output(config, results_list)
 
     except Exception:

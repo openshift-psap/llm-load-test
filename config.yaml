@@ -29,3 +29,37 @@ plugin_options:
   port: 8033
 extra_metadata:
   replicas: 1
+metadata_extensions_enabled: True
+metadata_extensions_options:
+# https://prometheus.demo.do.prometheus.io/graph?g0.expr=container_network_transmit_bytes_total&g0.tab=0&g0.display_mode=lines&g0.show_exemplars=1&g0.range_input=30m&g0.end_input=2024-06-26%2017%3A32%3A36&g0.moment_input=2024-06-26%2017%3A32%3A36
+  - prometheus:
+    - base_url: 'https://prometheus.demo.do.prometheus.io'
+      user: 'myuser'
+      password: 'mypassword'
+      metric: 'container_cpu_usage_seconds_total'
+      expected_labels:
+        env: 'demo'
+        id: '/'
+        instance: 'demo.do.prometheus.io:8080'
+        job: 'cadvisor'
+        cpu: 'total'
+    - base_url: 'https://prometheus.demo.do.prometheus.io'
+      user: 'myuser'
+      password: 'mypassword'
+      metric: 'container_memory_usage_bytes'
+      expected_labels:
+        env: 'demo'
+        id: '/'
+        instance: 'demo.do.prometheus.io:8080'
+        job: 'cadvisor'
+  - prometheus2:
+    - base_url: 'https://prometheus.demo.do.prometheus.io'
+      user: 'myuser'
+      password: 'mypassword'
+      metric: 'container_network_transmit_bytes_total'
+      expected_labels:
+        env: 'demo'
+        id: '/'
+        instance: 'demo.do.prometheus.io:8080'
+        job: 'cadvisor'
+        interface: eth0

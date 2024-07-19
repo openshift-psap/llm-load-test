@@ -6,7 +6,7 @@ import requests
 import urllib3
 
 from plugins import plugin
-from result import RequestResult
+from result import TextGenRequestResult
 
 urllib3.disable_warnings()
 
@@ -48,9 +48,9 @@ class HFTGIPlugin(plugin.Plugin):
             },
         }
 
-        result = RequestResult(user_id, query.get("input_id"), query.get("input_tokens"))
+        result = TextGenRequestResult(user_id, query.get("input_id"), query.get("input_tokens"))
 
-        tokens = []        
+        tokens = []
         response = None
         result.start_time = time.time()
         try:

@@ -6,7 +6,7 @@ import urllib3
 from caikit_nlp_client import GrpcClient, HttpClient
 
 from plugins import plugin
-from result import RequestResult
+from result import TextGenRequestResult
 
 urllib3.disable_warnings()
 
@@ -61,7 +61,7 @@ class CaikitClientPlugin(plugin.Plugin):
     def request_grpc(self, query, user_id, test_end_time: float=0):
         grpc_client = GrpcClient(self.host, self.port, verify=False)
 
-        result = RequestResult(user_id, query.get("input_id"), query.get("input_tokens"))
+        result = TextGenRequestResult(user_id, query.get("input_id"), query.get("input_tokens"))
 
         result.start_time = time.time()
         response = grpc_client.generate_text(
@@ -85,7 +85,7 @@ class CaikitClientPlugin(plugin.Plugin):
     def streaming_request_grpc(self, query, user_id, test_end_time: float=0):
         grpc_client = GrpcClient(self.host, self.port, verify=False)
 
-        result = RequestResult(user_id, query.get("input_id"), query.get("input_tokens"))
+        result = TextGenRequestResult(user_id, query.get("input_id"), query.get("input_tokens"))
 
         tokens = []
         result.start_time = time.time()
@@ -120,7 +120,7 @@ class CaikitClientPlugin(plugin.Plugin):
     def request_http(self, query, user_id):
         http_client = HttpClient(self.url, verify=False)
 
-        result = RequestResult(user_id, query.get("input_id"), query.get("input_tokens"))
+        result = TextGenRequestResult(user_id, query.get("input_id"), query.get("input_tokens"))
 
         result.start_time = time.time()
 
@@ -144,7 +144,7 @@ class CaikitClientPlugin(plugin.Plugin):
     def streaming_request_http(self, query, user_id):
         http_client = HttpClient(self.url, verify=False)
 
-        result = RequestResult(user_id, query.get("input_id"), query.get("input_tokens"))
+        result = TextGenRequestResult(user_id, query.get("input_id"), query.get("input_tokens"))
 
         tokens = []
         result.start_time = time.time()

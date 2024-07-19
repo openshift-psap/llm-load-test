@@ -6,7 +6,7 @@ import requests
 import urllib3
 
 from plugins import plugin
-from result import RequestResult
+from result import TextGenRequestResult
 
 urllib3.disable_warnings()
 """
@@ -46,7 +46,7 @@ class OpenAIPlugin(plugin.Plugin):
 
     def request_http(self, query: dict, user_id: int, test_end_time: float = 0):
 
-        result = RequestResult(user_id, query.get("text"), query.get("input_tokens"))
+        result = TextGenRequestResult(user_id, query.get("text"), query.get("input_tokens"))
 
         result.start_time = time.time()
 
@@ -145,7 +145,7 @@ class OpenAIPlugin(plugin.Plugin):
         if self.model_name is not None:
             data["model"] = self.model_name
 
-        result = RequestResult(user_id, query.get("input_id"), query.get("input_tokens"))
+        result = TextGenRequestResult(user_id, query.get("input_id"), query.get("input_tokens"))
 
         tokens = []
         response = None

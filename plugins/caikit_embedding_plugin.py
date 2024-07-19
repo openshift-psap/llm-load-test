@@ -11,10 +11,7 @@ import pandas as pd
 import utils
 
 from plugins import plugin
-from result import (
-    RequestResult,
-    EmbeddingRequestResult,
-)
+from result import EmbeddingRequestResult
 
 urllib3.disable_warnings()
 
@@ -125,7 +122,7 @@ class CaikitEmbeddingPlugin(plugin.Plugin):
     def request_http_sentence_similarity(self, query, user_id, test_end_time: float=0):
         http_client = HttpClient(self.host, verify=False)
 
-        result = RequestResult(user_id, query.get("input_id"), query.get("input_tokens"))
+        result = EmbeddingRequestResult(user_id, query.get("input_id"), query.get("input_tokens"))
         result.start_time = time.time()
 
         response = http_client.sentence_similarity(
@@ -150,7 +147,7 @@ class CaikitEmbeddingPlugin(plugin.Plugin):
     def request_http_rerank(self, query, user_id, test_end_time: float=0):
         http_client = HttpClient(self.host, verify=False)
 
-        result = RequestResult(user_id, query.get("input_id"), query.get("input_tokens"))
+        result = EmbeddingRequestResult(user_id, query.get("input_id"), query.get("input_tokens"))
         result.start_time = time.time()
 
         response = http_client.rerank(

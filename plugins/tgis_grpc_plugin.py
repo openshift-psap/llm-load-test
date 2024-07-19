@@ -8,7 +8,7 @@ import sys
 
 import generation_pb2_grpc
 from plugins import plugin
-from result import RequestResult
+from result import TextGenRequestResult
 
 logger = logging.getLogger("user")
 
@@ -78,7 +78,7 @@ class TGISGRPCPlugin(plugin.Plugin):
             grpc_channel
         )
 
-        result = RequestResult(
+        result = TextGenRequestResult(
             user_id, query.get("input_id"), query.get("input_tokens")
         )
         request = generation_pb2_grpc.generation__pb2.BatchedGenerationRequest(
@@ -133,7 +133,7 @@ class TGISGRPCPlugin(plugin.Plugin):
         generation_service_stub = generation_pb2_grpc.GenerationServiceStub(
             grpc_channel
         )
-        result = RequestResult(
+        result = TextGenRequestResult(
             user_id, query.get("input_id"), query.get("input_tokens")
         )
         tokens = []

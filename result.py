@@ -1,8 +1,21 @@
 """Main result class."""
 
-
 class RequestResult:
-    """Request result class."""
+
+    def __init__(self, user_id, input_id):
+        self.user_id = user_id
+        self.input_id = input_id
+
+    def asdict(self):
+        """Return a dictionary."""
+        return vars(self)
+
+    def calculate_results(self):
+        """Calculate the results."""
+        pass
+
+class TextGenRequestResult(RequestResult):
+    """Request result class for text generation tasks."""
 
     def __init__(self, user_id, input_id, input_tokens):
         """Init method."""
@@ -24,12 +37,6 @@ class RequestResult:
         self.stop_reason = None
         self.error_code = None
         self.error_text = None
-
-    def asdict(self):
-        """Return a dictionary."""
-        # Maybe later we will want to only include some fields in the results,
-        # but for now, this just puts all object fields in a dict.
-        return vars(self)
 
     # Fill in calculated fields like response_time, tt_ack, ttft, tpot.
     def calculate_results(self):
@@ -53,3 +60,31 @@ class RequestResult:
             self.tpot = (
                 self.response_time / self.output_tokens
             )  # Time per output token in ms
+
+class EmbeddingRequestResult(RequestResult):
+    """Request result class for embedding tasks."""
+
+    def __init__(self, user_id, input_id, input_tokens):
+        """Init method."""
+        self.user_id = user_id
+        self.input_id = input_id
+        self.input_tokens = input_tokens
+        self.output_embeddings = None
+        self.start_time = None
+        self.ack_time = None
+        self.end_time = None
+        self.response_time = None
+        self.stop_reason = None
+        self.error_code = None
+        self.error_text = None
+
+    # Fill in calculated fields like response_time, tt_ack, ttft, tpot.
+    def calculate_results(self):
+        """Calculate the results."""
+        # Only calculate results if response is error-free.
+        if self.error_code is None and self.error_text is None:
+            # response_time in seconds
+            self.response_time = 1000 * (self.end_time - self.start_time)
+
+            if self.ack_time is not None:
+                self.tt_ack = 1000 * (self.ack_time - self.start_time)

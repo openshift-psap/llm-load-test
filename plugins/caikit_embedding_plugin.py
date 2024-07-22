@@ -67,33 +67,18 @@ class CaikitEmbeddingPlugin(plugin.Plugin):
         else:
             logger.error("Task %s not yet implemented", args["task"])
 
+        if args["task"] != "embedding":
+            if "objects_per_request" in args:
+                self.objects_per_request = args["objects_per_request"]
+            else:
+                self.objects_per_request = 10
+
     def request_grpc_embedding(self, query, user_id, test_end_time: float=0):
         """
         Not yet implemented as gRPC functionality is not yet implemented
         in caikit-nlp-client for the embeddings endpoints
         """
-        grpc_client = GrpcClient(self.host, self.port, verify=False)
-
-        result = EmbeddingRequestResult(user_id, query.get("input_id"), query.get("input_tokens"))
-
-        result.start_time = time.time()
-        response = grpc_client.generate_text(
-            self.model_name,
-            query["text"],
-            min_new_tokens=query["output_tokens"],
-            max_new_tokens=query["output_tokens"],
-            # timeout=240 #Not supported, may need to contribute to caikit-nlp-client
-        )
-
-        logger.debug("Response: %s", json.dumps(response))
-        result.end_time = time.time()
-
-        result.output_tokens = query["output_tokens"]
-        result.output_tokens_before_timeout = result.output_tokens
-        result.output_text = response
-
-        result.calculate_results()
-        return result
+        return {}
 
     def request_http_embedding(self, query, user_id, test_end_time: float=0):
         http_client = HttpClient(self.host, verify=False)
@@ -114,7 +99,8 @@ class CaikitEmbeddingPlugin(plugin.Plugin):
         result.end_time = time.time()
 
         result.input_tokens = response["input_token_count"]
-        result.output_embeddings = str(response["result"]["data"]["values"])
+        result.input_objects = 1
+        result.output_object = str(response["result"]["data"]["values"])
 
         result.calculate_results()
         return result
@@ -125,10 +111,12 @@ class CaikitEmbeddingPlugin(plugin.Plugin):
         result = EmbeddingRequestResult(user_id, query.get("input_id"), query.get("input_tokens"))
         result.start_time = time.time()
 
+        num_objects = 10
+
         response = http_client.sentence_similarity(
             self.model_name,
             query["text"],
-            list(query["text"] for _ in range(10)),
+            list(query["text"] for _ in range(num_objects)),
             parameters={
                 "truncate_input_tokens": self.model_max_input_tokens
             }
@@ -137,9 +125,9 @@ class CaikitEmbeddingPlugin(plugin.Plugin):
         logger.debug("Response: %s", json.dumps(response))
         result.end_time = time.time()
 
-        result.output_tokens = response["input_token_count"]
-        result.output_tokens_before_timeout = result.output_tokens
-        result.output_text = str(response)
+        result.input_tokens = response["input_token_count"]
+        result.input_objects = num_objects
+        result.output_object = str(response)
 
         result.calculate_results()
         return result
@@ -150,9 +138,11 @@ class CaikitEmbeddingPlugin(plugin.Plugin):
         result = EmbeddingRequestResult(user_id, query.get("input_id"), query.get("input_tokens"))
         result.start_time = time.time()
 
+        num_objects = 10
+
         response = http_client.rerank(
             self.model_name,
-            [{query["text"]: i} for i in range(10)],
+            [{query["text"]: i} for i in range(num_objects)],
             query["text"],
             parameters={
                 "truncate_input_tokens": self.model_max_input_tokens
@@ -162,9 +152,9 @@ class CaikitEmbeddingPlugin(plugin.Plugin):
         logger.debug("Response: %s", json.dumps(response))
         result.end_time = time.time()
 
-        result.output_tokens = response["input_token_count"]
-        result.output_tokens_before_timeout = result.output_tokens
-        result.output_text = str(response)
+        result.input_tokens = response["input_token_count"]
+        result.input_objects = num_objects
+        result.output_object = str(response)
 
         result.calculate_results()
         return result
@@ -214,6 +204,7 @@ class CaikitEmbeddingPlugin(plugin.Plugin):
             [
                 "response_time",
                 "input_tokens",
+                "input_objects",
             ]
         ].mean(numeric_only=True)
         print(summary_df)
@@ -228,11 +219,16 @@ class CaikitEmbeddingPlugin(plugin.Plugin):
         # input tokens summary
         output_obj = utils.get_summary(df, output_obj, "input_tokens")
 
+        # input objects summary
+        output_obj = utils.get_summary(df, output_obj, "input_objects")
+
         # CALCULATE REAL DURATION NOT TARGET DURATION
         true_end = df["end_time"].max()
         true_start = df["start_time"].min()
         full_duration = true_end - true_start
         throughput_full_duration = df["input_tokens"].sum() / full_duration
+        throughput_per_object = df["input_objects"].sum() / full_duration
+        throughput_tokens_per_doc_per_sec = (df["input_tokens"].sum() / df["input_objects"].sum()) / full_duration
         print(
             f"Total true throughput across all users: {throughput_full_duration} tokens / sec, for duration {full_duration}"
         )
@@ -243,6 +239,8 @@ class CaikitEmbeddingPlugin(plugin.Plugin):
         )
 
         output_obj["summary"]["throughput_full_duration"] = throughput_full_duration
+        output_obj["summary"]["throughput_per_object"] = throughput_per_object
+        output_obj["summary"]["throughput_tokens_per_document_per_second"] = throughput_tokens_per_doc_per_sec
         output_obj["summary"]["full_duration"] = full_duration
         output_obj["summary"]["throughput"] = throughput
         output_obj["summary"]["total_requests"] = req_count

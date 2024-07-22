@@ -69,7 +69,8 @@ class EmbeddingRequestResult(RequestResult):
         self.user_id = user_id
         self.input_id = input_id
         self.input_tokens = input_tokens
-        self.output_embeddings = None
+        self.input_objects: int = 1
+        self.output_object: str = ""
         self.start_time = None
         self.ack_time = None
         self.end_time = None

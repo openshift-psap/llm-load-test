@@ -22,8 +22,7 @@ class Plugin:
     def streaming_request_grpc(self, query, user_id):
         pass
 
-    @staticmethod
-    def write_output(config, results_list):
+    def write_output(self, config, results_list):
         """Write the results."""
         output_options = config.get("output")
         output_path = output_options.get("dir")
@@ -144,7 +143,7 @@ class Plugin:
         output_obj["summary"]["total_failures"] = error_count
         output_obj["summary"]["failure_rate"] = error_count / req_count * 100
 
-        json_out = json.dumps(output_obj, cls=customEncoder, indent=2)
+        json_out = json.dumps(output_obj, cls=utils.customEncoder, indent=2)
         with outfile.open("w") as f:
             f.write(json_out)
 

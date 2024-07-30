@@ -45,6 +45,8 @@ class CaikitEmbeddingPlugin(plugin.Plugin):
         self.host = args["host"]
         self.port = args["port"]
         self.model_max_input_tokens = args["model_max_input_tokens"]
+        self.save_raw_output = True if "save_raw_output" not in args else args["save_raw_output"]
+        self.only_summary = False if "only_summary" not in args else args["only_summary"]
 
         if args["task"] == "embedding":
             if args["interface"] == "http":
@@ -100,7 +102,8 @@ class CaikitEmbeddingPlugin(plugin.Plugin):
 
         result.input_tokens = response["input_token_count"]
         result.input_objects = 1
-        result.output_object = str(response["result"]["data"]["values"])
+        if self.save_raw_output:
+            result.output_object = str(response["result"]["data"]["values"])
 
         result.calculate_results()
         return result
@@ -127,7 +130,8 @@ class CaikitEmbeddingPlugin(plugin.Plugin):
 
         result.input_tokens = response["input_token_count"]
         result.input_objects = num_objects
-        result.output_object = str(response)
+        if self.save_raw_output:
+            result.output_object = str(response)
 
         result.calculate_results()
         return result
@@ -154,13 +158,13 @@ class CaikitEmbeddingPlugin(plugin.Plugin):
 
         result.input_tokens = response["input_token_count"]
         result.input_objects = num_objects
-        result.output_object = str(response)
+        if self.save_raw_output:
+            result.output_object = str(response)
 
         result.calculate_results()
         return result
 
-    @staticmethod
-    def write_output(config, results_list):
+    def write_output(self, config, results_list):
         """Write output for embedding results"""
         output_options = config.get("output")
         output_path = output_options.get("dir")
@@ -177,11 +181,17 @@ class CaikitEmbeddingPlugin(plugin.Plugin):
         )
         outfile = path / Path(outfile_name)
         results_list = [result.asdict() for result in results_list]
-        output_obj = {
-            "results": results_list,
-            "config": config,
-            "summary": {},
-        }
+        if self.only_summary:
+            output_obj = {
+                "config": config,
+                "summary": {},
+            }
+        else:
+            output_obj = {
+                "results": results_list,
+                "config": config,
+                "summary": {},
+            }
 
         logging.info("Length of results: %d", len(results_list))
 

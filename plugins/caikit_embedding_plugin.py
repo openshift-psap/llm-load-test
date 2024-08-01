@@ -254,6 +254,7 @@ class CaikitEmbeddingPlugin(plugin.Plugin):
         output_obj["summary"]["full_duration"] = full_duration
         output_obj["summary"]["throughput"] = throughput
         output_obj["summary"]["total_requests"] = req_count
+        output_obj["summary"]["total_tokens"] = df["input_tokens"].sum()
         output_obj["summary"][
             "req_completed_within_test_duration"
         ] = req_completed_within_test_duration

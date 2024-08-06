@@ -260,6 +260,7 @@ class CaikitEmbeddingPlugin(plugin.Plugin):
         ] = req_completed_within_test_duration
         output_obj["summary"]["total_failures"] = error_count
         output_obj["summary"]["failure_rate"] = error_count / req_count * 100
+        output_obj["summary"]["start_time"] = true_start
 
         json_out = json.dumps(output_obj, cls=utils.customEncoder, indent=2)
         with outfile.open("w") as f:

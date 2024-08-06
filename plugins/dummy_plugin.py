@@ -1,7 +1,7 @@
 import time
 
 from plugins import plugin
-from result import RequestResult
+from result import TextGenRequestResult
 
 """
 Example plugin config.yaml:
@@ -23,7 +23,7 @@ class DummyPlugin(plugin.Plugin):
             self.request_func = self.request_http
 
     def request_http(self, query, user_id, test_end_time: float=0):
-        result = RequestResult(user_id, query.get("input_id"), query.get("input_tokens"))
+        result = TextGenRequestResult(user_id, query.get("input_id"), query.get("input_tokens"))
         result.start_time = time.time()
 
         # Fake response is just the input backwards
@@ -40,7 +40,7 @@ class DummyPlugin(plugin.Plugin):
         return result
 
     def streaming_request_http(self, query, user_id, test_end_time: float=0):
-        result = RequestResult(user_id, query.get("input_id"), query.get("input_tokens"))
+        result = TextGenRequestResult(user_id, query.get("input_id"), query.get("input_tokens"))
         result.start_time = time.time()
         time.sleep(0.1)
 

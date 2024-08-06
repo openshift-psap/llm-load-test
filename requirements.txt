@@ -1,4 +1,4 @@
-caikit-nlp-client==0.0.8
+git+https://github.com/drewrip/caikit-nlp-client.git@embedding
 deprecation
 flake8
 isort

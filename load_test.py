@@ -153,6 +153,7 @@ def main(args):
     # Parse config
     logging.debug("Parsing YAML config file %s", args.config)
     concurrency, duration, plugin = 0, 0, None
+    config = {}
     try:
         config = utils.yaml_load(args.config)
         concurrency, duration, plugin = utils.parse_config(config)
@@ -212,7 +213,7 @@ def main(args):
 
         results_list = gather_results(results_pipes)
 
-        utils.write_output(config, results_list)
+        plugin.write_output(config, results_list)
 
     except Exception:
         logging.exception("Unexpected exception in main process")

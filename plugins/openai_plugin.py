@@ -42,7 +42,11 @@ class OpenAIPlugin(plugin.Plugin):
 
         self.host = args.get("host") + args.get("endpoint")
 
+        logger.debug("Host: %s", self.host)
+
         self.model_name = args.get("model_name")
+
+        logger.debug("Model name: %s", self.model_name)
 
     def request_http(self, query: dict, user_id: int, test_end_time: float = 0):
 
@@ -100,7 +104,8 @@ class OpenAIPlugin(plugin.Plugin):
             error = message.get("error")
             if error is None:
                 if "/v1/chat/completions" in self.host:
-                    result.output_text = message["choices"][0]['delta']['content']
+                    #result.output_text = message["choices"][0]['delta']['content']
+                    result.output_text = message["choices"][0]['message']['content']
                 else:
                     result.output_text = message["choices"][0]["text"]
 

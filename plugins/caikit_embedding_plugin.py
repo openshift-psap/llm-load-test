@@ -47,6 +47,7 @@ class CaikitEmbeddingPlugin(plugin.Plugin):
         self.model_max_input_tokens = args["model_max_input_tokens"]
         self.save_raw_output = True if "save_raw_output" not in args else args["save_raw_output"]
         self.only_summary = False if "only_summary" not in args else args["only_summary"]
+        self.batch_size = 1 if "batch_size" not in args else args["batch_size"]
 
         if args["task"] == "embedding":
             if args["interface"] == "http":
@@ -89,9 +90,9 @@ class CaikitEmbeddingPlugin(plugin.Plugin):
 
         result.start_time = time.time()
 
-        response = http_client.embedding(
+        response = http_client.embedding_tasks(
             self.model_name,
-            query["text"],
+            [query["text"] for _ in range(self.batch_size)],
             parameters={
                 "truncate_input_tokens": self.model_max_input_tokens
             }
@@ -103,7 +104,7 @@ class CaikitEmbeddingPlugin(plugin.Plugin):
         result.input_tokens = response["input_token_count"]
         result.input_objects = 1
         if self.save_raw_output:
-            result.output_object = str(response["result"]["data"]["values"])
+            result.output_object = str([result["data"]["values"] for result in response["results"]])
 
         result.calculate_results()
         return result
@@ -116,9 +117,9 @@ class CaikitEmbeddingPlugin(plugin.Plugin):
 
         num_objects = 10
 
-        response = http_client.sentence_similarity(
+        response = http_client.sentence_similarity_tasks(
             self.model_name,
-            query["text"],
+            [query["text"] for _ in range(self.batch_size)],
             list(query["text"] for _ in range(num_objects)),
             parameters={
                 "truncate_input_tokens": self.model_max_input_tokens
@@ -144,10 +145,10 @@ class CaikitEmbeddingPlugin(plugin.Plugin):
 
         num_objects = 10
 
-        response = http_client.rerank(
+        response = http_client.rerank_tasks(
             self.model_name,
             [{query["text"]: i} for i in range(num_objects)],
-            query["text"],
+            [query["text"] for _ in range(self.batch_size)],
             parameters={
                 "truncate_input_tokens": self.model_max_input_tokens
             }
@@ -155,12 +156,12 @@ class CaikitEmbeddingPlugin(plugin.Plugin):
 
         logger.debug("Response: %s", json.dumps(response))
         result.end_time = time.time()
-
         result.input_tokens = response["input_token_count"]
         result.input_objects = num_objects
         if self.save_raw_output:
             result.output_object = str(response)
 
+        result.input_queries = self.batch_size
         result.calculate_results()
         return result
 
@@ -215,6 +216,7 @@ class CaikitEmbeddingPlugin(plugin.Plugin):
                 "response_time",
                 "input_tokens",
                 "input_objects",
+                "input_queries",
             ]
         ].mean(numeric_only=True)
         print(summary_df)
@@ -223,14 +225,14 @@ class CaikitEmbeddingPlugin(plugin.Plugin):
         # calculating the summary statistics on tpot, ttft, itl, tt_ack
         req_completed_within_test_duration = len(df)
 
-        # response time summary
+        # summaries
         output_obj = utils.get_summary(df, output_obj, "response_time")
 
-        # input tokens summary
         output_obj = utils.get_summary(df, output_obj, "input_tokens")
 
-        # input objects summary
         output_obj = utils.get_summary(df, output_obj, "input_objects")
+
+        output_obj = utils.get_summary(df, output_obj, "input_queries")
 
         # CALCULATE REAL DURATION NOT TARGET DURATION
         true_end = df["end_time"].max()

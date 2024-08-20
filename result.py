@@ -70,6 +70,7 @@ class EmbeddingRequestResult(RequestResult):
         self.input_id = input_id
         self.input_tokens = input_tokens
         self.input_objects: int = 1
+        self.input_queries: int = 1
         self.output_object: str = ""
         self.start_time = None
         self.ack_time = None

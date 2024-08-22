@@ -145,7 +145,7 @@ class OpenAIPlugin(plugin.Plugin):
         if self.model_name is not None:
             data["model"] = self.model_name
 
-        result = RequestResult(user_id, query.get("input_id"), query.get("input_tokens"))
+        result = RequestResult(user_id, query.get("input_id"))
 
         tokens = []
         response = None

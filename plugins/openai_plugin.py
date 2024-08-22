@@ -132,6 +132,9 @@ class OpenAIPlugin(plugin.Plugin):
                 "max_tokens": query["output_tokens"],
                 "temperature": 0.1,
                 "stream": True,
+                "stream_options": {
+                    "include_usage": True
+                }
             }
         if "/v1/chat/completions" in self.host:
             data["messages"] = [
@@ -184,6 +187,13 @@ class OpenAIPlugin(plugin.Plugin):
                             message["choices"][0]['delta']['content']=""
                         error = message.get("error")
                         if error is None:
+                            # If stream_options.include_usage == True then the final
+                            # message contains only token stats
+                            if not message.get("choices") and message.get('usage'):
+                                result.output_tokens = message["usage"]["completion_tokens"]
+                                result.input_tokens = message["usage"]["prompt_tokens"]
+                                # We don't want to record this message
+                                continue
                             if "/v1/chat/completions" in self.host:
                                 token = message["choices"][0]['delta']['content']
                             else:
@@ -225,10 +235,6 @@ class OpenAIPlugin(plugin.Plugin):
 
                     # Last token comes with finish_reason set.
                     if message.get("choices", [])[0].get("finish_reason", None):
-                        if message.get("usage"):
-                            result.output_tokens = message["usage"]["completion_tokens"]
-                            result.input_tokens = message["usage"]["prompt_tokens"]
-
                         result.stop_reason =  message["choices"][0]["finish_reason"]
 
                         # If test duration timeout didn't happen before the last token is received, 

@@ -4,7 +4,7 @@
 class RequestResult:
     """Request result class."""
 
-    def __init__(self, user_id, input_id, input_tokens = None):
+    def __init__(self, user_id, input_id, input_tokens=None):
         """Init method."""
         self.user_id = user_id
         self.input_id = input_id

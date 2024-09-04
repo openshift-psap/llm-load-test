@@ -48,6 +48,7 @@ class CaikitEmbeddingPlugin(plugin.Plugin):
         self.save_raw_output = True if "save_raw_output" not in args else args["save_raw_output"]
         self.only_summary = False if "only_summary" not in args else args["only_summary"]
         self.batch_size = 1 if "batch_size" not in args else args["batch_size"]
+        self.timeout = 120 if "timeout" not in args else args["timeout"]
 
         if args["task"] == "embedding":
             if args["interface"] == "http":
@@ -75,6 +76,8 @@ class CaikitEmbeddingPlugin(plugin.Plugin):
                 self.objects_per_request = args["objects_per_request"]
             else:
                 self.objects_per_request = 10
+        else:
+            self.objects_per_request = self.batch_size
 
     def request_grpc_embedding(self, query, user_id, test_end_time: float=0):
         """
@@ -95,7 +98,8 @@ class CaikitEmbeddingPlugin(plugin.Plugin):
             [query["text"] for _ in range(self.batch_size)],
             parameters={
                 "truncate_input_tokens": self.model_max_input_tokens
-            }
+            },
+            timeout=self.timeout
         )
 
         logger.debug("Response: %s", json.dumps(response))
@@ -123,7 +127,8 @@ class CaikitEmbeddingPlugin(plugin.Plugin):
             list(query["text"] for _ in range(num_objects)),
             parameters={
                 "truncate_input_tokens": self.model_max_input_tokens
-            }
+            },
+            timeout=self.timeout
         )
 
         logger.debug("Response: %s", json.dumps(response))
@@ -151,7 +156,8 @@ class CaikitEmbeddingPlugin(plugin.Plugin):
             [query["text"] for _ in range(self.batch_size)],
             parameters={
                 "truncate_input_tokens": self.model_max_input_tokens
-            }
+            },
+            timeout=self.timeout
         )
 
         logger.debug("Response: %s", json.dumps(response))

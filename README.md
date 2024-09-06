@@ -34,12 +34,20 @@ optional arguments:
                         Provide logging level. Example --log_level debug, default=warning
 ```
 
+There're some example CONFIG files available:
+ - config-tgis.yaml:   config file for GRPC request for TGI Server.
+ - config-openai.yaml: config file for OpenAI format API endpoints.
+
+more LLM protocol config format, refer to ./plugins for more details. 
+
+
+
 ## Configuration Options
 
 The tool's behavior can be customized using a YAML configuration file. Take a look at `config.yaml` for an example. More documentation on this should be added in the future.
 
 **Results**:
-The tool will produce a results summary logged to stdout, and detailed test results along with its summary in json format in `outpu/output.json`.
+The tool will produce a results summary logged to stdout, and detailed test results along with its summary in json format in `output/output.json`.
 The json output will have following:
 
 1. Array of results with one element per request sent during the test.

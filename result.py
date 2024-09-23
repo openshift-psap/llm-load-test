@@ -1,29 +1,31 @@
 """Main result class."""
 
+from typing import Optional
+
 
 class RequestResult:
     """Request result class."""
 
     def __init__(self, user_id, input_id, input_tokens=None):
         """Init method."""
-        self.user_id = user_id
-        self.input_id = input_id
-        self.input_tokens = input_tokens
-        self.output_text = None
-        self.output_tokens = None
-        self.output_tokens_before_timeout = None
-        self.start_time = None
-        self.ack_time = None
-        self.first_token_time = None
-        self.end_time = None
-        self.response_time = None
-        self.tt_ack = None
-        self.ttft = None
-        self.itl = None
-        self.tpot = None
-        self.stop_reason = None
-        self.error_code = None
-        self.error_text = None
+        self.user_id: int = user_id
+        self.input_id: int = input_id
+        self.input_tokens: Optional[int] = input_tokens
+        self.output_text: Optional[str] = None
+        self.output_tokens: Optional[int] = None
+        self.output_tokens_before_timeout: Optional[int] = None
+        self.start_time: Optional[float] = None
+        self.ack_time: Optional[float] = None
+        self.first_token_time: Optional[float] = None
+        self.end_time: Optional[float] = None
+        self.response_time: Optional[float] = None
+        self.tt_ack: Optional[float] = None
+        self.ttft: Optional[float] = None
+        self.itl: Optional[float] = None
+        self.tpot: Optional[float] = None
+        self.stop_reason: Optional[str] = None
+        self.error_code: Optional[int] = None
+        self.error_text: Optional[str] = None
 
     def asdict(self):
         """Return a dictionary."""

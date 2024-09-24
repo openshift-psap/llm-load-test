@@ -227,6 +227,12 @@ class OpenAIPlugin(plugin.Plugin):
             logger.exception("ChunkedEncodingError while streaming response")
             return result
 
+        # If no data was received return early
+        if not resps:
+            result.output_tokens = 0
+            result.error_code = response.status_code
+            return result
+
         # Check for end of request marker
         if resps[-1]['data'] == b"data: [DONE]":
             result.end_time = resps[-1]['time']

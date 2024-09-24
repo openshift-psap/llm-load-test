@@ -1,0 +1,18 @@
+# Example Pod for running llm-load-test on k8s/OpenShift.
+# Typical use is to oc exec/rsh into the Pod to manually run tests.
+apiVersion: v1
+kind: Pod
+metadata:
+ name: llm-load-test
+spec:
+  containers:
+  - name: llm-load-test
+    image: quay.io/dagray/llm-load-test:latest
+    imagePullPolicy: Always
+    command:
+    - bash
+    - -c
+    args:
+    - |
+      cd /src/llm-load-test
+      sleep infinity

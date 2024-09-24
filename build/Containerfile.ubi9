@@ -1,0 +1,15 @@
+FROM registry.access.redhat.com/ubi9
+
+RUN dnf install -y wget git golang
+
+RUN python3 -m ensurepip --upgrade
+
+WORKDIR /src 
+
+WORKDIR /src/llm-load-test
+
+COPY . .
+
+RUN pwd && ls
+
+RUN pip3 install -r requirements.txt

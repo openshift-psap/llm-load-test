@@ -243,17 +243,16 @@ class OpenAIPlugin(plugin.Plugin):
 
         # Check for usage statistics
         message = self._process_resp(resps[-1]['data'])
-        if message:
-            # If stream_options.include_usage == True then the final
-            # message contains only token stats
-            if not message.get("choices") and message.get('usage'):
-                result.output_tokens = deepget(message, "usage", "completion_tokens")
-                result.input_tokens = deepget(message, "usage", "prompt_tokens")
-                # We don't want to record this message
-                resps.pop()
-            else:
-                # TODO This signals that the request is faulty
-                logger.warn("Usage token missing")
+        # If stream_options.include_usage == True then the final
+        # message contains only token stats
+        if message and not message.get("choices") and message.get('usage'):
+            result.output_tokens = deepget(message, "usage", "completion_tokens")
+            result.input_tokens = deepget(message, "usage", "prompt_tokens")
+            # We don't want to record this message
+            resps.pop()
+        else:
+            # TODO This signals that the request is faulty
+            logger.warn("Usage token missing")
 
         # Iterate through all responses
         tokens = []

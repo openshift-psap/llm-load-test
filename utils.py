@@ -73,7 +73,9 @@ def parse_config(config):
     logging.info("load_options config: %s", config["load_options"])
 
     load_options = config.get("load_options")
+
     concurrency = load_options.get("concurrency")
+
     duration = load_options.get("duration")
 
     plugin_type = config.get("plugin")
@@ -107,7 +109,7 @@ def yaml_load(file):
             raise RuntimeError(f"Could not parse {file}") from exc
 
 
-def write_output(config, results_list):
+def write_output(config, results_list, concurrency, duration):
     """Write the results."""
     output_options = config.get("output")
     output_path = output_options.get("dir")
@@ -118,7 +120,7 @@ def write_output(config, results_list):
         logging.warning("Output path %s does not exist, creating it!", path)
         path.mkdir(parents=True, exist_ok=True)
 
-    concurrency, duration, _ = parse_config(config)
+    config["load_options"]["concurrency"] = concurrency
     outfile_name = output_options.get("file").format(
         concurrency=concurrency, duration=duration
     )

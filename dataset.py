@@ -11,6 +11,7 @@ class Dataset:
 
     def __init__(self,
                  file,
+                 format_prompt=True,
                  model_name="",
                  max_queries=3000,
                  min_input_tokens=0,
@@ -23,6 +24,7 @@ class Dataset:
         logging.info("Initializing dataset with %s", locals())
         self.dataset_list = [input for input in
                              initialize_dataset(file,
+                                                format_prompt=format_prompt,
                                                 model_name=model_name,
                                                 max_queries=max_queries,
                                                 min_input_tokens=min_input_tokens,
@@ -46,6 +48,7 @@ class Dataset:
 
 def initialize_dataset(
     filename,
+    format_prompt=False,
     model_name="",
     max_queries=3000,
     min_input_tokens=0,
@@ -55,7 +58,7 @@ def initialize_dataset(
     max_sequence_tokens=32000
 ):
     """Initialize the dataset."""
-    prompt_format = get_format_string(model_name)
+    prompt_format = get_format_string(model_name, format_prompt)
     with open(filename, "r", encoding="utf-8") as file:
         total_queries = 0
 
@@ -119,8 +122,11 @@ def filter_token_lengths(input_tokens,
             and sequence_tokens < max_sequence_tokens)
 
 
-def get_format_string(model_name):
+def get_format_string(model_name, format_prompt):
     """Get the format string."""
+    if not format_prompt:
+        return "{prompt}"
+
     known_system_prompts = {
         "llama": "<s>[INST] <<SYS>>\n{system_prompt}\n<</SYS>>\n\n{prompt} [/INST]",
         "flan": "Question: {prompt}\n\nAnswer:",

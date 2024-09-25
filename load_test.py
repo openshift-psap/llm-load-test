@@ -214,6 +214,13 @@ def main(args):
 
         utils.write_output(config, results_list)
 
+    # Terminate queues immediately on ^C
+    except KeyboardInterrupt:
+        stop_q.cancel_join_thread()
+        dataset_q.cancel_join_thread()
+        if warmup_q:
+            warmup_q.cancel_join_thread()
+        exit_gracefully(procs, warmup_q, dataset_q, stop_q, logger_q, log_reader_thread, 130)
     except Exception:
         logging.exception("Unexpected exception in main process")
         exit_gracefully(procs, warmup_q, dataset_q, stop_q, logger_q, log_reader_thread, 1)

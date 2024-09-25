@@ -144,9 +144,9 @@ class OpenAIPlugin(plugin.Plugin):
                 else: # self.api == 'legacy'
                     result.output_text = deepget(message, "choices", 0, 'text')
 
-                result.output_tokens = message["usage"]["completion_tokens"]
-                result.input_tokens = message["usage"]["prompt_tokens"]
-                result.stop_reason =  message["choices"][0]["finish_reason"]
+                result.output_tokens = deepget(message, "usage", "completion_tokens")
+                result.input_tokens = deepget(message, "usage", "prompt_tokens")
+                result.stop_reason =  deepget(message, "choices", 0, "finish_reason")
             else:
                 result.error_code = response.status_code
                 result.error_text = error

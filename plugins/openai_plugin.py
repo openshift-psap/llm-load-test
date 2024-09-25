@@ -22,6 +22,7 @@ plugin_options:
 """
 
 required_args = ["host", "streaming", "endpoint"]
+APIS = ["legacy", "chat"]
 
 logger = logging.getLogger("user")
 
@@ -65,6 +66,9 @@ class OpenAIPlugin(plugin.Plugin):
         if not self.api:
             self.api = 'chat' if "/v1/chat/completions" in self.host else 'legacy'
 
+        if self.api not in APIS:
+            logger.error("Invalid api type: %s", self.api)
+
     def _process_resp(self, resp: bytes) -> Optional[dict]:
         try:
             _, found, data = resp.partition(b"data: ")
@@ -88,7 +92,7 @@ class OpenAIPlugin(plugin.Plugin):
 
         headers = {"Content-Type": "application/json"}
 
-        if "/v1/chat/completions" in self.host:
+        if self.api == 'chat':
             data = {
                 "messages": [
                     {"role": "user", "content": query["text"]}
@@ -96,14 +100,14 @@ class OpenAIPlugin(plugin.Plugin):
                 "max_tokens": query["output_tokens"],
                 "temperature": 0.1,
             }
-        else:
+        else: # self.api == 'legacy'
             data = {
                 "prompt": query["text"],
                 "max_tokens": query["output_tokens"],
                 "min_tokens": query["output_tokens"],
-                "temperature": 1.0,
-                "top_p": 0.9,
-                "seed": 10,
+                "temperature": 1.0, # FIXME: This seems wrong
+                "top_p": 0.9, # FIXME: Standardize on something
+                "seed": 10, # FIXME: Standardize on something
             }
         if self.model_name is not None:
             data["model"] = self.model_name
@@ -135,11 +139,10 @@ class OpenAIPlugin(plugin.Plugin):
             message = json.loads(response.text)
             error = message.get("error")
             if error is None:
-                if "/v1/chat/completions" in self.host:
-                    #result.output_text = message["choices"][0]['delta']['content']
-                    result.output_text = message["choices"][0]['message']['content']
-                else:
-                    result.output_text = message["choices"][0]["text"]
+                if self.api == 'chat':
+                    result.output_text = deepget(message, "choices", 0, 'delta', 'content')
+                else: # self.api == 'legacy'
+                    result.output_text = deepget(message, "choices", 0, 'text')
 
                 result.output_tokens = message["usage"]["completion_tokens"]
                 result.input_tokens = message["usage"]["prompt_tokens"]
@@ -166,18 +169,19 @@ class OpenAIPlugin(plugin.Plugin):
         headers = {"Content-Type": "application/json"}
 
         data = {
-                "max_tokens": query["output_tokens"],
-                "temperature": 0.1,
-                "stream": True,
-                "stream_options": {
-                    "include_usage": True
-                }
+            "max_tokens": query["output_tokens"],
+            "temperature": 0.1,
+            "stream": True,
+            "stream_options": {
+                "include_usage": True
             }
-        if "/v1/chat/completions" in self.host:
+        }
+
+        if self.api == 'chat':
             data["messages"] = [
-                    {"role": "user", "content": query["text"]}
-                ]
-        else:
+                { "role": "user", "content": query["text"] }
+            ]
+        else: # self.api == 'legacy'
             data["prompt"] = query["text"],
             data["min_tokens"] = query["output_tokens"]
 
@@ -273,10 +277,10 @@ class OpenAIPlugin(plugin.Plugin):
             token['lat'] = token['time'] - prev_time
             prev_time = token['time']
 
-            if self.api == 'legacy':
-                token["text"] = deepget(message, "choices", 0, 'text')
-            elif self.api == 'chat':
+            if self.api == 'chat':
                 token["text"] = deepget(message, "choices", 0, 'delta', 'content')
+            else: # self.api == 'legacy'
+                token["text"] = deepget(message, "choices", 0, 'text')
 
             # Skip blank tokens
             if not token['text']:

@@ -38,20 +38,24 @@ class RequestResult:
         """Calculate the results."""
         # Only calculate results if response is error-free.
         if self.error_code is None and self.error_text is None:
-            # response_time in seconds
-            self.response_time = 1000 * (self.end_time - self.start_time)
+            if self.end_time is not None and self.start_time is not None:
+                # response_time in seconds
+                self.response_time = 1000 * (self.end_time - self.start_time)
 
-            if self.ack_time is not None:
+            if self.ack_time is not None and self.start_time is not None:
                 self.tt_ack = 1000 * (self.ack_time - self.start_time)
 
             if self.first_token_time is not None:
-                self.ttft = 1000 * (
-                    self.first_token_time - self.start_time
-                )  # Time to first token in ms
-                self.itl = (1000 * (self.end_time - self.first_token_time)) / (
-                    self.output_tokens - 1
-                )  # Inter-token latency in ms. Distinct from TPOT as it excludes the first token time.
+                if self.start_time is not None:
+                    self.ttft = 1000 * (
+                        self.first_token_time - self.start_time
+                    )  # Time to first token in ms
+                if self.end_time is not None and self.output_tokens is not None:
+                    self.itl = (1000 * (self.end_time - self.first_token_time)) / (
+                        self.output_tokens - 1
+                    )  # Inter-token latency in ms. Distinct from TPOT as it excludes the first token time.
 
-            self.tpot = (
-                self.response_time / self.output_tokens
-            )  # Time per output token in ms
+            if self.response_time is not None and self.output_tokens is not None:
+                self.tpot = (
+                    self.response_time / self.output_tokens
+                )  # Time per output token in ms

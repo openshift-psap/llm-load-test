@@ -297,11 +297,8 @@ class OpenAIPlugin(plugin.Plugin):
 
         # If the current token time is outside the test duration, record the total tokens received before
         # the current token.
-        result.output_tokens_before_timeout = 0
-        for i, token in enumerate(tokens, 1):
-            if token['time'] > test_end_time:
-                break
-            result.output_tokens_before_timeout = i
+        tokens_before_timeout = [t for t in tokens if t['time'] <= test_end_time]
+        result.output_tokens_before_timeout = len(tokens_before_timeout)
 
         # Last token comes with finish_reason set.
         result.stop_reason = deepget(resps[-1], "choices", 0, "finish_reason")

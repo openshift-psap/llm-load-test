@@ -1,15 +1,12 @@
-class Plugin:
+from abc import ABC, abstractmethod
+
+from result import RequestResult
+
+
+class Plugin(ABC):
     def __init__(self, args):
         self.args = args
 
-    def request_http(self, query, user_id):
-        pass
-
-    def streaming_request_http(self, query, user_id):
-        pass
-
-    def request_grpc(self, query, user_id):
-        pass
-
-    def streaming_request_grpc(self, query, user_id):
+    @abstractmethod
+    def request_func(self, query: dict, user_id: int, test_end_time: float) -> RequestResult:
         pass

@@ -1,13 +1,14 @@
 import json
 import logging
 import time
-from typing import Any, Optional
+from typing import Optional
 
 import requests
 import urllib3
 
 from plugins import plugin
 from result import RequestResult
+from utils import deepget
 
 urllib3.disable_warnings()
 """
@@ -25,17 +26,6 @@ required_args = ["host", "streaming", "endpoint"]
 APIS = ["legacy", "chat"]
 
 logger = logging.getLogger("user")
-
-def deepget(obj: dict, *path, r = None) -> Any:
-    """ Acts like .get() but for nested objects """
-    loc = obj
-    for p in path:
-        try:
-            loc = loc[p]
-        # NOTE: If loc is list then an invalid index throws IndexError
-        except (KeyError, IndexError):
-            return r
-    return loc
 
 # This plugin is written primarily for testing vLLM, though it can be made
 # to work for other runtimes which conform to the OpenAI API, as required.
@@ -133,6 +123,10 @@ class OpenAIPlugin(plugin.Plugin):
 
         result.end_time = time.time()
 
+        ###########################################
+        # DO NOT CALL time.time BEYOND THIS POINT #
+        ###########################################
+
         logger.debug("Response: %s", json.dumps(response.text))
 
         try:
@@ -212,11 +206,12 @@ class OpenAIPlugin(plugin.Plugin):
         resps = []
         try:
             for line in response.iter_lines():
+                recv_time = time.time() # Record time asap
                 # Only record lines with data
                 if line:
                     logger.debug("response line: %s", line)
                     resps.append(dict(
-                        time = time.time(),
+                        time = recv_time,
                         data = line
                     ))
             # Full response received
@@ -230,6 +225,10 @@ class OpenAIPlugin(plugin.Plugin):
                 result.error_code = response.status_code
             logger.exception("ChunkedEncodingError while streaming response")
             return result
+
+        ###########################################
+        # DO NOT CALL time.time BEYOND THIS POINT #
+        ###########################################
 
         # If no data was received return early
         if not resps:
@@ -254,9 +253,6 @@ class OpenAIPlugin(plugin.Plugin):
             result.input_tokens = deepget(message, "usage", "prompt_tokens")
             # We don't want to record this message
             resps.pop()
-        else:
-            # TODO This signals that the request is faulty
-            logger.warn("Usage token missing")
 
         # Iterate through all responses
         tokens = []

@@ -257,6 +257,7 @@ class OpenAIPlugin(plugin.Plugin):
         # Iterate through all responses
         tokens = []
         prev_time = 0
+        first_token_seen = False
         for resp in resps:
             message = self._process_resp(resp['data'])
             if not message:
@@ -269,18 +270,20 @@ class OpenAIPlugin(plugin.Plugin):
                 logger.error("Error received in response message: %s", result.error_text)
 
             token = {}
-            token['time'] = resp['time']
-            token['lat'] = token['time'] - prev_time
-            prev_time = token['time']
 
             if self.api == 'chat':
                 token["text"] = deepget(message, "choices", 0, 'delta', 'content')
             else: # self.api == 'legacy'
                 token["text"] = deepget(message, "choices", 0, 'text')
 
-            # Skip blank tokens
-            if not token['text']:
+            # Skip blank tokens before first non-blank
+            if not first_token_seen and not token['text']:
                 continue
+            first_token_seen = True
+
+            token['time'] = resp['time']
+            token['lat'] = token['time'] - prev_time
+            prev_time = token['time']
 
             # Append our vaild token
             tokens.append(token)

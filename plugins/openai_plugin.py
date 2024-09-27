@@ -1,14 +1,13 @@
 import json
 import logging
 import time
-from typing import Optional
+from typing import Any, Optional
 
 import requests
 import urllib3
 
 from plugins import plugin
 from result import RequestResult
-from utils import deepget
 
 urllib3.disable_warnings()
 """
@@ -26,6 +25,18 @@ required_args = ["host", "streaming", "endpoint"]
 APIS = ["legacy", "chat"]
 
 logger = logging.getLogger("user")
+
+def deepget(obj: dict, *path, r: Any = None) -> Any:
+    """Acts like .get() but for nested objects."""
+    loc = obj
+    for p in path:
+        try:
+            loc = loc[p]
+        # NOTE: If loc is list then an invalid index throws IndexError
+        except (KeyError, IndexError):
+            return r
+    return loc
+
 
 # This plugin is written primarily for testing vLLM, though it can be made
 # to work for other runtimes which conform to the OpenAI API, as required.

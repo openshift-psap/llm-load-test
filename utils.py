@@ -5,7 +5,6 @@ import json
 import logging
 import os
 from pathlib import Path
-from typing import Any
 
 import numpy as np
 
@@ -95,18 +94,6 @@ def parse_config(config):
         raise ValueError(f"Unknown plugin type {plugin_type}")
 
     return concurrency, duration, plugin
-
-
-def deepget(obj: dict, *path, r: Any = None) -> Any:
-    """Acts like .get() but for nested objects."""
-    loc = obj
-    for p in path:
-        try:
-            loc = loc[p]
-        # NOTE: If loc is list then an invalid index throws IndexError
-        except (KeyError, IndexError):
-            return r
-    return loc
 
 
 def yaml_load(file):

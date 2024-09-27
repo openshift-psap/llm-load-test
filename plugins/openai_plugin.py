@@ -259,8 +259,10 @@ class OpenAIPlugin(plugin.Plugin):
         message = self._process_resp(resps[-1]['data'])
         # If stream_options.include_usage == True then the final
         # message contains only token stats
+        expected_output_tokens = None
         if message and not message.get("choices") and message.get('usage'):
-            result.output_tokens = deepget(message, "usage", "completion_tokens")
+            # We want to count output tokens ourselves, but we can check our work with usage data.
+            expected_output_tokens = deepget(message, "usage", "completion_tokens")
             result.input_tokens = deepget(message, "usage", "prompt_tokens")
             # We don't want to record this message
             resps.pop()
@@ -320,9 +322,9 @@ class OpenAIPlugin(plugin.Plugin):
             logger.warning("Input token count not found in response, using dataset input_tokens")
             result.input_tokens = query.get("input_tokens")
 
-        if not result.output_tokens:
-            logger.warning("Output token count not found in response, length of token list")
-            result.output_tokens = len(tokens)
+        result.output_tokens = len(tokens)
+        if expected_output_tokens and result.output_tokens != expected_output_tokens:
+            logger.warning(f"Received {result.output_tokens} tokens but expected {expected_output_tokens} tokens")
 
         # If test duration timeout didn't happen before the last token is received, 
         # total tokens before the timeout will be equal to the total tokens in the response.

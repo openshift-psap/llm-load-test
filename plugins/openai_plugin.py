@@ -106,19 +106,18 @@ class OpenAIPlugin(plugin.Plugin):
 
         headers = {"Content-Type": "application/json"}
 
+        request = {
+            "max_tokens": query["output_tokens"],
+            "min_tokens": query["output_tokens"],
+        }
+
         if self.api == 'chat':
-            request = {
-                "messages": [
-                    {"role": "user", "content": query["text"]}
-                ],
-                "max_tokens": query["output_tokens"],
-            }
+            request["messages"] = [
+                { "role": "user", "content": query["text"] }
+            ]
         else: # self.api == 'legacy'
-            request = {
-                "prompt": query["text"],
-                "max_tokens": query["output_tokens"],
-                "min_tokens": query["output_tokens"],
-            }
+            request["prompt"] = query["text"],
+
         if self.model_name is not None:
             request["model"] = self.model_name
 
@@ -184,6 +183,7 @@ class OpenAIPlugin(plugin.Plugin):
 
         request = {
             "max_tokens": query["output_tokens"],
+            "min_tokens": query["output_tokens"],
             "stream": True,
             "stream_options": {
                 "include_usage": True
@@ -196,7 +196,6 @@ class OpenAIPlugin(plugin.Plugin):
             ]
         else: # self.api == 'legacy'
             request["prompt"] = query["text"],
-            request["min_tokens"] = query["output_tokens"]
 
         # some runtimes only serve one model, won't check this.
         if self.model_name is not None:

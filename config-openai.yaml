@@ -1,0 +1,29 @@
+output:
+  format: "json" # Maybe add option for pickle?
+  dir: "./output/"
+  file: "output.json"
+warmup: True
+warmup_options:
+  requests: 11
+  timeout_sec: 20
+storage: # TODO
+  type: local
+dataset:
+  file: "datasets/openorca_large_subset_011.jsonl"
+  max_queries: 1000
+  min_input_tokens: 0
+  max_input_tokens: 1024
+  max_output_tokens: 256
+  max_sequence_tokens: 1024
+load_options:
+  type: constant #Future options: loadgen, stair-step
+  concurrency: 2
+  duration: 20 # In seconds. Maybe in future support "100s" "10m", etc...
+plugin: "openai_plugin"
+plugin_options:
+  streaming: False
+  host: "http://localhost:8000"
+  model_name: "facebook/opt-125m"
+  endpoint: "/v1/completions" # "/v1/chat/completions"
+extra_metadata:
+  replicas: 1

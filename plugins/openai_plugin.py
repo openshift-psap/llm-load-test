@@ -1,7 +1,7 @@
 import json
 import logging
 import time
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 import requests
 import urllib3
@@ -26,16 +26,25 @@ APIS = ["legacy", "chat"]
 
 logger = logging.getLogger("user")
 
-def deepget(obj: dict, *path, r: Any = None) -> Any:
-    """Acts like .get() but for nested objects."""
-    loc = obj
-    for p in path:
+def deepget(obj: Union[dict, list], *path: Any, default: Any = None) -> Any:
+    """
+    Acts like .get() but for nested objects.
+
+    Each item in path is recusively indexed on obj. For path of length N,
+      obj[path[0]][path[1]]...[path[N-1]][path[N]]
+
+    :param obj: root object to index
+    :param path: ordered list of keys to index recursively
+    :param default: the default value to return if an indexing fails
+    :returns: result of final index or default if Key/Index Error occurs
+    """
+    current = obj
+    for pos in path:
         try:
-            loc = loc[p]
-        # NOTE: If loc is list then an invalid index throws IndexError
+            current = current[pos]
         except (KeyError, IndexError):
-            return r
-    return loc
+            return default
+    return current
 
 
 # This plugin is written primarily for testing vLLM, though it can be made
@@ -83,13 +92,11 @@ class OpenAIPlugin(plugin.Plugin):
                 return None
             message = json.loads(data)
             logger.debug("Message: %s", message)
-            return message
         except json.JSONDecodeError:
             logger.exception("Response line could not be json decoded: %s", resp)
-        except KeyError:
-            logger.exception(
-                "KeyError, unexpected response format in line: %s", resp
-            )
+            return None
+
+        return message
 
     def request_http(self, query: dict, user_id: int, test_end_time: float = 0):
 
@@ -164,9 +171,6 @@ class OpenAIPlugin(plugin.Plugin):
         except json.JSONDecodeError:
             logger.exception("Response could not be json decoded: %s", response.text)
             result.error_text = f"Response could not be json decoded {response.text}"
-        except KeyError:
-            logger.exception("KeyError, unexpected response format: %s", response.text)
-            result.error_text = f"KeyError, unexpected response format: {response.text}"
 
         # For non-streaming requests we are keeping output_tokens_before_timeout and output_tokens same.
         result.output_tokens_before_timeout = result.output_tokens

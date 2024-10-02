@@ -160,15 +160,16 @@ def main(args):
         logging.error("Exiting due to invalid input: %s", repr(e))
         exit_gracefully(procs, warmup_q, dataset_q, stop_q, logger_q, log_reader_thread, 1)
 
+    warmup = config.get("warmup")
+    if not warmup:
+        warmup_q = None
+
     try:
         logging.debug("Creating dataset with configuration %s", config["dataset"])
         # Get model_name if set for prompt formatting
         model_name = config.get("plugin_options", {}).get("model_name", "")
         dataset = Dataset(model_name=model_name, **config["dataset"])
 
-        warmup = config.get("warmup")
-        if not warmup:
-            warmup_q = None
         logging.debug("Creating %s Users and corresponding processes", concurrency)
         for idx in range(concurrency):
             send_results, recv_results = mp_ctx.Pipe()
@@ -214,6 +215,13 @@ def main(args):
 
         utils.write_output(config, results_list)
 
+    # Terminate queues immediately on ^C
+    except KeyboardInterrupt:
+        stop_q.cancel_join_thread()
+        dataset_q.cancel_join_thread()
+        if warmup_q:
+            warmup_q.cancel_join_thread()
+        exit_gracefully(procs, warmup_q, dataset_q, stop_q, logger_q, log_reader_thread, 130)
     except Exception:
         logging.exception("Unexpected exception in main process")
         exit_gracefully(procs, warmup_q, dataset_q, stop_q, logger_q, log_reader_thread, 1)

@@ -46,10 +46,16 @@ class RequestResult:
                 self.ttft = 1000 * (
                     self.first_token_time - self.start_time
                 )  # Time to first token in ms
-                self.itl = (1000 * (self.end_time - self.first_token_time)) / (
-                    self.output_tokens - 1
-                )  # Inter-token latency in ms. Distinct from TPOT as it excludes the first token time.
+                if self.output_tokens and self.output_tokens > 1:
+                    self.itl = (1000 * (self.end_time - self.first_token_time)) / (
+                        self.output_tokens - 1
+                    )  # Inter-token latency in ms. Distinct from TPOT as it excludes the first token time.
+                else:
+                    self.itl = None
 
-            self.tpot = (
-                self.response_time / self.output_tokens
-            )  # Time per output token in ms
+            if self.output_tokens and self.output_tokens > 0:
+                self.tpot = (
+                    self.response_time / self.output_tokens
+                )  # Time per output token in ms
+            else:
+                self.tpot = None

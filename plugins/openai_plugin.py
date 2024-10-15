@@ -262,20 +262,21 @@ class OpenAIPlugin(plugin.Plugin):
             result.end_time = resps[-1]['time']
             resps.pop() # Drop the end indicator
         else:
-            # TODO This signals that the request is incomplete
-            pass
+            logger.warning("End of response marker missing, response may be incomplete")
 
         # Check for usage statistics
         message = self._process_resp(resps[-1]['data'])
         # If stream_options.include_usage == True then the final
         # message contains only token stats
-        expected_output_tokens = None
+        expected_output_tokens = None # None also means that usage is missing
         if message and not message.get("choices") and message.get('usage'):
             # We want to count output tokens ourselves, but we can check our work with usage data.
             expected_output_tokens = deepget(message, "usage", "completion_tokens")
             result.input_tokens = deepget(message, "usage", "prompt_tokens")
             # We don't want to record this message
             resps.pop()
+        else:
+            logger.warning("Usage statistics are missing, token count will be inaccurate")
 
         # Iterate through all responses
         tokens = []

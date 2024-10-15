@@ -280,6 +280,7 @@ class OpenAIPlugin(plugin.Plugin):
         # Iterate through all responses
         tokens = []
         prev_time = 0
+        total_usage = 0
         first_token_seen = False
         for resp in resps:
             message = self._process_resp(resp['data'])
@@ -308,6 +309,12 @@ class OpenAIPlugin(plugin.Plugin):
             token['lat'] = token['time'] - prev_time
             prev_time = token['time']
 
+            # If the message has the current usage then record the number of
+            # tokens, otherwise assume 1 token.
+            current_usage = deepget(message, "usage", "completion_tokens", default=0)
+            token['count'] = max(current_usage - total_usage, 1)
+            total_usage += token['count']
+
             # Append our vaild token
             tokens.append(token)
 
@@ -319,8 +326,7 @@ class OpenAIPlugin(plugin.Plugin):
 
         # If the current token time is outside the test duration, record the total tokens received before
         # the current token.
-        tokens_before_timeout = [t for t in tokens if t['time'] <= test_end_time]
-        result.output_tokens_before_timeout = len(tokens_before_timeout)
+        result.output_tokens_before_timeout = sum(t['count'] for t in tokens if t['time'] <= test_end_time)
 
         # Last token comes with finish_reason set.
         result.stop_reason = deepget(resps[-1], "choices", 0, "finish_reason")
@@ -332,7 +338,7 @@ class OpenAIPlugin(plugin.Plugin):
             logger.warning("Input token count not found in response, using dataset input_tokens")
             result.input_tokens = query.get("input_tokens")
 
-        result.output_tokens = len(tokens)
+        result.output_tokens = total_usage # Just reuse our count from the loop
         if expected_output_tokens and result.output_tokens != expected_output_tokens:
             logger.warning(f"Received {result.output_tokens} tokens but expected {expected_output_tokens} tokens")
 

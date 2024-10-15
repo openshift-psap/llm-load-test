@@ -282,7 +282,6 @@ class OpenAIPlugin(plugin.Plugin):
         tokens = []
         prev_time = 0
         total_usage = 0
-        first_token_seen = False
         for resp in resps:
             message = self._process_resp(resp['data'])
             if not message:
@@ -301,20 +300,18 @@ class OpenAIPlugin(plugin.Plugin):
             else: # self.api == 'legacy'
                 token["text"] = deepget(message, "choices", 0, 'text')
 
-            # Skip blank tokens before first non-blank
-            if not first_token_seen and not token['text']:
-                continue
-            first_token_seen = True
+            # If the message has the current usage then record the number of
+            # tokens, otherwise assume 1 token.
+            current_usage = deepget(message, "usage", "completion_tokens")
+            if current_usage != None:
+                token['count'] = max(current_usage - total_usage, 0)
+            else:
+                token['count'] = 1
+            total_usage += token['count']
 
             token['time'] = resp['time']
             token['lat'] = token['time'] - prev_time
             prev_time = token['time']
-
-            # If the message has the current usage then record the number of
-            # tokens, otherwise assume 1 token.
-            current_usage = deepget(message, "usage", "completion_tokens", default=0)
-            token['count'] = max(current_usage - total_usage, 1)
-            total_usage += token['count']
 
             # Append our vaild token
             tokens.append(token)
@@ -323,7 +320,7 @@ class OpenAIPlugin(plugin.Plugin):
         result.ack_time = resps[0]['time']
 
         # First non empty token is the first token
-        result.first_token_time = tokens[0]['time']
+        result.first_token_time = next(t for t in tokens if t['count'] > 0)['time']
 
         # If the current token time is outside the test duration, record the total tokens received before
         # the current token.

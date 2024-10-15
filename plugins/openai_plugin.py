@@ -300,13 +300,21 @@ class OpenAIPlugin(plugin.Plugin):
             else: # self.api == 'legacy'
                 token["text"] = deepget(message, "choices", 0, 'text')
 
+            # Responses can have more than one token in certain scenarios
+            # such as speculative decoding
             # If the message has the current usage then record the number of
             # tokens, otherwise assume 1 token.
             current_usage = deepget(message, "usage", "completion_tokens")
             if current_usage != None:
-                token['count'] = max(current_usage - total_usage, 0)
+                token['count'] = current_usage - total_usage
             else:
                 token['count'] = 1
+
+            # Omit responses that don't have
+            # tokens (or somehow negative tokens)
+            if token['count'] < 1:
+                continue
+
             total_usage += token['count']
 
             token['time'] = resp['time']
@@ -320,7 +328,7 @@ class OpenAIPlugin(plugin.Plugin):
         result.ack_time = resps[0]['time']
 
         # First non empty token is the first token
-        result.first_token_time = next(t for t in tokens if t['count'] > 0)['time']
+        result.first_token_time = tokens[0]['time']
 
         # If the current token time is outside the test duration, record the total tokens received before
         # the current token.

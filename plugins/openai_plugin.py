@@ -268,7 +268,7 @@ class OpenAIPlugin(plugin.Plugin):
         message = self._process_resp(resps[-1]['data'])
         # If stream_options.include_usage == True then the final
         # message contains only token stats
-        expected_output_tokens = None # None also means that usage is missing
+        expected_output_tokens = None
         if message and not message.get("choices") and message.get('usage'):
             # We want to count output tokens ourselves, but we can check our work with usage data.
             expected_output_tokens = deepget(message, "usage", "completion_tokens")
@@ -279,19 +279,25 @@ class OpenAIPlugin(plugin.Plugin):
             logger.warning("Usage statistics are missing, token count will be inaccurate")
 
         # Iterate through all responses
+        # Responses can have more than one token in certain scenarios
+        # such as speculative decoding, thus an item in this list
+        # represents one or more tokens
         tokens = []
         prev_time = 0
         total_usage = 0
         for resp in resps:
             message = self._process_resp(resp['data'])
             if not message:
-                # TODO: This may be bad
+                result.error_code = response.status_code
+                result.error_text = 'bad_response'
+                logger.error("Skipping a token that failed to parse, this may be bad")
                 continue
 
             if message.get('error'):
                 result.error_code = response.status_code
                 result.error_text = message['error']
                 logger.error("Error received in response message: %s", result.error_text)
+                continue
 
             token = {}
 
@@ -300,10 +306,8 @@ class OpenAIPlugin(plugin.Plugin):
             else: # self.api == 'legacy'
                 token["text"] = deepget(message, "choices", 0, 'text')
 
-            # Responses can have more than one token in certain scenarios
-            # such as speculative decoding
             # If the message has the current usage then record the number of
-            # tokens, otherwise assume 1 token.
+            # tokens, otherwise assume 1 token
             current_usage = deepget(message, "usage", "completion_tokens")
             if current_usage != None:
                 token['count'] = current_usage - total_usage
@@ -313,8 +317,11 @@ class OpenAIPlugin(plugin.Plugin):
             # Omit responses that don't have
             # tokens (or somehow negative tokens)
             if token['count'] < 1:
+                logger.debug("Omiting response '%s' because it contains %d tokens",
+                             token["text"], token['count'])
                 continue
 
+            # Update the total token count
             total_usage += token['count']
 
             token['time'] = resp['time']

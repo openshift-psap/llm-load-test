@@ -1,0 +1,7 @@
+[allowlist]
+  description = "Global Allowlist"
+
+  paths = [
+    # Ignore the python code generation dataset, it has fake secrets
+    '''datasets\/python_code_alpaca_subset.jsonl$''',
+  ]

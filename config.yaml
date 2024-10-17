@@ -2,10 +2,6 @@ output:
   format: "json" # Maybe add option for pickle?
   dir: "./output/"
   file: "output.json"
-warmup: False
-warmup_options:
-  requests: 10
-  timeout_sec: 20
 storage: # TODO
   type: local
 dataset:

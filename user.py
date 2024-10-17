@@ -12,7 +12,6 @@ class User:
         self,
         user_id,
         dataset_q,
-        warmup_q,
         stop_q,
         results_pipe,
         plugin,
@@ -24,7 +23,6 @@ class User:
         self.user_id = user_id
         self.plugin = plugin
         self.dataset_q = dataset_q
-        self.warmup_q = warmup_q
         self.stop_q = stop_q
         self.results_list = []
         self.results_pipe = results_pipe
@@ -64,19 +62,6 @@ class User:
     def run_user_process(self):
         """Run a process."""
         self._init_user_process_logging()
-
-        if self.warmup_q is not None:
-            self.logger.info("User %s starting warmup", self.user_id)
-            while self.warmup_q.empty():
-                result = self.make_request()
-                # make_request will return None after 2 seconds if dataset_q is empty
-                # to ensure that users don't get stuck waiting for requests
-                if result is not None:
-                    # During warmup, send results as soon as they are received
-                    self.results_list.append(result)
-                    self.results_pipe.send(self.results_list)
-                    self.results_list = []
-            self.logger.info("User %s done warmup", self.user_id)
 
         test_end_time = time.time() + self.run_duration
         while self.stop_q.empty():

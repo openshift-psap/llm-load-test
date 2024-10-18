@@ -328,7 +328,11 @@ class OpenAIPlugin(plugin.Plugin):
             token['lat'] = token['time'] - prev_time
             prev_time = token['time']
 
-            # Append our vaild token
+            # Find the last response with finish_reason set.
+            if deepget(message, "choices", 0, "finish_reason"):
+                result.stop_reason = deepget(message, "choices", 0, "finish_reason")
+
+            # Append our valid token
             tokens.append(token)
 
         # First chunk may not be a token, just a connection ack
@@ -341,9 +345,6 @@ class OpenAIPlugin(plugin.Plugin):
         # the current token.
         result.output_tokens_before_timeout = sum(t['count'] for t in tokens if t['time'] <= test_end_time)
 
-        # Last token comes with finish_reason set.
-        result.stop_reason = deepget(resps[-1], "choices", 0, "finish_reason")
-
         # Full response received, return
         result.output_text = "".join([token['text'] for token in tokens])
 
@@ -354,11 +355,6 @@ class OpenAIPlugin(plugin.Plugin):
         result.output_tokens = total_usage # Just reuse our count from the loop
         if expected_output_tokens and result.output_tokens != expected_output_tokens:
             logger.warning(f"Received {result.output_tokens} tokens but expected {expected_output_tokens} tokens")
-
-        # If test duration timeout didn't happen before the last token is received, 
-        # total tokens before the timeout will be equal to the total tokens in the response.
-        if not result.output_tokens_before_timeout:
-            result.output_tokens_before_timeout = result.output_tokens
 
         result.calculate_results()
         return result

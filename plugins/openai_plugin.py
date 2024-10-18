@@ -328,6 +328,10 @@ class OpenAIPlugin(plugin.Plugin):
             token['lat'] = token['time'] - prev_time
             prev_time = token['time']
 
+            # Find the last response with finish_reason set.
+            if deepget(message, "choices", 0, "finish_reason"):
+                result.stop_reason = deepget(message, "choices", 0, "finish_reason")
+
             # Append our vaild token
             tokens.append(token)
 
@@ -340,9 +344,6 @@ class OpenAIPlugin(plugin.Plugin):
         # If the current token time is outside the test duration, record the total tokens received before
         # the current token.
         result.output_tokens_before_timeout = sum(t['count'] for t in tokens if t['time'] <= test_end_time)
-
-        # Last token comes with finish_reason set.
-        result.stop_reason = deepget(resps[-1], "choices", 0, "finish_reason")
 
         # Full response received, return
         result.output_text = "".join([token['text'] for token in tokens])

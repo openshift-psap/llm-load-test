@@ -356,10 +356,5 @@ class OpenAIPlugin(plugin.Plugin):
         if expected_output_tokens and result.output_tokens != expected_output_tokens:
             logger.warning(f"Received {result.output_tokens} tokens but expected {expected_output_tokens} tokens")
 
-        # If test duration timeout didn't happen before the last token is received, 
-        # total tokens before the timeout will be equal to the total tokens in the response.
-        if not result.output_tokens_before_timeout:
-            result.output_tokens_before_timeout = result.output_tokens
-
         result.calculate_results()
         return result

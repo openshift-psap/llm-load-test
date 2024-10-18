@@ -332,7 +332,7 @@ class OpenAIPlugin(plugin.Plugin):
             if deepget(message, "choices", 0, "finish_reason"):
                 result.stop_reason = deepget(message, "choices", 0, "finish_reason")
 
-            # Append our vaild token
+            # Append our valid token
             tokens.append(token)
 
         # First chunk may not be a token, just a connection ack

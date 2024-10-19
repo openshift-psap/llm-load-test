@@ -14,22 +14,15 @@ import logging_utils
 import utils
 
 
-def run_main_process(concurrency, duration, dataset, dataset_q, stop_q):
+def run_main_process(concurrency, duration, dataset, schedule_q, stop_q):
     """Run the main process."""
     logging.info("Test from main process")
 
-    # Initialize the dataset_queue with 4*concurrency requests
-    for query in dataset.get_next_n_queries(2 * concurrency):
-        dataset_q.put(query)
-
     start_time = time.time()
     current_time = start_time
+    schedule_q.put(start_time)
     while (current_time - start_time) < duration:
         # Keep the dataset queue full for duration
-        if dataset_q.qsize() < int(0.5*concurrency + 1):
-            logging.info("Adding %d entries to dataset queue", concurrency)
-            for query in dataset.get_next_n_queries(concurrency):
-                dataset_q.put(query)
         time.sleep(0.1)
         current_time = time.time()
 
@@ -37,11 +30,6 @@ def run_main_process(concurrency, duration, dataset, dataset_q, stop_q):
 
     # Signal users to stop sending requests
     stop_q.put(None)
-
-    # Empty the dataset queue
-    while not dataset_q.empty():
-        logging.debug("Removing element from dataset_q")
-        dataset_q.get()
 
     return
 
@@ -57,17 +45,12 @@ def gather_results(results_pipes):
     return results_list
 
 
-def exit_gracefully(procs, dataset_q, stop_q, logger_q, log_reader_thread, code):
+def exit_gracefully(procs, stop_q, logger_q, log_reader_thread, code):
     """Exit gracefully."""
     # Signal users to stop sending requests
     if stop_q.empty():
         stop_q.put(None)
-
-    if dataset_q is not None and not dataset_q.empty():
-        logging.warning("Removing more elements from dataset_q after gathering results!")
-        while not dataset_q.empty():
-            dataset_q.get()
-
+    
     logging.debug("Calling join() on all user processes")
     for proc in procs:
         proc.join()
@@ -89,8 +72,8 @@ def main(args):
     log_reader_thread = logging_utils.init_logging(args.log_level, logger_q)
 
     # Create processes and their Users
+    schedule_q = mp_ctx.Queue(1)
     stop_q = mp_ctx.Queue(1)
-    dataset_q = mp_ctx.Queue()
     procs = []
     results_pipes = []
 
@@ -102,7 +85,7 @@ def main(args):
         concurrency, duration, plugin = utils.parse_config(config)
     except Exception as e:
         logging.error("Exiting due to invalid input: %s", repr(e))
-        exit_gracefully(procs, dataset_q, stop_q, logger_q, log_reader_thread, 1)
+        exit_gracefully(procs, stop_q, logger_q, log_reader_thread, 1)
 
     try:
         logging.debug("Creating dataset with configuration %s", config["dataset"])
@@ -113,9 +96,11 @@ def main(args):
         logging.debug("Creating %s Users and corresponding processes", concurrency)
         for idx in range(concurrency):
             send_results, recv_results = mp_ctx.Pipe()
+            results_pipes.append(recv_results)
             user = User(
                 idx,
-                dataset_q=dataset_q,
+                dataset=dataset.user_subset(idx, concurrency),
+                schedule_q=schedule_q,
                 stop_q=stop_q,
                 results_pipe=send_results,
                 plugin=plugin,
@@ -127,10 +112,9 @@ def main(args):
             procs.append(proc)
             logging.info("Starting %s", proc)
             proc.start()
-            results_pipes.append(recv_results)
 
         logging.debug("Running main process")
-        run_main_process(concurrency, duration, dataset, dataset_q, stop_q)
+        run_main_process(concurrency, duration, dataset, schedule_q, stop_q)
 
         results_list = gather_results(results_pipes)
 
@@ -139,13 +123,12 @@ def main(args):
     # Terminate queues immediately on ^C
     except KeyboardInterrupt:
         stop_q.cancel_join_thread()
-        dataset_q.cancel_join_thread()
-        exit_gracefully(procs, dataset_q, stop_q, logger_q, log_reader_thread, 130)
+        exit_gracefully(procs, stop_q, logger_q, log_reader_thread, 130)
     except Exception:
         logging.exception("Unexpected exception in main process")
-        exit_gracefully(procs, dataset_q, stop_q, logger_q, log_reader_thread, 1)
+        exit_gracefully(procs, stop_q, logger_q, log_reader_thread, 1)
 
-    exit_gracefully(procs, dataset_q, stop_q, logger_q, log_reader_thread, 0)
+    exit_gracefully(procs, stop_q, logger_q, log_reader_thread, 0)
 
 
 if __name__ == "__main__":

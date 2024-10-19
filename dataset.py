@@ -12,7 +12,7 @@ class Dataset:
     def __init__(self,
                  file,
                  model_name="",
-                 max_queries=3000,
+                 max_queries=8000,
                  min_input_tokens=0,
                  max_input_tokens=16000,
                  min_output_tokens=0,
@@ -36,6 +36,13 @@ class Dataset:
             logging.warning("Total dataset is %s elements, check filters!", len(self.dataset_list))
         self.index = 0
 
+    def user_subset(self, user_id, num_users):
+        if user_id >= num_users:
+            logging.error("Unexpected inputs, user_id must be < num_users")
+        
+        return self.dataset_list[user_id::num_users]
+        
+
     def get_next_n_queries(self, n):
         """Get the N next queries."""
         max_index = len(self.dataset_list)
@@ -47,7 +54,7 @@ class Dataset:
 def initialize_dataset(
     filename,
     model_name="",
-    max_queries=3000,
+    max_queries=8000,
     min_input_tokens=0,
     max_input_tokens=16000,
     min_output_tokens=0,

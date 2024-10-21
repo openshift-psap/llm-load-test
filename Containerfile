@@ -7,7 +7,7 @@ WORKDIR /llm-load-test/
 ARG GIT_BRANCH=main
 
 ENV LLM_LOAD_TEST_CONFIG=config.yaml
-ENV LLM_LOAD_TEST_LOG_LEVEL=warning
+ENV LLM_LOAD_TEST_LOG_LEVEL=debug
 
 RUN dnf -y update \
  && dnf -y install git python3-pip

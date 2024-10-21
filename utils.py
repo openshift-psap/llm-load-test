@@ -186,14 +186,6 @@ def write_output(config, results_list):
     df_test_duration = df[df["output_tokens"] == df["output_tokens_before_timeout"]]
     req_completed_within_test_duration = len(df_test_duration)
 
-    if rps is not None:
-        rps_scheduled = req_count / duration
-        rps_completed = req_completed_within_test_duration / duration
-        print(f"Actual requests per second scheduled: {rps_scheduled}")
-        print(f"Actual requests per second completed during run: {rps_completed}")
-        average_client_wait_time = df["client_wait_time"].mean()
-        print(f"Avg. client wait time per request: {average_client_wait_time}")
-
     # Time per output token summary
     output_obj = get_summary(df_test_duration, output_obj, "tpot")
 
@@ -232,6 +224,16 @@ def write_output(config, results_list):
     print(
         f"Total throughput across all users bounded by the test duration: {throughput} tokens / sec, for duration {duration}"
     )
+
+    if rps is not None:
+        rps_scheduled = req_count / duration
+        rps_completed = req_completed_within_test_duration / duration
+        rps_completed_extend = req_count / full_duration
+        print(f"Requests per second scheduled: {rps_scheduled}")
+        print(f"Requests per second completed during run: {rps_completed}")
+        print(f"Requests per second completed total (incl. after run): {rps_completed_extend}")
+        average_client_wait_time = df["client_wait_time"].mean()
+        print(f"Avg. client wait time per request: {average_client_wait_time}")
 
     output_obj["summary"]["throughput_full_duration"] = throughput_full_duration
     output_obj["summary"]["full_duration"] = full_duration

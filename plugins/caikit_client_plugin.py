@@ -79,7 +79,6 @@ class CaikitClientPlugin(plugin.Plugin):
         result.output_tokens_before_timeout = result.output_tokens
         result.output_text = response
 
-        result.calculate_results()
         return result
 
     def streaming_request_grpc(self, query, user_id, test_end_time: float=0):
@@ -113,8 +112,6 @@ class CaikitClientPlugin(plugin.Plugin):
         # TODO: Calculate correct output tokens before test timeout duration for streaming requests
         result.output_tokens_before_timeout = result.output_tokens
 
-        result.calculate_results()
-
         return result
 
     def request_http(self, query, user_id):
@@ -138,7 +135,6 @@ class CaikitClientPlugin(plugin.Plugin):
         result.output_tokens_before_timeout = result.output_tokens
         result.output_text = response
 
-        result.calculate_results()
         return result
 
     def streaming_request_http(self, query, user_id):
@@ -171,5 +167,4 @@ class CaikitClientPlugin(plugin.Plugin):
         # TODO: Calculate correct output tokens before test timeout duration for streaming requests
         result.output_tokens_before_timeout = result.output_tokens
 
-        result.calculate_results()
         return result

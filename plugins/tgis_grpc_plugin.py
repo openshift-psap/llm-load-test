@@ -121,7 +121,6 @@ class TGISGRPCPlugin(plugin.Plugin):
         else:
             result.output_tokens = query["output_tokens"]
 
-        result.calculate_results()
         return result
 
     def make_request_stream(self, query: dict, user_id: int, test_end_time: float):
@@ -199,5 +198,4 @@ class TGISGRPCPlugin(plugin.Plugin):
             logger.warning("Output token count not found in response, using dataset expected output tokens")
             result.output_tokens = len(tokens)
 
-        result.calculate_results()
         return result

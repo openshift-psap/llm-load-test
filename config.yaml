@@ -6,15 +6,16 @@ storage: # TODO
   type: local
 dataset:
   file: "datasets/openorca_large_subset_011.jsonl"
-  max_queries: 1000
+  max_queries: 4000
   min_input_tokens: 0
   max_input_tokens: 1024
   min_output_tokens: 0
-  max_output_tokens: 1024
+  max_output_tokens: 512
   max_sequence_tokens: 2048
 load_options:
-  type: constant #Future options: loadgen, stair-step
-  concurrency: 1
+  type: rps #Options: concurrency, rps, loadgen, stair-step
+  concurrency: 4 
+  rps: 16
   duration: 20 # In seconds. Maybe in future support "100s" "10m", etc...
 plugin: "openai_plugin"
 plugin_options:

@@ -33,6 +33,7 @@ def run_main_process(rps, duration, dataset, schedule_q, stop_q):
     return
 
 def main_loop_concurrency_mode(schedule_q, start_time, end_time):
+    """Let all users send requests repeatedly until end_time"""
     logging.info("Test from main process")
 
     schedule_q.put(start_time)
@@ -48,22 +49,36 @@ def main_loop_concurrency_mode(schedule_q, start_time, end_time):
     stop_q.put(None)
 
 
-def main_loop_rps_mode(schedule_q, rps, start_time, end_time):
+def request_schedule_constant_rps(rps, start_time, end_time):
+    """Returns a list of timestamps for request schedule with constant RPS"""
     interval = 1 / rps
-
     next_req_time = start_time
-    current_time = start_time
-    while current_time < end_time:
-        if next_req_time <= current_time:
-            logging.info("Scheduling request")
-            schedule_q.put(next_req_time)
-            next_req_time = next_req_time + interval
+    while next_req_time < end_time:
+        yield(next_req_time)
+        next_req_time = next_req_time + interval
+
+
+# This function should support non-constant RPS in the future
+def main_loop_rps_mode(schedule_q, rps, start_time, end_time):
+    """Dispatch requests with constant RPS, via schedule_q"""
+    req_times = request_schedule_constant_rps(rps, start_time, end_time)
+        
+    current_time = time.time()
+    for next_req_time in req_times:
+        while next_req_time > current_time:
+            # Wait or spin until next req needs to be dispatched
             sleep_time = (next_req_time - current_time) - 0.01 # Sleep until 10ms before next_req_time
             if sleep_time > 0:
                 time.sleep(sleep_time)
-            # else spin until next_req_time <= current_time
-
-        current_time = time.time()
+            # else spin
+            current_time = time.time()
+        
+        logging.info(f"Scheduling request time {next_req_time}")
+        schedule_q.put(next_req_time)
+        
+        if current_time >= end_time:
+            return
+        
 
 
 def gather_results(results_pipes):

@@ -114,5 +114,4 @@ class HFTGIPlugin(plugin.Plugin):
         # TODO: Calculate correct output tokens before test timeout duration for streaming requests
         result.output_tokens_before_timeout = result.output_tokens
 
-        result.calculate_results()
         return result

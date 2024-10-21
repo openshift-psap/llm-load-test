@@ -14,15 +14,31 @@ import logging_utils
 import utils
 
 
-def run_main_process(concurrency, duration, dataset, schedule_q, stop_q):
+def run_main_process(rps, duration, dataset, schedule_q, stop_q):
     """Run the main process."""
     logging.info("Test from main process")
 
     start_time = time.time()
-    current_time = start_time
+    end_time = start_time + duration
+    if rps is not None:
+        main_loop_rps_mode(schedule_q, rps, start_time, end_time)
+    else:
+        main_loop_concurrency_mode(schedule_q, start_time, end_time)
+
+    logging.info("Timer ended, stopping processes")
+
+    # Signal users to stop sending requests
+    stop_q.put(None)
+
+    return
+
+def main_loop_concurrency_mode(schedule_q, start_time, end_time):
+    logging.info("Test from main process")
+
     schedule_q.put(start_time)
-    while (current_time - start_time) < duration:
-        # Keep the dataset queue full for duration
+
+    current_time = start_time
+    while current_time < end_time:
         time.sleep(0.1)
         current_time = time.time()
 
@@ -31,7 +47,23 @@ def run_main_process(concurrency, duration, dataset, schedule_q, stop_q):
     # Signal users to stop sending requests
     stop_q.put(None)
 
-    return
+
+def main_loop_rps_mode(schedule_q, rps, start_time, end_time):
+    interval = 1 / rps
+
+    next_req_time = start_time
+    current_time = start_time
+    while current_time < end_time:
+        if next_req_time <= current_time:
+            logging.info("Scheduling request")
+            schedule_q.put(next_req_time)
+            next_req_time = next_req_time + interval
+            sleep_time = (next_req_time - current_time) - 0.01 # Sleep until 10ms before next_req_time
+            if sleep_time > 0:
+                time.sleep(sleep_time)
+            # else spin until next_req_time <= current_time
+
+        current_time = time.time()
 
 
 def gather_results(results_pipes):
@@ -50,7 +82,7 @@ def exit_gracefully(procs, stop_q, logger_q, log_reader_thread, code):
     # Signal users to stop sending requests
     if stop_q.empty():
         stop_q.put(None)
-    
+
     logging.debug("Calling join() on all user processes")
     for proc in procs:
         proc.join()
@@ -79,10 +111,10 @@ def main(args):
 
     # Parse config
     logging.debug("Parsing YAML config file %s", args.config)
-    concurrency, duration, plugin = 0, 0, None
+    rps, concurrency, duration, plugin = None, 0, 0, None
     try:
         config = utils.yaml_load(args.config)
-        concurrency, duration, plugin = utils.parse_config(config)
+        rps, concurrency, duration, plugin = utils.parse_config(config)
     except Exception as e:
         logging.error("Exiting due to invalid input: %s", repr(e))
         exit_gracefully(procs, stop_q, logger_q, log_reader_thread, 1)
@@ -93,7 +125,7 @@ def main(args):
         model_name = config.get("plugin_options", {}).get("model_name", "")
         dataset = Dataset(model_name=model_name, **config["dataset"])
 
-        logging.debug("Creating %s Users and corresponding processes", concurrency)
+        logging.info("Creating %s Users and corresponding processes", concurrency)
         for idx in range(concurrency):
             send_results, recv_results = mp_ctx.Pipe()
             results_pipes.append(recv_results)
@@ -107,6 +139,7 @@ def main(args):
                 logger_q=logger_q,
                 log_level=args.log_level,
                 run_duration=duration,
+                rate_limited=(rps is not None)
             )
             proc = mp_ctx.Process(target=user.run_user_process)
             procs.append(proc)
@@ -114,7 +147,7 @@ def main(args):
             proc.start()
 
         logging.debug("Running main process")
-        run_main_process(concurrency, duration, dataset, schedule_q, stop_q)
+        run_main_process(rps, duration, dataset, schedule_q, stop_q)
 
         results_list = gather_results(results_pipes)
 

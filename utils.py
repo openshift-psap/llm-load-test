@@ -73,8 +73,15 @@ def parse_config(config):
     logging.info("load_options config: %s", config["load_options"])
 
     load_options = config.get("load_options")
-    concurrency = load_options.get("concurrency")
     duration = load_options.get("duration")
+    if load_options.get("type") == "concurrency":
+        concurrency = load_options.get("concurrency")
+        rps = None
+    elif load_options.get("type") == "rps":
+        concurrency = load_options.get("concurrency")
+        rps = load_options.get("rps")
+    else: 
+        logging.error("Unknown load_options type %s", load_options.get("type"))
 
     plugin_type = config.get("plugin")
     if plugin_type == "openai_plugin":
@@ -93,7 +100,7 @@ def parse_config(config):
         logging.error("Unknown plugin type %s", plugin_type)
         raise ValueError(f"Unknown plugin type {plugin_type}")
 
-    return concurrency, duration, plugin
+    return rps, concurrency, duration, plugin
 
 
 def yaml_load(file):
@@ -118,7 +125,7 @@ def write_output(config, results_list):
         logging.warning("Output path %s does not exist, creating it!", path)
         path.mkdir(parents=True, exist_ok=True)
 
-    concurrency, duration, _ = parse_config(config)
+    rps, concurrency, duration, _ = parse_config(config)
     outfile_name = output_options.get("file").format(
         concurrency=concurrency, duration=duration
     )
@@ -178,6 +185,14 @@ def write_output(config, results_list):
     # calculating the summary statistics on tpot, ttft, itl, tt_ack
     df_test_duration = df[df["output_tokens"] == df["output_tokens_before_timeout"]]
     req_completed_within_test_duration = len(df_test_duration)
+
+    if rps is not None:
+        rps_scheduled = req_count / duration
+        rps_completed = req_completed_within_test_duration / duration
+        print(f"Actual requests per second scheduled: {rps_scheduled}")
+        print(f"Actual requests per second completed during run: {rps_completed}")
+        average_client_wait_time = df["client_wait_time"].mean()
+        print(f"Avg. client wait time per request: {average_client_wait_time}")
 
     # Time per output token summary
     output_obj = get_summary(df_test_duration, output_obj, "tpot")

@@ -14,32 +14,43 @@ import logging_utils
 import utils
 
 
-def run_main_process(rps, duration, dataset, schedule_q, stop_q):
+def run_main_process(rps, duration, dataset, request_q, stop_q):
     """Run the main process."""
     logging.info("Test from main process")
 
     start_time = time.time()
     end_time = start_time + duration
     if rps is not None:
-        main_loop_rps_mode(schedule_q, rps, start_time, end_time)
+        main_loop_rps_mode(dataset, request_q, rps, start_time, end_time)
     else:
-        main_loop_concurrency_mode(schedule_q, start_time, end_time)
+        main_loop_concurrency_mode(dataset, request_q, start_time, end_time)
 
     logging.info("Timer ended, stopping processes")
 
     # Signal users to stop sending requests
     stop_q.put(None)
 
+    # Empty the dataset queue
+    while not request_q.empty():
+        logging.debug("Removing element from request_q")
+        request_q.get()
+
     return
 
-def main_loop_concurrency_mode(schedule_q, start_time, end_time):
+def main_loop_concurrency_mode(dataset, request_q, start_time, end_time):
     """Let all users send requests repeatedly until end_time"""
     logging.info("Test from main process")
 
-    schedule_q.put(start_time)
+    # Initialize the request_q with 2*concurrency requests
+    for query in dataset.get_next_n_queries(2 * concurrency):
+        request_q.put((None, query))
 
     current_time = start_time
     while current_time < end_time:
+        if request_q.qsize() < int(0.5*concurrency + 1):
+            logging.info("Adding %d entries to dataset queue", concurrency)
+            for query in dataset.get_next_n_queries(concurrency):
+                request_q.put((None, query))
         time.sleep(0.1)
         current_time = time.time()
 
@@ -59,27 +70,28 @@ def request_schedule_constant_rps(rps, start_time, end_time):
 
 
 # This function should support non-constant RPS in the future
-def main_loop_rps_mode(schedule_q, rps, start_time, end_time):
+def main_loop_rps_mode(dataset, request_q, rps, start_time, end_time):
     """Dispatch requests with constant RPS, via schedule_q"""
     req_times = request_schedule_constant_rps(rps, start_time, end_time)
         
     current_time = time.time()
+    query = dataset.get_next_n_queries(1)[0]
     for next_req_time in req_times:
         while next_req_time > current_time:
             # Wait or spin until next req needs to be dispatched
-            sleep_time = (next_req_time - current_time) - 0.01 # Sleep until 10ms before next_req_time
+            query = dataset.get_next_n_queries(1)[0]
+            sleep_time = (next_req_time - current_time) - 0.03 # Sleep until 30ms before next_req_time
             if sleep_time > 0:
                 time.sleep(sleep_time)
             # else spin
             current_time = time.time()
         
         logging.info(f"Scheduling request time {next_req_time}")
-        schedule_q.put(next_req_time)
+        request_q.put((next_req_time, query))
         
         if current_time >= end_time:
             return
         
-
 
 def gather_results(results_pipes):
     """Get the results."""
@@ -92,11 +104,16 @@ def gather_results(results_pipes):
     return results_list
 
 
-def exit_gracefully(procs, stop_q, logger_q, log_reader_thread, code):
+def exit_gracefully(procs, request_q, stop_q, logger_q, log_reader_thread, code):
     """Exit gracefully."""
     # Signal users to stop sending requests
     if stop_q.empty():
         stop_q.put(None)
+
+    if request_q is not None and not request_q.empty():
+        logging.warning("Removing more elements from request_q after gathering results!")
+        while not request_q.empty():
+            request_q.get()
 
     logging.debug("Calling join() on all user processes")
     for proc in procs:
@@ -119,8 +136,10 @@ def main(args):
     log_reader_thread = logging_utils.init_logging(args.log_level, logger_q)
 
     # Create processes and their Users
-    schedule_q = mp_ctx.Queue(1)
+    request_q = mp_ctx.Queue(1)
+    request_q.cancel_join_thread()
     stop_q = mp_ctx.Queue(1)
+
     procs = []
     results_pipes = []
 
@@ -132,7 +151,7 @@ def main(args):
         rps, concurrency, duration, plugin = utils.parse_config(config)
     except Exception as e:
         logging.error("Exiting due to invalid input: %s", repr(e))
-        exit_gracefully(procs, stop_q, logger_q, log_reader_thread, 1)
+        exit_gracefully(procs, request_q, stop_q, logger_q, log_reader_thread, 1)
 
     try:
         logging.debug("Creating dataset with configuration %s", config["dataset"])
@@ -146,8 +165,7 @@ def main(args):
             results_pipes.append(recv_results)
             user = User(
                 idx,
-                dataset=dataset.user_subset(idx, concurrency),
-                schedule_q=schedule_q,
+                request_q=request_q,
                 stop_q=stop_q,
                 results_pipe=send_results,
                 plugin=plugin,
@@ -162,7 +180,7 @@ def main(args):
             proc.start()
 
         logging.debug("Running main process")
-        run_main_process(rps, duration, dataset, schedule_q, stop_q)
+        run_main_process(rps, duration, dataset, request_q, stop_q)
 
         results_list = gather_results(results_pipes)
 
@@ -171,12 +189,12 @@ def main(args):
     # Terminate queues immediately on ^C
     except KeyboardInterrupt:
         stop_q.cancel_join_thread()
-        exit_gracefully(procs, stop_q, logger_q, log_reader_thread, 130)
+        exit_gracefully(procs, request_q, stop_q, logger_q, log_reader_thread, 130)
     except Exception:
         logging.exception("Unexpected exception in main process")
-        exit_gracefully(procs, stop_q, logger_q, log_reader_thread, 1)
+        exit_gracefully(procs, request_q, stop_q, logger_q, log_reader_thread, 1)
 
-    exit_gracefully(procs, stop_q, logger_q, log_reader_thread, 0)
+    exit_gracefully(procs, request_q, stop_q, logger_q, log_reader_thread, 0)
 
 
 if __name__ == "__main__":

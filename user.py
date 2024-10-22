@@ -11,8 +11,7 @@ class User:
     def __init__(
         self,
         user_id,
-        dataset,
-        schedule_q,
+        request_q,
         stop_q,
         results_pipe,
         plugin,
@@ -24,9 +23,7 @@ class User:
         """Initialize object."""
         self.user_id = user_id
         self.plugin = plugin
-        self.dataset = dataset
-        self.dataset_idx = 0
-        self.schedule_q = schedule_q
+        self.request_q = request_q
         self.stop_q = stop_q
         self.results_list = []
         self.results_pipe = results_pipe
@@ -37,10 +34,8 @@ class User:
         self.run_duration = run_duration
         self.rate_limited = rate_limited
 
-    def make_request(self, test_end_time=0, req_schedule_time=None):
+    def make_request(self, query, test_end_time=0, req_schedule_time=None):
         """Make a request."""
-        query = self.dataset[self.dataset_idx]
-        self.dataset_idx = (self.dataset_idx + 1) % len(self.dataset)
 
         self.logger.info("User %s making request", self.user_id)
         result = self.plugin.request_func(query, self.user_id, test_end_time)
@@ -72,7 +67,7 @@ class User:
     def _rate_limited_user_loop(self, test_end_time):
         while self.stop_q.empty():
             try:
-                req_schedule_time = self.schedule_q.get(timeout=2)
+                req_schedule_time, query = self.request_q.get(timeout=5)
                 if not self.stop_q.empty():
                     break
             except queue.Empty:
@@ -81,8 +76,7 @@ class User:
                 # self.debug.info("User waiting for a request to be scheduled")
                 continue
 
-            result = self.make_request(test_end_time, req_schedule_time=req_schedule_time)
-
+            result = self.make_request(query, test_end_time, req_schedule_time=req_schedule_time)
 
             if result is not None:
                 self.results_list.append(result)
@@ -95,7 +89,7 @@ class User:
         self._init_user_process_logging()
 
         # Waits for all processes to actually be started
-        while not self.rate_limited and self.schedule_q.empty():
+        while not self.rate_limited and self.request_q.empty():
             time.sleep(0.1)
 
         test_end_time = time.time() + self.run_duration

@@ -7,7 +7,7 @@ import requests
 import urllib3
 
 from plugins import plugin
-from result import RequestResult
+from result import RequestResult, BatchRequestResult
 
 urllib3.disable_warnings()
 """
@@ -50,18 +50,23 @@ def deepget(obj: Union[dict, list], *path: Any, default: Any = None) -> Any:
 # This plugin is written primarily for testing vLLM, though it can be made
 # to work for other runtimes which conform to the OpenAI API, as required.
 class OpenAIPlugin(plugin.Plugin):
-    def __init__(self, args):
-        self._parse_args(args)
+    def __init__(self, args, batch_size = None):
+        self._parse_args(args, batch_size)
 
-    def _parse_args(self, args):
+    def _parse_args(self, args, batch_size = None):
         for arg in required_args:
             if arg not in args:
                 logger.error("Missing plugin arg: %s", arg)
 
         if args["streaming"]:
+            if batch_size and batch_size > 1:
+                raise NotImplementedError("Batch Streaming request is not implemented yet")
             self.request_func = self.streaming_request_http
         else:
-            self.request_func = self.request_http
+            if batch_size and batch_size > 1:
+                self.request_func = self.request_batch_http
+            else:
+                self.request_func = self.request_http
 
         self.host = args.get("host") + args.get("endpoint")
 
@@ -177,6 +182,91 @@ class OpenAIPlugin(plugin.Plugin):
 
         return result
 
+    def request_batch_http(self, queries, user_id, test_end_time: float = 0):
+        if not isinstance(queries, list):
+            raise TypeError("Queries must be a list. Given : " + str(type(queries)))
+        
+        if len(queries) < 1:
+            raise ValueError("Empty list passed to the request. This is not intended")
+        
+        if len(queries) == 1:
+            UserWarning("Single prompt requests must not be run with the batch API")
+        
+        result = BatchRequestResult(
+            user_id = user_id,
+            input_ids = [query.get("input_id") for query in queries],
+            input_tokens = [query.get("input_tokens") for query in queries],
+            )
+
+        headers = {
+            "Content-type": "application/json"
+        }
+
+        if "chat/completions" in self.host:
+            raise ValueError("Batch requests are supported only in v1/completions API")
+        
+        data = {
+            "prompt" : [query.get("text") for query in queries],
+            # TODO: Evaluate the logical option to select the max and min token lengths. We are playing the safer option at the moment. 
+            "max_tokens": max([query.get("output_tokens") for query in queries]), 
+            "min_tokens": min([query.get("output_tokens") for query in queries]),
+        }
+        data.update(self.request_defaults)
+
+        if self.model_name is not None:
+            data["model"] = self.model_name
+        
+        response = None
+        end_time = None
+        error_text = None
+        error_code = None
+        try:
+            result.start_time = time.time()
+            response = requests.post(self.host, headers=headers, json=data, verify=False)
+            response.raise_for_status()
+            result.end_time = time.time()
+        except requests.exceptions.ConnectionError as err:
+            result.end_time = time.time()
+            result.error_text = repr(err)
+            if response is not None:
+                result.error_code = response.status_code
+            logger.exception("Connection Error")
+            return result
+        except requests.exceptions.HTTPError as err:
+            result.end_time = time.time()
+            result.error_text = repr(err)
+            if response is not None:
+                result.error_code = response.status_code
+            logger.exception("HTTP Error")
+            return result
+
+        logger.debug("Response: %s", json.dumps(response.text))
+
+        try:
+            message = json.loads(response.text)
+            error = message.get("error")
+
+            if error is None:
+                if len(message["choices"]) != len(result.input_ids):
+                    raise IndexError("Returned number of sequences does not match the sequences sent")
+                
+                result.output_tokens = message["usage"]["completion_tokens"]
+                result.input_tokens = message["usage"]["prompt_tokens"]
+                # TODO: Raise issue on incorrect naming - OpenAI API returns both a finish reason and a stop reason. 
+                # stop_reason indicates a possible failure of the sequence. finish_reason could also indicate that we reached the requested length.
+                result.stop_reason = [choice.get('finish_reason') for choice in message["choices"]] 
+
+        except json.JSONDecodeError as e:
+            logger.exception("JSON Decode Error : %s Response could not be json decoded : %s", str(e), response.text)
+            result.error_text = f"Response could not be json decoded {response.text}"
+        except KeyError:
+            logger.exception("KeyError, unexpected response format: %s", response.text)
+            result.error_text = f"KeyError, unexpected response format: {response.text}"
+
+        result.output_tokens_before_timeout = result.output_tokens
+        result.calculate_results()
+
+        return result
 
     def streaming_request_http(self, query: dict, user_id: int, test_end_time: float):
         headers = {"Content-Type": "application/json"}

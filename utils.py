@@ -73,13 +73,14 @@ def parse_config(config):
     logging.info("load_options config: %s", config["load_options"])
 
     load_options = config.get("load_options")
+    batch_size = load_options.get("batch_size") if load_options.get("batch_size") else 1
     concurrency = load_options.get("concurrency")
     duration = load_options.get("duration")
 
     plugin_type = config.get("plugin")
     if plugin_type == "openai_plugin":
         plugin = openai_plugin.OpenAIPlugin(
-            config.get("plugin_options")
+            config.get("plugin_options"), batch_size
         )
     elif plugin_type == "caikit_client_plugin":
         plugin = caikit_client_plugin.CaikitClientPlugin(config.get("plugin_options"))
@@ -93,7 +94,7 @@ def parse_config(config):
         logging.error("Unknown plugin type %s", plugin_type)
         raise ValueError(f"Unknown plugin type {plugin_type}")
 
-    return concurrency, duration, plugin
+    return concurrency, duration, plugin, batch_size
 
 
 def yaml_load(file):
@@ -118,7 +119,7 @@ def write_output(config, results_list):
         logging.warning("Output path %s does not exist, creating it!", path)
         path.mkdir(parents=True, exist_ok=True)
 
-    concurrency, duration, _ = parse_config(config)
+    concurrency, duration, _, __ = parse_config(config)
     outfile_name = output_options.get("file").format(
         concurrency=concurrency, duration=duration
     )

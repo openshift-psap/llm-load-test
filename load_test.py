@@ -14,21 +14,21 @@ import logging_utils
 import utils
 
 
-def run_main_process(concurrency, duration, dataset, dataset_q, stop_q):
+def run_main_process(concurrency, duration, dataset, dataset_q, stop_q, batch_size=1):
     """Run the main process."""
     logging.info("Test from main process")
 
     # Initialize the dataset_queue with 4*concurrency requests
-    for query in dataset.get_next_n_queries(2 * concurrency):
+    for query in dataset.get_next_n_queries(2 * concurrency * batch_size):
         dataset_q.put(query)
 
     start_time = time.time()
     current_time = start_time
     while (current_time - start_time) < duration:
         # Keep the dataset queue full for duration
-        if dataset_q.qsize() < int(0.5*concurrency + 1):
-            logging.info("Adding %d entries to dataset queue", concurrency)
-            for query in dataset.get_next_n_queries(concurrency):
+        if dataset_q.qsize() < int(0.5 * concurrency * batch_size + 1):
+            logging.info("Adding %d entries to dataset queue", concurrency * batch_size)
+            for query in dataset.get_next_n_queries(concurrency * batch_size):
                 dataset_q.put(query)
         time.sleep(0.1)
         current_time = time.time()
@@ -99,7 +99,8 @@ def main(args):
     concurrency, duration, plugin = 0, 0, None
     try:
         config = utils.yaml_load(args.config)
-        concurrency, duration, plugin = utils.parse_config(config)
+        print("Config : ", config)
+        concurrency, duration, plugin, batch_size = utils.parse_config(config)
     except Exception as e:
         logging.error("Exiting due to invalid input: %s", repr(e))
         exit_gracefully(procs, dataset_q, stop_q, logger_q, log_reader_thread, 1)
@@ -122,6 +123,7 @@ def main(args):
                 logger_q=logger_q,
                 log_level=args.log_level,
                 run_duration=duration,
+                batch_size=batch_size,
             )
             proc = mp_ctx.Process(target=user.run_user_process)
             procs.append(proc)
@@ -130,7 +132,7 @@ def main(args):
             results_pipes.append(recv_results)
 
         logging.debug("Running main process")
-        run_main_process(concurrency, duration, dataset, dataset_q, stop_q)
+        run_main_process(concurrency, duration, dataset, dataset_q, stop_q, batch_size)
 
         results_list = gather_results(results_pipes)
 

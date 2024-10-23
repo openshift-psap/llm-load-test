@@ -79,7 +79,6 @@ def main_loop_rps_mode(dataset, request_q, rps, start_time, end_time):
     for next_req_time in req_times:
         while next_req_time > current_time:
             # Wait or spin until next req needs to be dispatched
-            query = dataset.get_next_n_queries(1)[0]
             sleep_time = (next_req_time - current_time) - 0.03 # Sleep until 30ms before next_req_time
             if sleep_time > 0:
                 time.sleep(sleep_time)
@@ -89,6 +88,8 @@ def main_loop_rps_mode(dataset, request_q, rps, start_time, end_time):
         logging.info(f"Scheduling request time {next_req_time}")
         request_q.put((next_req_time, query))
         
+        query = dataset.get_next_n_queries(1)[0]
+
         if current_time >= end_time:
             return
         

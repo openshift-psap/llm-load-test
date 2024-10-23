@@ -73,8 +73,15 @@ def parse_config(config):
     logging.info("load_options config: %s", config["load_options"])
 
     load_options = config.get("load_options")
-    concurrency = load_options.get("concurrency")
     duration = load_options.get("duration")
+    if load_options.get("type") == "concurrency":
+        concurrency = load_options.get("concurrency")
+        rps = None
+    elif load_options.get("type") == "rps":
+        concurrency = load_options.get("concurrency")
+        rps = load_options.get("rps")
+    else: 
+        logging.error("Unknown load_options type %s", load_options.get("type"))
 
     plugin_type = config.get("plugin")
     if plugin_type == "openai_plugin":
@@ -93,7 +100,7 @@ def parse_config(config):
         logging.error("Unknown plugin type %s", plugin_type)
         raise ValueError(f"Unknown plugin type {plugin_type}")
 
-    return concurrency, duration, plugin
+    return rps, concurrency, duration, plugin
 
 
 def yaml_load(file):
@@ -118,7 +125,7 @@ def write_output(config, results_list):
         logging.warning("Output path %s does not exist, creating it!", path)
         path.mkdir(parents=True, exist_ok=True)
 
-    concurrency, duration, _ = parse_config(config)
+    rps, concurrency, duration, _ = parse_config(config)
     outfile_name = output_options.get("file").format(
         concurrency=concurrency, duration=duration
     )
@@ -217,6 +224,16 @@ def write_output(config, results_list):
     print(
         f"Total throughput across all users bounded by the test duration: {throughput} tokens / sec, for duration {duration}"
     )
+
+    if rps is not None:
+        rps_scheduled = req_count / duration
+        rps_completed = req_completed_within_test_duration / duration
+        rps_completed_extend = req_count / full_duration
+        print(f"Requests per second scheduled: {rps_scheduled}")
+        print(f"Requests per second completed during run: {rps_completed}")
+        print(f"Requests per second completed total (incl. after run): {rps_completed_extend}")
+        average_client_wait_time = df["client_wait_time"].mean()
+        print(f"Avg. client wait time per request: {average_client_wait_time}")
 
     output_obj["summary"]["throughput_full_duration"] = throughput_full_duration
     output_obj["summary"]["full_duration"] = full_duration

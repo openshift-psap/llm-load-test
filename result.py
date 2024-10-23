@@ -14,10 +14,12 @@ class RequestResult:
         self.output_text: Optional[str] = None
         self.output_tokens: Optional[int] = None
         self.output_tokens_before_timeout: Optional[int] = None
+        self.scheduled_start_time: Optional[float] = None
         self.start_time: Optional[float] = None
         self.ack_time: Optional[float] = None
         self.first_token_time: Optional[float] = None
         self.end_time: Optional[float] = None
+        self.client_wait_time: Optional[float] = None
         self.response_time: Optional[float] = None
         self.tt_ack: Optional[float] = None
         self.ttft: Optional[float] = None
@@ -59,3 +61,8 @@ class RequestResult:
                 self.tpot = (
                     self.response_time / self.output_tokens
                 )  # Time per output token in ms
+            
+            if self.scheduled_start_time is not None and self.start_time is not None:
+                self.client_wait_time = (
+                    self.start_time - self.scheduled_start_time
+                )

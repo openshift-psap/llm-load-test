@@ -173,7 +173,6 @@ class OpenAIPlugin(plugin.Plugin):
 
         # For non-streaming requests we are keeping output_tokens_before_timeout and output_tokens same.
         result.output_tokens_before_timeout = result.output_tokens
-        result.calculate_results()
 
         return result
 
@@ -356,5 +355,4 @@ class OpenAIPlugin(plugin.Plugin):
         if expected_output_tokens and result.output_tokens != expected_output_tokens:
             logger.warning(f"Received {result.output_tokens} tokens but expected {expected_output_tokens} tokens")
 
-        result.calculate_results()
         return result

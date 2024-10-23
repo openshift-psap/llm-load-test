@@ -12,7 +12,7 @@ class Dataset:
     def __init__(self,
                  file,
                  model_name="",
-                 max_queries=3000,
+                 max_queries=8000,
                  min_input_tokens=0,
                  max_input_tokens=16000,
                  min_output_tokens=0,
@@ -47,7 +47,7 @@ class Dataset:
 def initialize_dataset(
     filename,
     model_name="",
-    max_queries=3000,
+    max_queries=8000,
     min_input_tokens=0,
     max_input_tokens=16000,
     min_output_tokens=0,

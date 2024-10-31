@@ -7,7 +7,7 @@ import requests
 import urllib3
 
 from plugins import plugin
-from result import RequestResult, BatchRequestResult
+from result import RequestResult
 
 urllib3.disable_warnings()
 """
@@ -105,6 +105,9 @@ class OpenAIPlugin(plugin.Plugin):
 
     def request_http(self, query: dict, user_id: int, test_end_time: float = 0):
 
+        if (not isinstance(query, dict) and not isinstance(query, list)):
+            raise TypeError("Queries must be either of dict type or list of dicts")
+
         result = RequestResult(user_id, query.get("text"), query.get("input_tokens"))
 
         result.start_time = time.time()
@@ -192,9 +195,9 @@ class OpenAIPlugin(plugin.Plugin):
         if len(queries) == 1:
             UserWarning("Single prompt requests must not be run with the batch API")
         
-        result = BatchRequestResult(
+        result = RequestResult(
             user_id = user_id,
-            input_ids = [query.get("input_id") for query in queries],
+            input_id = [query.get("input_id") for query in queries],
             input_tokens = [query.get("input_tokens") for query in queries],
             )
 
@@ -217,9 +220,6 @@ class OpenAIPlugin(plugin.Plugin):
             data["model"] = self.model_name
         
         response = None
-        end_time = None
-        error_text = None
-        error_code = None
         try:
             result.start_time = time.time()
             response = requests.post(self.host, headers=headers, json=data, verify=False)
@@ -247,7 +247,7 @@ class OpenAIPlugin(plugin.Plugin):
             error = message.get("error")
 
             if error is None:
-                if len(message["choices"]) != len(result.input_ids):
+                if len(message["choices"]) != len(result.input_id):
                     raise IndexError("Returned number of sequences does not match the sequences sent")
                 
                 result.output_tokens = message["usage"]["completion_tokens"]

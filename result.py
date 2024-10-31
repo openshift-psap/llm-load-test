@@ -1,6 +1,6 @@
 """Main result class."""
 
-from typing import Optional, List
+from typing import Optional, List, Union
 
 
 class RequestResult:
@@ -9,7 +9,7 @@ class RequestResult:
     def __init__(self, user_id, input_id, input_tokens=None):
         """Init method."""
         self.user_id: int = user_id
-        self.input_id: int = input_id
+        self.input_id: Union[str, List[str]] = input_id if isinstance(input_id, list) else [input_id]
         self.input_tokens: Optional[int] = input_tokens
         self.output_text: Optional[str] = None
         self.output_tokens: Optional[int] = None
@@ -59,45 +59,3 @@ class RequestResult:
                 self.tpot = (
                     self.response_time / self.output_tokens
                 )  # Time per output token in ms
-
-class BatchRequestResult():
-    def __init__(self, user_id, input_ids, input_tokens=None):
-        
-        self.user_id: int = user_id
-        self.input_ids: List[str] = input_ids # All input IDs sent in the batch
-        self.input_tokens: Optional[int] = input_tokens
-        self.output_tokens: Optional[int] = None
-        self.output_tokens_before_timeout: Optional[int] = None
-        self.output_text: Optional[str] = None
-        
-        self.start_time: Optional[float] = None
-        self.ack_time: Optional[float] = None
-        self.first_token_time: Optional[float] = None
-        self.end_time: Optional[float] = None
-        self.response_time: Optional[float] = None
-        
-        self.tt_ack: Optional[float] = None
-        self.ttft: Optional[float] = None
-        self.itl: Optional[float] = None
-        self.tpot: Optional[float] = None
-
-        self.error_text: Optional[str] = None
-        self.error_code: Optional[int] = None
-        self.stop_reason: Optional[str] =  None
-
-    def asdict(self):
-        return vars(self)
-    
-    def calculate_results(self):
-        # Refer to Result Class for understanding the fields/calculation
-        if self.error_code is None and self.error_text is None:
-            self.response_time = 1000 * (self.end_time - self.start_time)
-
-            if self.ack_time is not None:
-                self.response_time = 1000 * (self.ack_time - self.start_time)
-
-            if self.first_token_time is not None:
-                self.ttft = 1000 * (self.first_token_time - self.start_time)
-                self.itl = 1000 * (self.end_time - self.first_token_time) / (self.output_tokens - 1)
-
-            self.tpot = self.response_time / self.output_tokens

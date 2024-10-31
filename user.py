@@ -36,35 +36,44 @@ class User:
 
     def make_request(self, test_end_time=0):
         """Make a request."""
-
-        if self.batch_size and self.batch_size > 1:
-            try:
-                queries = []
+        try:
+            if self.batch_size and self.batch_size > 1:
+                test_queries = []
                 for _ in range(self.batch_size):
-                    queries.append(self.dataset_q.get(timeout=2))
-            except queue.Empty:
-                return None
-            except ValueError:
-                self.logger.warn("dataset q does not exist!")
-                return None
-            
-            self.logger.info("User %s making request", self.user_id)
-            results = self.plugin.request_func(queries, self.user_id, test_end_time)
-            return results
-        else:
-            try:
-                query = self.dataset_q.get(timeout=2)
-            except queue.Empty:
-                # if timeout passes, queue.Empty will be thrown
-                # User should continue to poll for inputs
-                return None
-            except ValueError:
-                self.logger.warn("dataset q does not exist!")
-                return None
+                    test_queries.append(self.dataset_q.get(timeout=2))
+            else:
+                test_queries = self.dataset_q.get(timeout=2)
+        except queue.Empty:
+            return None
+        except ValueError:
+            self.logger.warn("dataset q does not exist!")
+            return None
+        
+        results = self.plugin.request_func(test_queries, self.user_id, test_end_time)
+        return results
+        
+        # TODO: Clean
+        # if self.batch_size and self.batch_size > 1:
+        #     try:
+        #         for _ in range(self.batch_size):
+        #             test_queries.append(self.dataset_q.get(timeout=2))
+        #     except queue.Empty:
+        #         return None
+        #     except ValueError:
+        #         self.logger.warn("dataset q does not exist!")
+        #         return None
+        # else:
 
-            self.logger.info("User %s making request", self.user_id)
-            result = self.plugin.request_func(query, self.user_id, test_end_time)
-            return result
+        # if self.batch_size and self.batch_size > 1:
+            
+        #     self.logger.info("User %s making request", self.user_id)
+        #     results = self.plugin.request_func(queries, self.user_id, test_end_time)
+        #     return results
+        # else:
+
+        #     self.logger.info("User %s making request", self.user_id)
+        #     result = self.plugin.request_func(query, self.user_id, test_end_time)
+        #     return result
 
     def _init_user_process_logging(self):
         """Init logging."""

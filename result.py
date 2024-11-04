@@ -9,7 +9,7 @@ class RequestResult:
     def __init__(self, user_id, input_id, input_tokens=None):
         """Init method."""
         self.user_id: int = user_id
-        self.input_id: Union[str, List[str]] = input_id if isinstance(input_id, list) else [input_id]
+        self.input_id: List[str] = input_id if isinstance(input_id, list) else [input_id]
         self.input_tokens: Optional[int] = input_tokens
         self.output_text: Optional[str] = None
         self.output_tokens: Optional[int] = None

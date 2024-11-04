@@ -51,29 +51,6 @@ class User:
         
         results = self.plugin.request_func(test_queries, self.user_id, test_end_time)
         return results
-        
-        # TODO: Clean
-        # if self.batch_size and self.batch_size > 1:
-        #     try:
-        #         for _ in range(self.batch_size):
-        #             test_queries.append(self.dataset_q.get(timeout=2))
-        #     except queue.Empty:
-        #         return None
-        #     except ValueError:
-        #         self.logger.warn("dataset q does not exist!")
-        #         return None
-        # else:
-
-        # if self.batch_size and self.batch_size > 1:
-            
-        #     self.logger.info("User %s making request", self.user_id)
-        #     results = self.plugin.request_func(queries, self.user_id, test_end_time)
-        #     return results
-        # else:
-
-        #     self.logger.info("User %s making request", self.user_id)
-        #     result = self.plugin.request_func(query, self.user_id, test_end_time)
-        #     return result
 
     def _init_user_process_logging(self):
         """Init logging."""

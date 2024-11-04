@@ -205,7 +205,7 @@ class OpenAIPlugin(plugin.Plugin):
             "Content-type": "application/json"
         }
 
-        if "chat/completions" in self.host:
+        if self.api == 'chat':
             raise ValueError("Batch requests are supported only in v1/completions API")
         
         data = {

@@ -209,7 +209,7 @@ class OpenAIPlugin(plugin.Plugin):
             raise ValueError("Batch requests are supported only in v1/completions API")
         
         data = {
-            "prompt" : [query.get("text") for query in queries],
+            "prompt" : [query["text"] for query in queries],
             # TODO: Evaluate the logical option to select the max and min token lengths. We are playing the safer option at the moment. 
             "max_tokens": max([query.get("output_tokens") for query in queries]), 
             "min_tokens": min([query.get("output_tokens") for query in queries]),
@@ -250,12 +250,20 @@ class OpenAIPlugin(plugin.Plugin):
                 if len(message["choices"]) != len(result.input_id):
                     raise IndexError("Returned number of sequences does not match the sequences sent")
                 
-                result.output_tokens = message["usage"]["completion_tokens"]
-                result.input_tokens = message["usage"]["prompt_tokens"]
+                result.output_tokens = deepget(message, "usage", "completion_tokens")
+                result.input_tokens = deepget(message, "usage", "prompt_tokens")
                 # TODO: Raise issue on incorrect naming - OpenAI API returns both a finish reason and a stop reason. 
                 # stop_reason indicates a possible failure of the sequence. finish_reason could also indicate that we reached the requested length.
-                result.stop_reason = [choice.get('finish_reason') for choice in message["choices"]] 
-
+                if isinstance(message.get("choices"), list):
+                    result.stop_reason = [choice.get('finish_reason') for choice in message.get("choices")] 
+                else:
+                    result.end_time = time.time()
+                    result.error_text = "Malformed reply"
+                    logger.exception("Malformed reply")
+                    if response is not None:
+                        result.error_code = response.status_code
+                    return result
+                
         except json.JSONDecodeError as e:
             logger.exception("JSON Decode Error : %s Response could not be json decoded : %s", str(e), response.text)
             result.error_text = f"Response could not be json decoded {response.text}"

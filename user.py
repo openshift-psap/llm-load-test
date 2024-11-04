@@ -18,6 +18,7 @@ class User:
         logger_q,
         log_level,
         run_duration,
+        batch_size
     ):
         """Initialize object."""
         self.user_id = user_id
@@ -31,22 +32,25 @@ class User:
         # Must get reset in user process to use the logger created in _init_user_process_logging
         self.logger = logging.getLogger("user")
         self.run_duration = run_duration
+        self.batch_size = batch_size
 
     def make_request(self, test_end_time=0):
         """Make a request."""
         try:
-            query = self.dataset_q.get(timeout=2)
+            if self.batch_size and self.batch_size > 1:
+                test_queries = []
+                for _ in range(self.batch_size):
+                    test_queries.append(self.dataset_q.get(timeout=2))
+            else:
+                test_queries = self.dataset_q.get(timeout=2)
         except queue.Empty:
-            # if timeout passes, queue.Empty will be thrown
-            # User should continue to poll for inputs
             return None
         except ValueError:
             self.logger.warn("dataset q does not exist!")
             return None
-
-        self.logger.info("User %s making request", self.user_id)
-        result = self.plugin.request_func(query, self.user_id, test_end_time)
-        return result
+        
+        results = self.plugin.request_func(test_queries, self.user_id, test_end_time)
+        return results
 
     def _init_user_process_logging(self):
         """Init logging."""
@@ -69,9 +73,12 @@ class User:
             # make_request will return None after 2 seconds if dataset_q is empty
             # to ensure that users don't get stuck waiting for requests indefinitely
             if result is not None:
-                self.results_list.append(result)
+                if isinstance(result, list):
+                    self.results_list.extend(result)
+                else:
+                    self.results_list.append(result)
 
         self.results_pipe.send(self.results_list)
 
-        time.sleep(4)
+        # time.sleep(4) # TODO : ???????????
         self.logger.info("User %s done", self.user_id)

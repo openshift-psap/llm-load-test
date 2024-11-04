@@ -5,6 +5,9 @@ class Plugin:
     def request_http(self, query, user_id):
         pass
 
+    def request_batch_http(self, queries, user_id):
+        raise NotImplementedError("Plugin does not have batch request implemented yet")
+
     def streaming_request_http(self, query, user_id):
         pass
 

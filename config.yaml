@@ -16,6 +16,7 @@ load_options:
   type: constant #Future options: loadgen, stair-step
   concurrency: 1
   duration: 20 # In seconds. Maybe in future support "100s" "10m", etc...
+  batch_size: 1 # The number of sequences in each user request. For non-batch runs, leave at 1 or remove
 plugin: "openai_plugin"
 plugin_options:
   use_tls: False # Use True if querying an SSL grpc endpoint over https

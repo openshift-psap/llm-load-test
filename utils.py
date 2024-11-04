@@ -73,7 +73,7 @@ def parse_config(config):
     logging.info("load_options config: %s", config["load_options"])
 
     load_options = config.get("load_options")
-    batch_size = load_options.get("batch_size") if load_options.get("batch_size") else 1
+    batch_size = load_options.get("batch_size", default=1)
     concurrency = load_options.get("concurrency")
     duration = load_options.get("duration")
 

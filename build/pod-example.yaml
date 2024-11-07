@@ -7,7 +7,7 @@ metadata:
 spec:
   containers:
   - name: llm-load-test
-    image: quay.io/dagray/llm-load-test:latest
+    image: <image>
     imagePullPolicy: Always
     command:
     - bash

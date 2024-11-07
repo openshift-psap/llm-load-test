@@ -22,7 +22,6 @@ plugin_options:
   streaming: True
   model_name: "flan-t5-small"
   host: "http://route.to.host"
-  endpoint: "/v1/chat/completions"
-  port: 8033
+  endpoint: "/v1/completions"
 extra_metadata:
   replicas: 1

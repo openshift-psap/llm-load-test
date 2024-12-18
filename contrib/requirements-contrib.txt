@@ -1,3 +1,2 @@
 # Common Dependencies
 -r ../requirements.txt
-transformers==4.46.2

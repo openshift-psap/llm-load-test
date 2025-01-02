@@ -17,6 +17,7 @@ plugin: "openai_plugin"
 plugin_options:
   streaming: True/False
   host: "http://127.0.0.1:5000/v1/completions"
+  api_key: sk-xxxxxx
   model_name: "/mnt/model/"
   endpoint: "/v1/completions" # "/v1/chat/completions"
 """
@@ -71,6 +72,8 @@ class OpenAIPlugin(plugin.Plugin):
 
         logger.debug("Model name: %s", self.model_name)
 
+        self.api_key = args.get("api_key")
+
         self.api = args.get('api')
 
         if not self.api:
@@ -104,7 +107,8 @@ class OpenAIPlugin(plugin.Plugin):
 
         result.start_time = time.time()
 
-        headers = {"Content-Type": "application/json"}
+        headers = {"Content-Type": "application/json",
+                   "Authorization": "Bearer " + self.api_key}
 
         request = {
             "max_tokens": query["output_tokens"],
@@ -120,6 +124,7 @@ class OpenAIPlugin(plugin.Plugin):
 
         if self.model_name is not None:
             request["model"] = self.model_name
+
 
         # Merge request and defaults
         data = self.request_defaults | request
@@ -179,7 +184,9 @@ class OpenAIPlugin(plugin.Plugin):
 
 
     def streaming_request_http(self, query: dict, user_id: int, test_end_time: float):
-        headers = {"Content-Type": "application/json"}
+
+        headers = {"Content-Type": "application/json",
+                   "Authorization": "Bearer " + self.api_key}
 
         request = {
             "max_tokens": query["output_tokens"],

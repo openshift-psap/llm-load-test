@@ -35,8 +35,8 @@ optional arguments:
 ```
 
 There're some example CONFIG files available:
- - config-tgis.yaml:   config file for GRPC request for TGI Server.
- - config-openai.yaml: config file for OpenAI format API endpoints.
+ - example-configs/config-tgis.yaml:   config file for GRPC request for TGI Server.
+ - config.yaml: config file for those OpenAI format API endpoints.
 
 more LLM protocol config format, refer to ./plugins for more details. 
 

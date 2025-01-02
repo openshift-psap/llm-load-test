@@ -13,17 +13,20 @@ dataset:
   max_queries: 1000
   min_input_tokens: 0
   max_input_tokens: 1024
-  max_output_tokens: 256
+  min_output_tokens: 0
+  max_output_tokens: 1024
   max_sequence_tokens: 1024
 load_options:
   type: constant #Future options: loadgen, stair-step
-  concurrency: 2
+  concurrency: 2 # can also be a list [1,2,4]
   duration: 20 # In seconds. Maybe in future support "100s" "10m", etc...
 plugin: "openai_plugin"
 plugin_options:
-  streaming: False
-  host: "http://localhost:8000"
-  model_name: "facebook/opt-125m"
-  endpoint: "/v1/completions" # "/v1/chat/completions"
+  api_key: YOUR_API_KEY
+  use_tls: False # Use True if querying an SSL grpc endpoint over https
+  streaming: True
+  model_name: "gpt-4o-mini"
+  host: "http://route.to.host"
+  endpoint: "/v1/chat/completions" # "/v1/chat/completions"
 extra_metadata:
   replicas: 1

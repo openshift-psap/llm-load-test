@@ -2,6 +2,7 @@
 import json
 import logging
 import random
+import warnings
 
 dataset_seed = 1337
 
@@ -18,7 +19,8 @@ class Dataset:
                  max_input_tokens=16000,
                  min_output_tokens=0,
                  max_output_tokens=4096,
-                 max_sequence_tokens=32000
+                 max_sequence_tokens=32000,
+                 custom_prompt_format=None
                  ):
         """Init method."""
         logging.info("Initializing dataset with %s", locals())
@@ -32,6 +34,7 @@ class Dataset:
                                                 min_output_tokens=min_output_tokens,
                                                 max_output_tokens=max_output_tokens,
                                                 max_sequence_tokens=max_sequence_tokens,
+                                                custom_prompt_format=custom_prompt_format
                                                 )
                              ]
         if len(self.dataset_list) < 4:
@@ -55,10 +58,14 @@ def initialize_dataset(
     max_input_tokens=16000,
     min_output_tokens=0,
     max_output_tokens=4096,
-    max_sequence_tokens=32000
+    max_sequence_tokens=32000,
+    custom_prompt_format=None
 ):
     """Initialize the dataset."""
-    prompt_format = get_format_string(model_name, format_prompt)
+    prompt_format = get_format_string(model_name, format_prompt) if not custom_prompt_format else custom_prompt_format
+    if '{system_prompt}' not in prompt_format and '{prompt}' not in prompt_format:
+        logging.warning("Prompt template does not contain any of ['{system_prompt}', '{prompt}']")
+
     with open(filename, "r", encoding="utf-8") as file:
         total_queries = 0
 

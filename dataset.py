@@ -12,7 +12,7 @@ class Dataset:
 
     def __init__(self,
                  file,
-                 format_prompt=True,
+                 format_prompt=False,
                  model_name="",
                  max_queries=3000,
                  min_input_tokens=0,
@@ -62,7 +62,7 @@ def initialize_dataset(
     custom_prompt_format=None
 ):
     """Initialize the dataset."""
-    prompt_format = get_format_string(model_name, format_prompt) if not custom_prompt_format else custom_prompt_format
+    prompt_format = get_format_string(model_name, format_prompt, custom_prompt_format)
     if '{system_prompt}' not in prompt_format and '{prompt}' not in prompt_format:
         logging.warning("Prompt template does not contain any of ['{system_prompt}', '{prompt}']")
 
@@ -129,10 +129,15 @@ def filter_token_lengths(input_tokens,
             and sequence_tokens < max_sequence_tokens)
 
 
-def get_format_string(model_name, format_prompt):
+def get_format_string(model_name, format_prompt, custom_prompt_format):
     """Get the format string."""
     if not format_prompt:
+        if custom_prompt_format:
+            raise RuntimeError("Custom Prompt provided with format_prompt = " + str(format_prompt))
         return "{prompt}"
+    
+    if custom_prompt_format:
+        return custom_prompt_format
 
     known_system_prompts = {
         "llama": "<s>[INST] <<SYS>>\n{system_prompt}\n<</SYS>>\n\n{prompt} [/INST]",
@@ -147,4 +152,4 @@ def get_format_string(model_name, format_prompt):
             return fmt_str
 
     logging.info("Using default prompt format model_name: %s", model_name)
-    return "{prompt}"
+    return "{system_prompt}\n\n{prompt}"

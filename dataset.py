@@ -147,4 +147,4 @@ def get_format_string(model_name, format_prompt):
             return fmt_str
 
     logging.info("Using default prompt format model_name: %s", model_name)
-    return "{system_prompt}\n\n{prompt}"
+    return "{prompt}"

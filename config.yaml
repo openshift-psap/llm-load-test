@@ -12,8 +12,7 @@ dataset:
   min_output_tokens: 0
   max_output_tokens: 1024
   max_sequence_tokens: 2048 # system_prompt tokens not counted towards filters
-  format_prompt: False
-  custom_prompt_format: null
+  custom_prompt_format: null # Sample : "{system_prompt}\n\n{prompt}""
 load_options:
   type: constant #Future options: loadgen, stair-step
   concurrency: 1 # can also be a list [1,2,4]

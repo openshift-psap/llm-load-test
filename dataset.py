@@ -2,7 +2,6 @@
 import json
 import logging
 import random
-import warnings
 
 dataset_seed = 1337
 

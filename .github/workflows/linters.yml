@@ -18,22 +18,19 @@ jobs:
       matrix:
         python-version: [3.11]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+          cache-dependency-path: './test-requirements.txt'
       - name: Install dependencies
         run: |
-          sudo apt-get update -y
-          sudo apt-get install jq libyaml-dev git build-essential findutils -y
-          sudo python3 -m pip install -r test-requirements.txt
-          sudo python3 -m pip install --upgrade --ignore-installed PyYAML
-          sudo python3 -m pip install --upgrade pip
-          sudo python3 -m pip install --upgrade virtualenv
-          sudo python3 -m pip install --upgrade setuptools
+          set -x
+          pip install -r test-requirements.txt
       - name: Run Linters
         run: |
           tox -e linters

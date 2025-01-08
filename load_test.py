@@ -145,9 +145,7 @@ def main(args):
         for n_users in concurrency:
             config["load_options"]["concurrency"] = n_users
             logging.debug("Creating dataset with configuration %s", config["dataset"])
-            # Get model_name if set for prompt formatting
-            model_name = config.get("plugin_options", {}).get("model_name", "")
-            dataset = Dataset(model_name=model_name, **config["dataset"])
+            dataset = Dataset(**config["dataset"])
 
             procs, results_pipes = create_procs(mp_ctx, dataset_q, stop_q, plugin, logger_q, args.log_level, duration, n_users)
 

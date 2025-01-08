@@ -23,5 +23,6 @@ plugin_options:
   model_name: "flan-t5-small"
   host: "http://route.to.host"
   endpoint: "/v1/completions"
+  authorization: "" # Set if host requires Authorization Token
 extra_metadata:
   replicas: 1

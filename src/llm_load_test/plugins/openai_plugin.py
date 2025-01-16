@@ -6,8 +6,8 @@ from typing import Any, Optional, Union
 import requests
 import urllib3
 
-from plugins import plugin
-from result import RequestResult
+from llm_load_test.plugins import plugin
+from llm_load_test.result import RequestResult
 
 urllib3.disable_warnings()
 """

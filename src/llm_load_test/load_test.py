@@ -111,9 +111,9 @@ def create_procs(mp_ctx, dataset_q, stop_q, plugin, logger_q, log_level, duratio
     return procs, results_pipes
 
 
-def main(args):
+def main():
     """Load test CLI entrypoint."""
-    args = utils.parse_args(args)
+    args = utils.parse_args(sys.argv[1:])
 
     mp_ctx = mp.get_context("spawn")
     logger_q = mp_ctx.Queue()
@@ -172,4 +172,4 @@ def main(args):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    main()

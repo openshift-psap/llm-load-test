@@ -1,7 +1,7 @@
 import time
 
-from plugins import plugin
-from result import RequestResult
+from llm_load_test.plugins import plugin
+from llm_load_test.result import RequestResult
 
 """
 Example plugin config.yaml:

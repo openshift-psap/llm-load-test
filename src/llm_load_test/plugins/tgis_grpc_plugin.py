@@ -6,9 +6,9 @@ import socket
 import ssl
 import sys
 
-import generation_pb2_grpc
-from plugins import plugin
-from result import RequestResult
+from llm_load_test import generation_pb2_grpc
+from llm_load_test.plugins import plugin
+from llm_load_test.result import RequestResult
 
 logger = logging.getLogger("user")
 

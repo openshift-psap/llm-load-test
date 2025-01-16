@@ -2,7 +2,7 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-import generation_pb2 as generation__pb2
+import llm_load_test.generation_pb2 as generation__pb2
 
 
 class GenerationServiceStub(object):

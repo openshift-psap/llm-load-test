@@ -4,7 +4,7 @@ This tool is designed to load test large language models running in different ru
 
 ## Requirements
 
-- Python 3.9 or newer
+- Python 3.10 or newer
 
 ## Usage
 
@@ -13,7 +13,7 @@ This tool is designed to load test large language models running in different ru
 ```
 python3 -m venv venv
 source venv/bin/activate
-pip install -r requirements.txt
+pip install .
 ```
 
 **Running the Tool**:
@@ -24,13 +24,12 @@ pip install -r requirements.txt
 **Command Line Options**:
 
 ```
-usage: load_test.py [-h] [-c CONFIG] [-log {warn,warning,info,debug}]
+usage: load-test [-h] [-c CONFIG] [-log {warn,warning,info,debug}]
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
-  -c CONFIG, --config CONFIG
-                        config YAML file name
-  -log {warn,warning,info,debug}, --log_level {warn,warning,info,debug}
+  -c, --config CONFIG   config YAML file name
+  -log, --log_level {warn,warning,info,debug}
                         Provide logging level. Example --log_level debug, default=warning
 ```
 

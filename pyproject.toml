@@ -6,14 +6,10 @@ authors = [
     {name = "David Gray", email = "dagray@redhat.com"},
 ]
 dependencies = [
-    "caikit-nlp-client==0.0.8",
-    "deprecation",
-    "flake8",
-    "isort",
-    "numpy",
-    "pandas",
-    "pyyaml",
-    "pylint",
+    "numpy>=2.2.1",
+    "pandas>=2.2.3",
+    "pyyaml>=6.0.2",
+    "requests>=2.31.0",
 ]
 requires-python = ">=3.10"
 readme = "README.md"

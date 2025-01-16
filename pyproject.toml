@@ -1,0 +1,30 @@
+[project]
+name = "llm-load-test"
+version = "0.1.0"
+description = "A tool to load test large language models running in different runtimes / behind different APIs."
+authors = [
+    {name = "David Gray", email = "dagray@redhat.com"},
+]
+dependencies = [
+    "caikit-nlp-client==0.0.8",
+    "deprecation",
+    "flake8",
+    "isort",
+    "numpy",
+    "pandas",
+    "pyyaml",
+    "pylint",
+]
+requires-python = ">=3.10"
+readme = "README.md"
+license = {text = "MIT"}
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+[project.scripts]
+load-test = "llm_load_test.load_test:main"
+
+[tool.pdm]
+distribution = true

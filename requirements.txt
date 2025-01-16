@@ -1,0 +1,2 @@
+# Legacy support; add dependencies to pyproject.toml
+./ # Install llm-load-test as a library

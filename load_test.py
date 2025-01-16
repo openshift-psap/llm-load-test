@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
-"""Legacy compatibility script"""
+"""Legacy adapter for load_test"""
 
-from src.llm_load_test.load_test import main
+from llm_load_test.load_test import main
 
-main()
+if __name__ == "__main__":
+    main()

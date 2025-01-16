@@ -1,7 +1,0 @@
-deprecation
-flake8
-isort
-numpy
-pandas
-pyyaml
-pylint

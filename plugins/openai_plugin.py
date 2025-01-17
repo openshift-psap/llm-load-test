@@ -195,7 +195,8 @@ class OpenAIPlugin(plugin.Plugin):
             "min_tokens": query["output_tokens"],
             "stream": True,
             "stream_options": {
-                "include_usage": True
+                "include_usage": True,
+                "continuous_usage_stats": True,
             }
         }
 

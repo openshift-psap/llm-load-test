@@ -1,17 +1,19 @@
 import os
-import pickle
-import transformers
+from tokenizers import Tokenizer
 import random
 import numpy as np
 import json
-import sys
-
-sys.path.append(os.getcwd())
-
 import logging
-import logging.handlers
 
-import logging_utils
+Logger = logging.getLogger("synthetic-datagen ")
+logging.basicConfig(level=logging.INFO)
+
+# TODO: Data generation from corpus
+# TODO: Data distribution visualization
+
+DATA_RANDOM_SEED = 42
+# Consider special tokens ?
+INCLUDE_SPECIAL_TOKENS = False
 
 metadata_dict = {
     "name": "synthetic-data", 
@@ -19,19 +21,22 @@ metadata_dict = {
     "license": "MIT License\n\nCopyright (c) [year] [fullname]\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
 }
 
-# Types of distributions we want
-# Equal     - No change in lengths
-# Uniform   - Uniform distribution across the min_max intervals
-# Normal    - Standard normal distribution centered over the mean
-
+# Generate input and output lengths as 2 independant distributions
+# Future item: Possible dependent distribution
 def gen_io_lengths(num_samples :  int, distribution : str, other_args):
-
-    seed = 42
+    global DATA_RANDOM_SEED
     if "DATA_RANDOM_SEED" in os.environ:
-        seed = int(os.environ["DATA_RANDOM_SEED"])
+        DATA_RANDOM_SEED = int(os.environ["DATA_RANDOM_SEED"])
+        Logger.info(f"Using random seed from environment : {DATA_RANDOM_SEED}")
     
-    random_generator = np.random.default_rng(seed=seed)
+    Logger.debug(f"Data Random Seed : {DATA_RANDOM_SEED}")
+    random_generator = np.random.default_rng(seed=DATA_RANDOM_SEED)
+    random.seed(DATA_RANDOM_SEED)
 
+    # Types of distributions
+    # Equal     - No change in lengths
+    # Uniform   - Uniform distribution across the min_max intervals
+    # Normal    - Standard normal distribution centered over the mean
     if distribution == "uniform":
         return (
             random_generator.uniform(low=other_args["input_min"], high=other_args["input_max"], size=num_samples),
@@ -43,6 +48,7 @@ def gen_io_lengths(num_samples :  int, distribution : str, other_args):
             random_generator.normal(loc=other_args["output_mean"], scale=other_args["output_sd"], size=num_samples),
         )
     elif distribution == "equal":
+        # Using the library for consistency
         return (
             random_generator.normal(loc=other_args["input_len"], scale=0, size=num_samples),
             random_generator.normal(loc=other_args["output_len"], scale=0, size=num_samples),
@@ -50,43 +56,56 @@ def gen_io_lengths(num_samples :  int, distribution : str, other_args):
     else:
         raise RuntimeError("Unknown distribution requested : " + str(args.distribution))
 
-def make_one_sample(vocab, tokenizer, req_sample_size, max_dev=0):
+def make_one_sample(vocab : list, tokenizer, req_sample_size : int):
     tokens = random.sample(vocab, req_sample_size)
-    return tokenizer.decode(tokens).replace("<|begin_of_text|>", ""), len(tokens)
+    Logger.debug(f"Generated sample tokens : {tokens}")
+    return tokenizer.decode(tokens, skip_special_tokens = False)
 
 def make_dataset(args):
 
-    print(args)
-
-    # model, num_samples, input_min, input_max, output_min, output_max, distribution="normal"
     model = args['model']
     num_samples = args['num_samples']
 
-    tokenizer = transformers.AutoTokenizer.from_pretrained(model)
-    vocab = list(range(0, tokenizer.vocab_size))
+    dataset_info = {
+        'model': model,
+        'num_samples': num_samples,
+        'distribution': args['distribution']
+    }
+
+    # vLLM will add special tokens when running inference. 
+    # This can introduce a minor variation in the vLLM reported token count
+    tokenizer = Tokenizer.from_pretrained(
+        model
+        )
+    
+    # Use token ids instead of actual tokens
+    vocab = list(range(0, tokenizer.get_vocab_size()))
 
     input_lengths, output_lengths = gen_io_lengths(
         num_samples=num_samples, 
-        distribution=args['distribution'],
+        distribution=dataset_info['distribution'],
         other_args=args
         )
 
+    # dtype conversion due to output type of random sampling
     input_lengths, output_lengths = input_lengths.astype(dtype=int).tolist(), output_lengths.astype(dtype=int).tolist()
+    Logger.debug(f"Input and Output lengths : {list(zip(input_lengths, output_lengths))}")
     
-    print(input_lengths, output_lengths)
+    dataset_info["io_lengths"] = list(zip(input_lengths, output_lengths))
 
     dict_items = []
     for si, (input_len, output_len) in enumerate(zip(input_lengths, output_lengths)):
-        sample, _ = make_one_sample(vocab, tokenizer, int(input_len))
+        sample = make_one_sample(vocab, tokenizer, int(input_len))
+        Logger.debug(f"Sample : {sample}")
         dict_items.append({
             "index": "custom-"+model+"-data-" + str(si),
             "question": sample,
             "tok_input_length": input_len,
             "tok_output_length": output_len,
-            "output_tokens" : output_len
+            "output_tokens" : output_len # to maintain consistency with existing sample dataset
         })
 
-    return dict_items
+    return dict_items, dataset_info
 
 if __name__ == "__main__":
     import argparse
@@ -131,23 +150,15 @@ if __name__ == "__main__":
     else:
         raise RuntimeError("Unknown distribution requested : " + str(args.distribution))
 
-    print(args)
+    dataset, dataset_info = make_dataset(arg_vars)
+    metadata_dict['dataset_info'] = dataset_info
 
-    # No variance allowed if max is not specified. Min will be treated as the target length
-    if not args.input_max:
-        args.input_max = args.input_min
-    
-    if not args.output_max:
-        args.output_max = args.output_min
-
-    dataset = make_dataset(arg_vars)
-
-    with open(args.dataset_name + "_synthetic.jsonl", "w") as f:
-        metadata_dict["tokenizer"] = args.model
+    dataset_file_name = args.dataset_name + "_synthetic.jsonl"
+    with open(dataset_file_name, "w") as f:
         json.dump(metadata_dict, f)
         f.write("\n")
         for item in dataset:
             json.dump(item, f)
             f.write("\n")
 
-    
+    Logger.info(f"Dataset saved to : {dataset_file_name}")

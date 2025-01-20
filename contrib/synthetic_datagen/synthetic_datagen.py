@@ -95,7 +95,7 @@ def make_dataset(args):
 
     dict_items = []
     for si, (input_len, output_len) in enumerate(zip(input_lengths, output_lengths)):
-        sample = make_one_sample(vocab, tokenizer, int(input_len))
+        sample = make_one_sample(vocab, tokenizer, input_len)
         Logger.debug(f"Sample : {sample}")
         dict_items.append({
             "index": "custom-"+model+"-data-" + str(si),

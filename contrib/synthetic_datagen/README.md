@@ -33,7 +33,7 @@ python synthetic_datagen.py --model facebook/opt-125m --dataset_name sample --nu
 
 ### Equal Length Sequences
 ```
---input_len 1000 --input_max 1200 --output_min 200 --output_max 320
+--input_len 1000 --output_len 1200
 ```
 
 The script can also be pointed to local models following a huggingface model structure. 

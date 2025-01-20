@@ -85,6 +85,8 @@ class OpenAIPlugin(plugin.Plugin):
             seed = 42,
         )
 
+        self.authorization = args.get("authorization")
+
     def _process_resp(self, resp: bytes) -> Optional[dict]:
         try:
             _, found, data = resp.partition(b"data: ")
@@ -105,6 +107,9 @@ class OpenAIPlugin(plugin.Plugin):
         result.start_time = time.time()
 
         headers = {"Content-Type": "application/json"}
+        
+        if self.authorization: 
+            headers["Authorization"] = f"Bearer {self.authorization}"
 
         request = {
             "max_tokens": query["output_tokens"],
@@ -179,14 +184,19 @@ class OpenAIPlugin(plugin.Plugin):
 
 
     def streaming_request_http(self, query: dict, user_id: int, test_end_time: float):
+
         headers = {"Content-Type": "application/json"}
+        
+        if self.authorization: 
+            headers["Authorization"] = f"Bearer {self.authorization}"
 
         request = {
             "max_tokens": query["output_tokens"],
             "min_tokens": query["output_tokens"],
             "stream": True,
             "stream_options": {
-                "include_usage": True
+                "include_usage": True,
+                "continuous_usage_stats": True,
             }
         }
 

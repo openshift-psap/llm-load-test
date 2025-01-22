@@ -39,7 +39,7 @@ class RequestResult:
         # Only calculate results if response is error-free.
         if self.error_code is None and self.error_text is None:
             if self.end_time is not None and self.start_time is not None:
-                # response_time in seconds
+                # response_time in ms
                 self.response_time = 1000 * (self.end_time - self.start_time)
 
             if self.ack_time is not None and self.start_time is not None:

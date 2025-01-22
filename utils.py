@@ -11,7 +11,6 @@ import numpy as np
 import pandas as pd
 
 from plugins import (
-    caikit_client_plugin,
     dummy_plugin,
     hf_tgi_plugin,
     openai_plugin,
@@ -83,8 +82,6 @@ def parse_config(config):
         plugin = openai_plugin.OpenAIPlugin(
             config.get("plugin_options")
         )
-    elif plugin_type == "caikit_client_plugin":
-        plugin = caikit_client_plugin.CaikitClientPlugin(config.get("plugin_options"))
     elif plugin_type == "tgis_grpc_plugin":
         plugin = tgis_grpc_plugin.TGISGRPCPlugin(config.get("plugin_options"))
     elif plugin_type == "hf_tgi_plugin":

@@ -4,17 +4,17 @@ import random
 import numpy as np
 import json
 import logging
+import fileinput
+from glob import glob
 
 Logger = logging.getLogger("synthetic-datagen")
 logging.basicConfig(level=logging.INFO)
 
-# TODO: Data generation from corpus
 # TODO: Data distribution visualization
 
 DATA_RANDOM_SEED = int(os.environ.get("DATA_RANDOM_SEED", 42))
 random.seed(DATA_RANDOM_SEED)
-# Consider special tokens ?
-INCLUDE_SPECIAL_TOKENS = False
+CORPUS_GLOB="./corpus/*.txt"
 
 metadata_dict = {
     "name": "synthetic-data", 
@@ -51,10 +51,24 @@ def gen_io_lengths(num_samples :  int, distribution : str, other_args):
     else:
         raise RuntimeError("Unknown distribution requested : " + str(args.distribution))
 
-def make_one_sample(vocab : list, tokenizer, req_sample_size : int):
-    tokens = random.sample(vocab, req_sample_size)
-    Logger.debug(f"Generated sample tokens : {tokens}")
-    return tokenizer.decode(tokens, skip_special_tokens = False)
+def load_corpus():
+    with fileinput.input(files=glob(CORPUS_GLOB), mode='r', encoding="utf-8") as f:
+        for line in f:
+            yield line
+
+def calculate_offsets(model, corpus):
+    tokenizer = Tokenizer.from_pretrained(model)
+    tokenized_corpus = tokenizer.encode(corpus)
+    return tokenized_corpus.offsets
+
+
+def make_one_sample(corpus, offsets, req_sample_size : int):
+    start = random.randrange(len(offsets) - req_sample_size)
+    end = start + req_sample_size # req_sample_size tokens from start
+    start_idx = offsets[start][0]
+    end_idx = offsets[end][0]
+    tokens = corpus[start_idx:end_idx]
+    return tokens
 
 def make_dataset(args):
 
@@ -66,15 +80,6 @@ def make_dataset(args):
         'num_samples': num_samples,
         'distribution': args['distribution']
     }
-
-    # vLLM will add special tokens when running inference. 
-    # This can introduce a minor variation in the vLLM reported token count
-    tokenizer = Tokenizer.from_pretrained(
-        model
-        )
-    
-    # Use token ids instead of actual tokens
-    vocab = list(range(0, tokenizer.get_vocab_size()))
 
     input_lengths, output_lengths = gen_io_lengths(
         num_samples=num_samples, 
@@ -88,9 +93,14 @@ def make_dataset(args):
     
     dataset_info["io_lengths"] = list(zip(input_lengths, output_lengths))
 
+    corpus = "".join(load_corpus())
+    Logger.info(f"Loaded corpus")
+    offsets = calculate_offsets(model, corpus)
+    Logger.info(f"Found {len(offsets)} tokens in corpus")
+
     dict_items = []
     for si, (input_len, output_len) in enumerate(zip(input_lengths, output_lengths)):
-        sample = make_one_sample(vocab, tokenizer, input_len)
+        sample = make_one_sample(corpus, offsets, input_len)
         Logger.debug(f"Sample : {sample}")
         dict_items.append({
             "index": "custom-"+model+"-data-" + str(si),

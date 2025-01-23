@@ -146,6 +146,22 @@ For example:
 }
 ```
 
+## Known issues
+
+### Too many open files
+
+When running tests with a high degree of concurrency (>=512), you will likely see Python code tracebacks with messages similar to:
+
+```
+OSError: [Errno 24] Too many open files
+```
+
+In that case, increase your current limit of your favourite shell.  For bash, the command is:
+
+```
+ulimit -n <number-of-open-files-limit>
+```
+
 ## Contributing
 
 Contributions to this tool are welcome!

@@ -5,7 +5,7 @@ import numpy as np
 import json
 import logging
 
-Logger = logging.getLogger("synthetic-datagen ")
+Logger = logging.getLogger("synthetic-datagen")
 logging.basicConfig(level=logging.INFO)
 
 # TODO: Data generation from corpus

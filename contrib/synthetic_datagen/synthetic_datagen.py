@@ -11,7 +11,8 @@ logging.basicConfig(level=logging.INFO)
 # TODO: Data generation from corpus
 # TODO: Data distribution visualization
 
-DATA_RANDOM_SEED = 42
+DATA_RANDOM_SEED = int(os.environ.get("DATA_RANDOM_SEED", 42))
+random.seed(DATA_RANDOM_SEED)
 # Consider special tokens ?
 INCLUDE_SPECIAL_TOKENS = False
 
@@ -24,14 +25,8 @@ metadata_dict = {
 # Generate input and output lengths as 2 independant distributions
 # Future item: Possible dependent distribution
 def gen_io_lengths(num_samples :  int, distribution : str, other_args):
-    global DATA_RANDOM_SEED
-    if "DATA_RANDOM_SEED" in os.environ:
-        DATA_RANDOM_SEED = int(os.environ["DATA_RANDOM_SEED"])
-        Logger.info(f"Using random seed from environment : {DATA_RANDOM_SEED}")
-    
     Logger.debug(f"Data Random Seed : {DATA_RANDOM_SEED}")
     random_generator = np.random.default_rng(seed=DATA_RANDOM_SEED)
-    random.seed(DATA_RANDOM_SEED)
 
     # Types of distributions
     # Equal     - No change in lengths

@@ -102,6 +102,7 @@ def make_dataset(args):
             "question": sample,
             "tok_input_length": input_len,
             "tok_output_length": output_len,
+            "system_prompt": "",
             "output_tokens" : output_len # to maintain consistency with existing sample dataset
         })
 

@@ -14,7 +14,7 @@ logging.basicConfig(level=logging.INFO)
 
 DATA_RANDOM_SEED = int(os.environ.get("DATA_RANDOM_SEED", 42))
 random.seed(DATA_RANDOM_SEED)
-CORPUS_GLOB="./corpus/*.txt"
+CORPUS_GLOB=f"{os.path.dirname(os.path.realpath(__file__))}/corpus/*.txt"
 
 metadata_dict = {
     "name": "synthetic-data", 

@@ -52,7 +52,7 @@ def gen_io_lengths(num_samples :  int, distribution : str, other_args):
         raise RuntimeError("Unknown distribution requested : " + str(args.distribution))
 
 def load_corpus():
-    with fileinput.input(files=glob(CORPUS_GLOB), mode='r', encoding="utf-8") as f:
+    with fileinput.input(files=glob(CORPUS_GLOB), mode='r') as f:
         for line in f:
             yield line
 

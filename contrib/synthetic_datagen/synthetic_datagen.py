@@ -98,8 +98,6 @@ def make_dataset(args):
     assert isinstance(input_lengths, list) # TODO
     assert isinstance(output_lengths, list) # TODO
     Logger.debug(f"Input and Output lengths : {list(zip(input_lengths, output_lengths))}")
-    
-    dataset_info["io_lengths"] = list(zip(input_lengths, output_lengths))
 
     corpus = "".join(load_corpus())
     Logger.info(f"Loaded corpus")

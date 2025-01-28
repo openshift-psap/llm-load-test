@@ -12,8 +12,6 @@ pip install -r contrib/synthetic_datagen/requirements.txt
 
 ## Usage
 
-**Note:** There is a known request synchronization issue that can cause sub-optimal performance when using a dataset with no sequence to sequence variation in input/output lengths.
-
 ```
 usage: synthetic_datagen.py [-h] -m MODEL -o FILE [-i FILE [FILE ...]] -c COUNT (--input-equal LEN |
                             --input-normal MEAN SD | --input-uniform MIN MAX) (--output-equal LEN |
@@ -42,7 +40,7 @@ options:
 --input-normal 1000 30 --output-normal 1000 30
 ```
 
-- A standard deviation(sd) value of at least 30 recommended to avoid request synchronization
+- **Note:** A standard deviation(sd) value of at least 30 recommended to avoid request synchronization
 
 ### Uniform Distribution
 
@@ -55,5 +53,15 @@ options:
 ```
 --input-equal 1000 --output-equal 1200
 ```
+
+- **Note:** There is a known request synchronization issue that can cause sub-optimal performance when using a dataset with no sequence to sequence variation in input/output lengths.
+
+### Mixed Input/Output Distributions
+
+```
+--input-uniform 256 512 --output-normal 256 128
+```
+
+---
 
 The script can also be pointed to local models following a HuggingFace model structure. 

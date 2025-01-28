@@ -5,7 +5,6 @@ import random
 import numpy as np
 import json
 import logging
-import fileinput
 from glob import glob
 
 Logger = logging.getLogger("synthetic-datagen")
@@ -55,8 +54,8 @@ def gen_io_lengths(num_samples :  int, input_distribution : str, output_distribu
 
     return input, output
 
-def load_corpus():
-    with fileinput.input(files=glob(CORPUS_GLOB), mode='r') as f:
+def load_corpus(files: list[io.TextIOWrapper]):
+    for f in files:
         for line in f:
             yield line
 
@@ -99,7 +98,7 @@ def make_dataset(args):
     assert isinstance(output_lengths, list) # TODO
     Logger.debug(f"Input and Output lengths : {list(zip(input_lengths, output_lengths))}")
 
-    corpus = "".join(load_corpus())
+    corpus = "".join(load_corpus(args["corpus"]))
     Logger.info(f"Loaded corpus")
     offsets = calculate_offsets(model, corpus)
     Logger.info(f"Found {len(offsets)} tokens in corpus")
@@ -123,15 +122,34 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(
         description="Create Synthetic Datasets for use with llm-load-test",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
         "-m", "--model",
-        help="Huggingface model name or path to model",
+        help="HuggingFace model name or path to model",
         required=True,
     )
-    parser.add_argument("-o", "--dataset", metavar="FILE", required=True, type=argparse.FileType('w', encoding='UTF-8'))
-    parser.add_argument("-c", "--samples", metavar="COUNT", type=int, default=100)
+    parser.add_argument(
+        "-o", "--dataset",
+        metavar="FILE",
+        required=True,
+        type=argparse.FileType('w', encoding='UTF-8'),
+        help="path to output file",
+    )
+    parser.add_argument(
+        "-i", "--corpus",
+        metavar="FILE",
+        nargs="+",
+        default=[argparse.FileType('r')(f) for f in glob(CORPUS_GLOB)],
+        type=argparse.FileType('r'),
+        help="path to corpus file(s)",
+    )
+    parser.add_argument(
+        "-c", "--samples",
+        metavar="COUNT",
+        type=int,
+        required=True,
+        help="number of samples to generate",
+    )
 
     input_group = parser.add_mutually_exclusive_group(required=True)
     input_group.add_argument("--input-equal", metavar="LEN", type=int, nargs=1)

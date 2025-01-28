@@ -1,2 +1,0 @@
-# Common Dependencies
--r ../requirements.txt

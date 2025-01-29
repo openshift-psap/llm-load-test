@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import io
 import os
 from typing import Any
@@ -126,6 +128,7 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(
         description="Create Synthetic Datasets for use with llm-load-test",
+        formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=80)
     )
     parser.add_argument(
         "-m", "--model",
@@ -156,19 +159,56 @@ if __name__ == "__main__":
     )
 
     input_group = parser.add_mutually_exclusive_group(required=True)
-    input_group.add_argument("--input-equal", metavar="LEN", type=int, nargs=1)
-    input_group.add_argument("--input-normal", metavar=("MEAN", "SD"), type=int, nargs=2)
-    input_group.add_argument("--input-uniform", metavar=("MIN", "MAX"), type=int, nargs=2)
+    input_group.add_argument(
+        "--input-equal",
+        metavar="LEN",
+        type=int,
+        nargs=1,
+        help="equal distribution for input tokens",
+    )
+    input_group.add_argument(
+        "--input-normal",
+        metavar=("MEAN", "SD"),
+        type=int,
+        nargs=2,
+        help="normal distribution for input tokens",
+    )
+    input_group.add_argument(
+        "--input-uniform",
+        metavar=("MIN", "MAX"),
+        type=int,
+        nargs=2,
+        help="uniform distribution for input tokens",
+    )
 
     output_group = parser.add_mutually_exclusive_group(required=True)
-    output_group.add_argument("--output-equal", metavar="LEN", type=int, nargs=1)
-    output_group.add_argument("--output-normal", metavar=("MEAN", "SD"), type=int, nargs=2)
-    output_group.add_argument("--output-uniform", metavar=("MIN", "MAX"), type=int, nargs=2)
+    output_group.add_argument(
+        "--output-equal",
+        metavar="LEN",
+        type=int,
+        nargs=1,
+        help="equal distribution for output tokens",
+    )
+    output_group.add_argument(
+        "--output-normal",
+        metavar=("MEAN", "SD"),
+        type=int,
+        nargs=2,
+        help="normal distribution for output tokens",
+    )
+    output_group.add_argument(
+        "--output-uniform",
+        metavar=("MIN", "MAX"),
+        type=int,
+        nargs=2,
+        help="uniform distribution for output tokens",
+    )
 
     args = parser.parse_args()
 
     arg_vars = vars(args)
 
+    # Set the correct arguments based on specified distribution
     for i in ("input", "output"):
         if arg_vars.get(f"{i}_uniform") != None:
             params = ("min", "max")

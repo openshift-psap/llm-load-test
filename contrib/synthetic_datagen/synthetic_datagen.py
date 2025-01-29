@@ -3,7 +3,7 @@
 from abc import ABC
 import io
 import os
-from typing import Any, Iterable, Iterator
+from typing import Any, Iterator, Optional
 from tokenizers import Tokenizer
 import random
 import numpy as np
@@ -17,7 +17,6 @@ logging.basicConfig(level=logging.INFO)
 # TODO: Data distribution visualization
 
 DATA_RANDOM_SEED = int(os.environ.get("DATA_RANDOM_SEED", 42))
-random.seed(DATA_RANDOM_SEED)
 CORPUS_GLOB=f"{os.path.dirname(os.path.realpath(__file__))}/corpus/*.txt"
 
 metadata_dict: dict[str, Any] = {
@@ -26,11 +25,13 @@ metadata_dict: dict[str, Any] = {
     "license": "MIT License\n\nCopyright (c) [year] [fullname]\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
 }
 
+
 class Distribution(ABC):
     _samples: list
 
     def __init__(self, samples: int, generator: np.random.Generator, *args) -> None:
-        raise NotImplementedError
+        self.n = samples
+        self.argv = args
 
     def __iter__(self) -> Iterator[int]:
         return iter(self._samples)
@@ -38,56 +39,41 @@ class Distribution(ABC):
     def __getitem__(self, key) -> int:
         return self._samples[key]
 
+    def __len__(self) -> int:
+        return len(self._samples)
+
+    @property
+    def description(self) -> dict:
+        return dict(
+            distribution=type(self).__name__,
+            args=self.argv,
+            n=self.n,
+        )
+
 
 class NormalDist(Distribution):
     def __init__(self, samples: int, generator: np.random.Generator, mean: int, stdev: int) -> None:
         self._samples = generator.normal(loc=mean, scale=stdev, size=samples).astype(dtype=int).tolist()
+        super().__init__(samples, generator, mean, stdev)
 
 
 class UniformDist(Distribution):
     def __init__(self, samples: int, generator: np.random.Generator, minimum: int, maximum: int) -> None:
         self._samples = generator.uniform(low=minimum, high=maximum, size=samples).astype(dtype=int).tolist()
+        super().__init__(samples, generator, minimum, maximum)
 
 
 class EqualDist(Distribution):
     def __init__(self, samples: int, generator: np.random.Generator, length: int) -> None:
         self._samples = generator.normal(loc=length, scale=0, size=samples).astype(dtype=int).tolist()
+        super().__init__(samples, generator, length)
 
-
-# Generate input and output lengths as 2 independant distributions
-# Future item: Possible dependent distribution
-def gen_io_lengths(num_samples :  int, input_distribution : str, output_distribution : str, other_args):
-    logger.debug(f"Data Random Seed : {DATA_RANDOM_SEED}")
-    random_generator = np.random.default_rng(seed=DATA_RANDOM_SEED)
-
-    # Types of distributions
-    # Equal     - No change in lengths
-    # Uniform   - Uniform distribution across the min_max intervals
-    # Normal    - Standard normal distribution centered over the mean
-    if input_distribution == "uniform":
-        input = UniformDist(num_samples, random_generator, other_args["input_min"], other_args["input_max"])
-    elif input_distribution == "normal":
-        input = NormalDist(num_samples, random_generator, other_args["input_mean"], other_args["input_sd"])
-    elif input_distribution == "equal":
-        input = EqualDist(num_samples, random_generator, other_args["input_len"])
-    else:
-        raise RuntimeError("Unknown distribution requested : " + str(input_distribution))
-
-    if output_distribution == "uniform":
-        output = UniformDist(num_samples, random_generator, other_args["output_min"], other_args["output_max"])
-    elif output_distribution == "normal":
-        output = NormalDist(num_samples, random_generator, other_args["output_mean"], other_args["output_sd"])
-    elif output_distribution == "equal":
-        output = EqualDist(num_samples, random_generator, other_args["output_len"])
-    else:
-        raise RuntimeError("Unknown distribution requested : " + str(output_distribution))
-
-    return input, output
 
 def load_corpus(files: list[io.TextIOWrapper]):
     for f in files:
         for line in f:
             yield line
+
 
 def calculate_offsets(model, corpus):
     if os.path.isfile(f"{model}/tokenizer.json"):
@@ -106,34 +92,20 @@ def make_one_sample(corpus, offsets, req_sample_size : int):
     tokens = corpus[start_idx:end_idx]
     return tokens
 
-def make_dataset(args):
 
-    model = args['model']
-    num_samples = args['samples']
-
+def make_dataset(model: str, samples: int, input_dist: Distribution, output_dist: Distribution, corpus: str):
     dataset_info = {
-        'model': model,
-        'num_samples': num_samples,
-        'input_distribution': args['input_distribution'],
-        'output_distribution': args['output_distribution'],
+        'tokenizer': model,
+        'n': samples,
+        'input': input_dist.description,
+        'output': output_dist.description,
     }
 
-    input_lengths, output_lengths = gen_io_lengths(
-        num_samples=num_samples, 
-        input_distribution=dataset_info['input_distribution'],
-        output_distribution=dataset_info['output_distribution'],
-        other_args=args
-        )
-
-    logger.debug(f"Input and Output lengths : {list(zip(input_lengths, output_lengths))}")
-
-    corpus = "".join(load_corpus(args["corpus"]))
-    logger.info(f"Loaded corpus")
     offsets = calculate_offsets(model, corpus)
     logger.info(f"Found {len(offsets)} tokens in corpus")
 
     dict_items = []
-    for si, (input_len, output_len) in enumerate(zip(input_lengths, output_lengths)):
+    for si, (input_len, output_len) in enumerate(zip(input_dist, output_dist)):
         sample = make_one_sample(corpus, offsets, input_len)
         logger.debug(f"Sample : {sample}")
         dict_items.append({
@@ -146,6 +118,7 @@ def make_dataset(args):
         })
 
     return dict_items, dataset_info
+
 
 if __name__ == "__main__":
     import argparse
@@ -235,27 +208,33 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    arg_vars = vars(args)
-
+    rand = np.random.default_rng(seed=DATA_RANDOM_SEED)
     # Set the correct arguments based on specified distribution
-    for i in ("input", "output"):
-        if arg_vars.get(f"{i}_uniform") != None:
-            params = ("min", "max")
-            argv: list = arg_vars[f"{i}_uniform"]
-            arg_vars[f"{i}_distribution"] = "uniform"
-        elif arg_vars.get(f"{i}_normal") != None:
-            params = ("mean", "sd")
-            argv: list = arg_vars[f"{i}_normal"]
-            arg_vars[f"{i}_distribution"] = "normal"
-        elif arg_vars.get(f"{i}_equal") != None:
-            params = ("len",)
-            argv: list = arg_vars[f"{i}_equal"]
-            arg_vars[f"{i}_distribution"] = "equal"
-        else:
-            raise RuntimeError(f"Unknown distribution requested for: {i}")
-        arg_vars.update({f"{i}_{k}": v for k,v in zip(params, argv)})
+    if args.input_uniform != None:
+        input_dist = UniformDist(args.samples, rand, *args.input_uniform)
+    elif args.input_normal != None:
+        input_dist = NormalDist(args.samples, rand, *args.input_normal)
+    elif args.input_equal != None:
+        input_dist = EqualDist(args.samples, rand, *args.input_equal)
+    else:
+        raise RuntimeError(f"Unknown distribution requested for input")
 
-    dataset, dataset_info = make_dataset(arg_vars)
+    if args.output_uniform != None:
+        output_dist = UniformDist(args.samples, rand, *args.output_uniform)
+    elif args.output_normal != None:
+        output_dist = NormalDist(args.samples, rand, *args.output_normal)
+    elif args.output_equal != None:
+        output_dist = EqualDist(args.samples, rand, *args.output_equal)
+    else:
+        raise RuntimeError(f"Unknown distribution requested for output")
+
+    print(repr(input_dist))
+
+    # Load corpus
+    corpus = "".join(load_corpus(args.corpus))
+    logger.info(f"Loaded corpus")
+
+    dataset, dataset_info = make_dataset(args.model, args.samples, input_dist, output_dist, corpus)
     metadata_dict['dataset_info'] = dataset_info
 
     f: io.TextIOWrapper = args.dataset

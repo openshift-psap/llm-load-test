@@ -61,7 +61,10 @@ def load_corpus(files: list[io.TextIOWrapper]):
             yield line
 
 def calculate_offsets(model, corpus):
-    tokenizer = Tokenizer.from_pretrained(model)
+    if os.path.isfile(f"{model}/tokenizer.json"):
+        tokenizer = Tokenizer.from_file(f"{model}/tokenizer.json")
+    else:
+        tokenizer = Tokenizer.from_pretrained(model)
     tokenized_corpus = tokenizer.encode(corpus)
     return tokenized_corpus.offsets
 

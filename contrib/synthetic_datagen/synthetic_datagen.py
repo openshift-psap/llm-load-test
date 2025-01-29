@@ -3,7 +3,7 @@
 from abc import ABC
 import io
 import os
-from typing import Any, Iterator, Optional
+from typing import Any, Iterator
 from tokenizers import Tokenizer
 import random
 import numpy as np
@@ -16,7 +16,6 @@ logging.basicConfig(level=logging.INFO)
 
 # TODO: Data distribution visualization
 
-DATA_RANDOM_SEED = int(os.environ.get("DATA_RANDOM_SEED", 42))
 CORPUS_GLOB=f"{os.path.dirname(os.path.realpath(__file__))}/corpus/*.txt"
 
 metadata_dict: dict[str, Any] = {
@@ -159,6 +158,13 @@ if __name__ == "__main__":
         required=True,
         help="number of samples to generate",
     )
+    parser.add_argument(
+        "-s", "--seed",
+        metavar="INT",
+        type=int,
+        default=42,
+        help="random sample seed",
+    )
 
     input_group = parser.add_mutually_exclusive_group(required=True)
     input_group.add_argument(
@@ -208,7 +214,10 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    rand = np.random.default_rng(seed=DATA_RANDOM_SEED)
+    # Init random number generators
+    random.seed(args.seed) # We use python random for sampling corpus
+    rand = np.random.default_rng(seed=args.seed)
+
     # Set the correct arguments based on specified distribution
     if args.input_uniform != None:
         input_dist = UniformDist(args.samples, rand, *args.input_uniform)
@@ -227,8 +236,6 @@ if __name__ == "__main__":
         output_dist = EqualDist(args.samples, rand, *args.output_equal)
     else:
         raise RuntimeError(f"Unknown distribution requested for output")
-
-    print(repr(input_dist))
 
     # Load corpus
     corpus = "".join(load_corpus(args.corpus))

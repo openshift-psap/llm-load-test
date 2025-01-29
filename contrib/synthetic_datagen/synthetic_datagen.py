@@ -108,7 +108,7 @@ def make_dataset(model: str, samples: int, input_dist: Distribution, output_dist
         sample = make_one_sample(corpus, offsets, input_len)
         logger.debug(f"Sample : {sample}")
         dict_items.append({
-            "index": "custom-"+model+"-data-" + str(si),
+            "index": si,
             "question": sample,
             "tok_input_length": input_len,
             "tok_output_length": output_len,

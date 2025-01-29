@@ -126,6 +126,12 @@ def make_dataset(args):
 
 if __name__ == "__main__":
     import argparse
+    def positive_int(value):
+        ivalue = int(value)
+        if ivalue <= 0:
+            raise ValueError(f"{value} must be positive")
+        return ivalue
+
     parser = argparse.ArgumentParser(
         description="Create Synthetic Datasets for use with llm-load-test",
         formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=80)
@@ -153,7 +159,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "-c", "--samples",
         metavar="COUNT",
-        type=int,
+        type=positive_int,
         required=True,
         help="number of samples to generate",
     )
@@ -162,21 +168,21 @@ if __name__ == "__main__":
     input_group.add_argument(
         "--input-equal",
         metavar="LEN",
-        type=int,
+        type=positive_int,
         nargs=1,
         help="equal distribution for input tokens",
     )
     input_group.add_argument(
         "--input-normal",
         metavar=("MEAN", "SD"),
-        type=int,
+        type=positive_int,
         nargs=2,
         help="normal distribution for input tokens",
     )
     input_group.add_argument(
         "--input-uniform",
         metavar=("MIN", "MAX"),
-        type=int,
+        type=positive_int,
         nargs=2,
         help="uniform distribution for input tokens",
     )
@@ -185,21 +191,21 @@ if __name__ == "__main__":
     output_group.add_argument(
         "--output-equal",
         metavar="LEN",
-        type=int,
+        type=positive_int,
         nargs=1,
         help="equal distribution for output tokens",
     )
     output_group.add_argument(
         "--output-normal",
         metavar=("MEAN", "SD"),
-        type=int,
+        type=positive_int,
         nargs=2,
         help="normal distribution for output tokens",
     )
     output_group.add_argument(
         "--output-uniform",
         metavar=("MIN", "MAX"),
-        type=int,
+        type=positive_int,
         nargs=2,
         help="uniform distribution for output tokens",
     )

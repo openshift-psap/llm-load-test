@@ -10,7 +10,7 @@ import json
 import logging
 from glob import glob
 
-Logger = logging.getLogger("synthetic-datagen")
+logger = logging.getLogger("synthetic-datagen")
 logging.basicConfig(level=logging.INFO)
 
 # TODO: Data distribution visualization
@@ -28,7 +28,7 @@ metadata_dict: dict[str, Any] = {
 # Generate input and output lengths as 2 independant distributions
 # Future item: Possible dependent distribution
 def gen_io_lengths(num_samples :  int, input_distribution : str, output_distribution : str, other_args):
-    Logger.debug(f"Data Random Seed : {DATA_RANDOM_SEED}")
+    logger.debug(f"Data Random Seed : {DATA_RANDOM_SEED}")
     random_generator = np.random.default_rng(seed=DATA_RANDOM_SEED)
 
     # Types of distributions
@@ -102,17 +102,17 @@ def make_dataset(args):
     input_lengths, output_lengths = input_lengths.astype(dtype=int).tolist(), output_lengths.astype(dtype=int).tolist()
     assert isinstance(input_lengths, list) # TODO
     assert isinstance(output_lengths, list) # TODO
-    Logger.debug(f"Input and Output lengths : {list(zip(input_lengths, output_lengths))}")
+    logger.debug(f"Input and Output lengths : {list(zip(input_lengths, output_lengths))}")
 
     corpus = "".join(load_corpus(args["corpus"]))
-    Logger.info(f"Loaded corpus")
+    logger.info(f"Loaded corpus")
     offsets = calculate_offsets(model, corpus)
-    Logger.info(f"Found {len(offsets)} tokens in corpus")
+    logger.info(f"Found {len(offsets)} tokens in corpus")
 
     dict_items = []
     for si, (input_len, output_len) in enumerate(zip(input_lengths, output_lengths)):
         sample = make_one_sample(corpus, offsets, input_len)
-        Logger.debug(f"Sample : {sample}")
+        logger.debug(f"Sample : {sample}")
         dict_items.append({
             "index": "custom-"+model+"-data-" + str(si),
             "question": sample,
@@ -242,4 +242,4 @@ if __name__ == "__main__":
         json.dump(item, f)
         f.write("\n")
 
-    Logger.info(f"Dataset saved to : {f.name}")
+    logger.info(f"Dataset saved to : {f.name}")

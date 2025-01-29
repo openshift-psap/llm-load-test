@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 
+from abc import ABC
 import io
 import os
-from typing import Any
+from typing import Any, Iterable, Iterator
 from tokenizers import Tokenizer
 import random
 import numpy as np
@@ -25,6 +26,34 @@ metadata_dict: dict[str, Any] = {
     "license": "MIT License\n\nCopyright (c) [year] [fullname]\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
 }
 
+class Distribution(ABC):
+    _samples: list
+
+    def __init__(self, samples: int, generator: np.random.Generator, *args) -> None:
+        raise NotImplementedError
+
+    def __iter__(self) -> Iterator[int]:
+        return iter(self._samples)
+
+    def __getitem__(self, key) -> int:
+        return self._samples[key]
+
+
+class NormalDist(Distribution):
+    def __init__(self, samples: int, generator: np.random.Generator, mean: int, stdev: int) -> None:
+        self._samples = generator.normal(loc=mean, scale=stdev, size=samples).astype(dtype=int).tolist()
+
+
+class UniformDist(Distribution):
+    def __init__(self, samples: int, generator: np.random.Generator, minimum: int, maximum: int) -> None:
+        self._samples = generator.uniform(low=minimum, high=maximum, size=samples).astype(dtype=int).tolist()
+
+
+class EqualDist(Distribution):
+    def __init__(self, samples: int, generator: np.random.Generator, length: int) -> None:
+        self._samples = generator.normal(loc=length, scale=0, size=samples).astype(dtype=int).tolist()
+
+
 # Generate input and output lengths as 2 independant distributions
 # Future item: Possible dependent distribution
 def gen_io_lengths(num_samples :  int, input_distribution : str, output_distribution : str, other_args):
@@ -36,22 +65,20 @@ def gen_io_lengths(num_samples :  int, input_distribution : str, output_distribu
     # Uniform   - Uniform distribution across the min_max intervals
     # Normal    - Standard normal distribution centered over the mean
     if input_distribution == "uniform":
-        input = random_generator.uniform(low=other_args["input_min"], high=other_args["input_max"], size=num_samples)
+        input = UniformDist(num_samples, random_generator, other_args["input_min"], other_args["input_max"])
     elif input_distribution == "normal":
-        input = random_generator.normal(loc=other_args["input_mean"], scale=other_args["input_sd"], size=num_samples)
+        input = NormalDist(num_samples, random_generator, other_args["input_mean"], other_args["input_sd"])
     elif input_distribution == "equal":
-        # Using the library for consistency
-        input = random_generator.normal(loc=other_args["input_len"], scale=0, size=num_samples)
+        input = EqualDist(num_samples, random_generator, other_args["input_len"])
     else:
         raise RuntimeError("Unknown distribution requested : " + str(input_distribution))
 
     if output_distribution == "uniform":
-        output = random_generator.uniform(low=other_args["output_min"], high=other_args["output_max"], size=num_samples)
+        output = UniformDist(num_samples, random_generator, other_args["output_min"], other_args["output_max"])
     elif output_distribution == "normal":
-        output = random_generator.normal(loc=other_args["output_mean"], scale=other_args["output_sd"], size=num_samples)
+        output = NormalDist(num_samples, random_generator, other_args["output_mean"], other_args["output_sd"])
     elif output_distribution == "equal":
-        # Using the library for consistency
-        output = random_generator.normal(loc=other_args["output_len"], scale=0, size=num_samples)
+        output = EqualDist(num_samples, random_generator, other_args["output_len"])
     else:
         raise RuntimeError("Unknown distribution requested : " + str(output_distribution))
 
@@ -98,10 +125,6 @@ def make_dataset(args):
         other_args=args
         )
 
-    # dtype conversion due to output type of random sampling
-    input_lengths, output_lengths = input_lengths.astype(dtype=int).tolist(), output_lengths.astype(dtype=int).tolist()
-    assert isinstance(input_lengths, list) # TODO
-    assert isinstance(output_lengths, list) # TODO
     logger.debug(f"Input and Output lengths : {list(zip(input_lengths, output_lengths))}")
 
     corpus = "".join(load_corpus(args["corpus"]))

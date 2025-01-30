@@ -36,23 +36,18 @@ if __name__ == "__main__":
         formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=80)
     )
     parser.add_argument(
-        "-m", "--model",
+        "model",
         help="HuggingFace model name or path to model",
-        required=True,
     )
     parser.add_argument(
-        "-i", "--input",
-        metavar="PROFILE",
+        "input",
         type=Profiles,
         help="input profile",
-        required=True,
     )
     parser.add_argument(
-        "-o", "--output",
-        metavar="PROFILE",
+        "output",
         type=Profiles,
         help="output profile",
-        required=True,
     )
 
     args = parser.parse_args()

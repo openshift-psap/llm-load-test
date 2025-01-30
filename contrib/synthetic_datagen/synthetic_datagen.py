@@ -10,6 +10,7 @@ import numpy as np
 import json
 import logging
 from glob import glob
+from copy import deepcopy
 
 logger = logging.getLogger("synthetic-datagen")
 logging.basicConfig(level=logging.INFO)
@@ -18,7 +19,7 @@ logging.basicConfig(level=logging.INFO)
 
 CORPUS_GLOB=f"{os.path.dirname(os.path.realpath(__file__))}/corpus/*.txt"
 
-metadata_dict: dict[str, Any] = {
+METADATA_DICT: dict[str, Any] = {
     "name": "synthetic-data", 
     "version": "0.1.1", 
     "license": "MIT License\n\nCopyright (c) [year] [fullname]\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
@@ -100,10 +101,14 @@ def make_dataset(model: str, samples: int, input_dist: Distribution, output_dist
         'output': output_dist.description,
     }
 
+    # Make the metadata header
+    metadata = deepcopy(METADATA_DICT)
+    metadata['dataset_info'] = dataset_info
+
     offsets = calculate_offsets(model, corpus)
     logger.info(f"Found {len(offsets)} tokens in corpus")
 
-    dict_items = []
+    dict_items = [ metadata ]
     for si, (input_len, output_len) in enumerate(zip(input_dist, output_dist)):
         sample = make_one_sample(corpus, offsets, input_len)
         logger.debug(f"Sample : {sample}")
@@ -116,7 +121,7 @@ def make_dataset(model: str, samples: int, input_dist: Distribution, output_dist
             "output_tokens" : output_len # to maintain consistency with existing sample dataset
         })
 
-    return dict_items, dataset_info
+    return dict_items
 
 
 if __name__ == "__main__":
@@ -241,8 +246,7 @@ if __name__ == "__main__":
     corpus = "".join(load_corpus(args.corpus))
     logger.info(f"Loaded corpus")
 
-    dataset, dataset_info = make_dataset(args.model, args.samples, input_dist, output_dist, corpus)
-    metadata_dict['dataset_info'] = dataset_info
+    dataset = make_dataset(args.model, args.samples, input_dist, output_dist, corpus)
 
     f: io.TextIOWrapper = args.dataset
     json.dump(metadata_dict, f)

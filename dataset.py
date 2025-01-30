@@ -2,6 +2,7 @@
 import json
 import logging
 import random
+from typing import Optional
 
 dataset_seed = 1337
 
@@ -11,12 +12,12 @@ class Dataset:
 
     def __init__(self,
                  file,
-                 max_queries=3000,
-                 min_input_tokens=0,
-                 max_input_tokens=16000,
-                 min_output_tokens=0,
-                 max_output_tokens=4096,
-                 max_sequence_tokens=32000,
+                 max_queries: int = 3000,
+                 min_input_tokens: Optional[int]=None,
+                 max_input_tokens: Optional[int]=None,
+                 min_output_tokens: Optional[int]=None,
+                 max_output_tokens: Optional[int]=None,
+                 max_sequence_tokens: Optional[int]=None,
                  custom_prompt_format=None
                  ):
         """Init method."""
@@ -46,13 +47,13 @@ class Dataset:
 
 def initialize_dataset(
     filename,
-    max_queries=3000,
-    min_input_tokens=0,
-    max_input_tokens=16000,
-    min_output_tokens=0,
-    max_output_tokens=4096,
-    max_sequence_tokens=32000,
-    custom_prompt_format=None
+    max_queries: int,
+    min_input_tokens: Optional[int],
+    max_input_tokens: Optional[int],
+    min_output_tokens: Optional[int],
+    max_output_tokens: Optional[int],
+    max_sequence_tokens: Optional[int],
+    custom_prompt_format: Optional[str],
 ):
     """Initialize the dataset."""
     prompt_format = "{prompt}" if not custom_prompt_format else custom_prompt_format
@@ -115,8 +116,13 @@ def filter_token_lengths(input_tokens,
                          max_sequence_tokens):
     """Filter the tokens by length."""
     sequence_tokens = input_tokens + output_tokens
-    return (output_tokens > min_output_tokens
-            and output_tokens < max_output_tokens
-            and input_tokens < max_input_tokens
-            and input_tokens > min_input_tokens
-            and sequence_tokens < max_sequence_tokens)
+    output_min = output_tokens > min_output_tokens if min_output_tokens else True
+    output_max = output_tokens < max_output_tokens if max_output_tokens else True
+    input_max = input_tokens < max_input_tokens if max_input_tokens else True
+    input_min = input_tokens > min_input_tokens if min_input_tokens else True
+    seq_max = sequence_tokens < max_sequence_tokens if max_input_tokens else True
+    return (output_min
+            and output_max
+            and input_max
+            and input_min
+            and seq_max)

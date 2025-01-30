@@ -33,6 +33,7 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(
         description="Generate llm-load-test profile based datasets",
+        epilog=f"Profiles are one of {', '.join(p.value for p in Profiles)}.",
         formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=80)
     )
     parser.add_argument(

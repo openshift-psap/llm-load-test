@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 
 from abc import ABC
-import io
 import os
-from typing import Any, Iterator
+from typing import IO, Any, Iterator
 from tokenizers import Tokenizer
 import random
 import numpy as np
@@ -69,13 +68,13 @@ class EqualDist(Distribution):
         super().__init__(samples, generator, length)
 
 
-def read_files(files: list[io.TextIOWrapper]):
+def read_files(files: list[IO[str]]):
     for f in files:
         for line in f:
             yield line
 
 
-def write_dataset(dataset: list[dict], f: io.TextIOWrapper):
+def write_dataset(dataset: list[dict], f: IO[str]):
     dataset_str = "\n".join(map(json.dumps, dataset))
     f.write(dataset_str)
     f.write("\n")

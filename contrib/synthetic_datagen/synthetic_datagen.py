@@ -69,10 +69,18 @@ class EqualDist(Distribution):
         super().__init__(samples, generator, length)
 
 
-def load_corpus(files: list[io.TextIOWrapper]):
+def read_files(files: list[io.TextIOWrapper]):
     for f in files:
         for line in f:
             yield line
+
+
+def write_dataset(dataset: list[dict], f: io.TextIOWrapper):
+    dataset_str = "\n".join(map(json.dumps, dataset))
+    f.write(dataset_str)
+    f.write("\n")
+
+    logger.info(f"Dataset saved to : {f.name}")
 
 
 def calculate_offsets(model, corpus):
@@ -243,16 +251,9 @@ if __name__ == "__main__":
         raise RuntimeError(f"Unknown distribution requested for output")
 
     # Load corpus
-    corpus = "".join(load_corpus(args.corpus))
+    corpus = "".join(read_files(args.corpus))
     logger.info(f"Loaded corpus")
 
     dataset = make_dataset(args.model, args.samples, input_dist, output_dist, corpus)
 
-    f: io.TextIOWrapper = args.dataset
-    json.dump(metadata_dict, f)
-    f.write("\n")
-    for item in dataset:
-        json.dump(item, f)
-        f.write("\n")
-
-    logger.info(f"Dataset saved to : {f.name}")
+    write_dataset(dataset, args.dataset)

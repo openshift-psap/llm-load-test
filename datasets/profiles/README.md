@@ -18,6 +18,7 @@ Each dataset has the following naming convention:
 Some possible use-cases for each dataset:
 
 - `LIMO_normal_granite-3.1-8b-instruct.jsonl`: Best default as it is most similar to `openorca_large_subset_011.jsonl`, our previous default.
+- `MILO_normal_granite-3.1-8b-instruct.jsonl`: Best for measuring output throughput with a normal input.
 - `LISO_normal_granite-3.1-8b-instruct.jsonl`: Best for short summarization scenarios such as RAG.
 - `MIMO_normal_granite-3.1-8b-instruct.jsonl`: Best for testing balanced I/O.
 - `SILO_normal_granite-3.1-8b-instruct.jsonl`: Best for measuring peak output throughput.

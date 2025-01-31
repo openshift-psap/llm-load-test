@@ -13,11 +13,11 @@ class Dataset:
     def __init__(self,
                  file,
                  max_queries: int = 3000,
-                 min_input_tokens: Optional[int]=None,
-                 max_input_tokens: Optional[int]=None,
-                 min_output_tokens: Optional[int]=None,
-                 max_output_tokens: Optional[int]=None,
-                 max_sequence_tokens: Optional[int]=None,
+                 min_input_tokens: Optional[int] = None,
+                 max_input_tokens: Optional[int] = None,
+                 min_output_tokens: Optional[int] = None,
+                 max_output_tokens: Optional[int] = None,
+                 max_sequence_tokens: Optional[int] = None,
                  custom_prompt_format=None
                  ):
         """Init method."""
@@ -120,7 +120,7 @@ def filter_token_lengths(input_tokens,
     output_max = output_tokens < max_output_tokens if max_output_tokens else True
     input_max = input_tokens < max_input_tokens if max_input_tokens else True
     input_min = input_tokens > min_input_tokens if min_input_tokens else True
-    seq_max = sequence_tokens < max_sequence_tokens if max_input_tokens else True
+    seq_max = sequence_tokens < max_sequence_tokens if max_sequence_tokens else True
     return (output_min
             and output_max
             and input_max

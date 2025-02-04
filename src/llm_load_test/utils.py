@@ -247,4 +247,8 @@ def get_summary(df: pd.DataFrame, output_obj: dict, summary_key: str):
     output_obj["summary"][summary_key]["percentile_90"] = df[summary_key].quantile(0.90)
     output_obj["summary"][summary_key]["percentile_95"] = df[summary_key].quantile(0.95)
     output_obj["summary"][summary_key]["percentile_99"] = df[summary_key].quantile(0.99)
+    # Replace NaNs with None
+    output_obj["summary"][summary_key].update(
+        {k: None for k, v in output_obj["summary"][summary_key].items() if np.isnan(v)}
+    )
     return output_obj

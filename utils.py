@@ -176,6 +176,11 @@ def write_output(config, results_list, concurrency, duration):
     # calculating the summary statistics on tpot, ttft, itl, tt_ack
     df_test_duration = df[df["output_tokens"] == df["output_tokens_before_timeout"]]
     req_completed_within_test_duration = len(df_test_duration)
+    req_filtered = len(df) - req_completed_within_test_duration
+    logging.info(f"Filtered out {req_filtered} requests that did not complete within their deadline")
+
+    if req_completed_within_test_duration == 0:
+        logging.error("No requests completed within the their deadline, cannot calculate summary statistics")
 
     # Time per output token summary
     output_obj = get_summary(df_test_duration, output_obj, "tpot")

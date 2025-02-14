@@ -116,13 +116,15 @@ def main(args):
     """Load test CLI entrypoint."""
     args = utils.parse_args(args)
 
+    mp_mgr = mp.Manager()
+
     mp_ctx = mp.get_context("spawn")
-    logger_q = mp_ctx.Queue()
+    logger_q = mp_mgr.Queue()
     log_reader_thread = logging_utils.init_logging(args.log_level, logger_q)
 
     # Create processes and their Users
-    stop_q = mp_ctx.Queue(1)
-    dataset_q = mp_ctx.Queue()
+    stop_q = mp_mgr.Queue(1)
+    dataset_q = mp_mgr.Queue()
     procs = []
     results_pipes = []
 

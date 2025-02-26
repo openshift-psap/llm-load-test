@@ -1,3 +1,5 @@
+#! /usr/bin/env python3
+
 """Main llm-load-test CLI entrypoint."""
 
 import logging

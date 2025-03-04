@@ -176,6 +176,11 @@ def write_output(config, results_list, concurrency, duration):
     # calculating the summary statistics on tpot, ttft, itl, tt_ack
     df_test_duration = df[df["output_tokens"] == df["output_tokens_before_timeout"]]
     req_completed_within_test_duration = len(df_test_duration)
+    req_filtered = len(df) - req_completed_within_test_duration
+    logging.info(f"Filtered out {req_filtered} requests that did not complete within their deadline")
+
+    if req_completed_within_test_duration == 0:
+        logging.error("No requests completed within the their deadline, cannot calculate summary statistics")
 
     # Time per output token summary
     output_obj = get_summary(df_test_duration, output_obj, "tpot")
@@ -242,4 +247,8 @@ def get_summary(df: pd.DataFrame, output_obj: dict, summary_key: str):
     output_obj["summary"][summary_key]["percentile_90"] = df[summary_key].quantile(0.90)
     output_obj["summary"][summary_key]["percentile_95"] = df[summary_key].quantile(0.95)
     output_obj["summary"][summary_key]["percentile_99"] = df[summary_key].quantile(0.99)
+    # Replace NaNs with None
+    output_obj["summary"][summary_key].update(
+        {k: None for k, v in output_obj["summary"][summary_key].items() if np.isnan(v)}
+    )
     return output_obj

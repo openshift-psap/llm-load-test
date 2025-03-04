@@ -1,12 +1,15 @@
+"""Plugin for the Hugging Face TGI model server."""
+
 import json
 import logging
 import time
 
-import requests
-import urllib3
-
 from llm_load_test.plugins import plugin
 from llm_load_test.result import RequestResult
+
+import requests
+
+import urllib3
 
 urllib3.disable_warnings()
 
@@ -18,7 +21,10 @@ logger = logging.getLogger("user")
 # TODO:
 # - Add configurable timeout for requests
 class HFTGIPlugin(plugin.Plugin):
+    """Plugin for the Hugging Face TGI model server."""
+
     def __init__(self, args):
+        """Initialize the plugin."""
         self._parse_args(args)
 
     def _parse_args(self, args):
@@ -35,8 +41,8 @@ class HFTGIPlugin(plugin.Plugin):
 
         self.host = args["host"] + endpoint
 
-    def streaming_request_http(self, query, user_id, test_end_time: float=0):
-
+    def streaming_request_http(self, query, user_id, test_end_time: float = 0):
+        """Make a streaming HTTP request."""
         headers = {"Content-Type": "application/json"}
 
         data = {
@@ -50,7 +56,7 @@ class HFTGIPlugin(plugin.Plugin):
 
         result = RequestResult(user_id, query.get("input_id"), query.get("input_tokens"))
 
-        tokens = []        
+        tokens = []
         response = None
         result.start_time = time.time()
         try:

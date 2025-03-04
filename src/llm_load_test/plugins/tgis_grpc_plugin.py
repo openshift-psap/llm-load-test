@@ -1,10 +1,12 @@
-import logging
-import time
+"""Plugin for interacting with TGI Server using gRPC."""
 
-import grpc
+import logging
 import socket
 import ssl
 import sys
+import time
+
+import grpc
 
 from llm_load_test import generation_pb2_grpc
 from llm_load_test.plugins import plugin
@@ -14,23 +16,25 @@ logger = logging.getLogger("user")
 
 required_args = ["model_name", "host", "port", "streaming", "use_tls"]
 
-"""
-This plugin currently only supports grpc requests for a standalone TGI server.
-
-Example plugin config.yaml:
-
-plugin: "tgis_grpc_plugin"
-plugin_options:
-  use_tls: True/False
-  streaming: True/False
-  model_name: "Llama-2-7b-hf"
-  host: "localhost"
-  port: 8033
-"""
-
 
 class TGISGRPCPlugin(plugin.Plugin):
+    """Plugin for interacting with TGI Server using gRPC.
+
+    This plugin currently only supports grpc requests for a standalone TGI server.
+
+    Example plugin config.yaml:
+
+    plugin: "tgis_grpc_plugin"
+    plugin_options:
+    use_tls: True/False
+    streaming: True/False
+    model_name: "Llama-2-7b-hf"
+    host: "localhost"
+    port: 8033
+    """
+
     def __init__(self, args):
+        """Initialize the plugin."""
         self._parse_args(args)
         self.connection = f"{self.host}:{self.port}"
 
@@ -50,6 +54,7 @@ class TGISGRPCPlugin(plugin.Plugin):
             self.request_func = self.make_request
 
     def get_server_certificate(self, host: str, port: int) -> str:
+        """Get the server certificate for the given host and port."""
         if sys.version_info >= (3, 10):
             # ssl.get_server_certificate supports TLS SNI only above 3.10
             # https://github.com/python/cpython/pull/16820
@@ -63,12 +68,14 @@ class TGISGRPCPlugin(plugin.Plugin):
         return ssl.DER_cert_to_PEM_cert(cert_der)
 
     def channel_credentials(self):
+        """Get the channel credentials for the gRPC connection."""
         cert = self.get_server_certificate(self.host, self.port).encode()
         credentials_kwargs: dict[str, bytes] = {}
         credentials_kwargs.update(root_certificates=cert)
         return grpc.ssl_channel_credentials(**credentials_kwargs)
 
     def make_request(self, query: dict, user_id: int, test_end_time: float = 0):
+        """Make a syncronous gRPC request."""
         if self.use_tls:
             grpc_channel = grpc.secure_channel(self.connection, self.channel_credentials())
         else:
@@ -125,6 +132,7 @@ class TGISGRPCPlugin(plugin.Plugin):
         return result
 
     def make_request_stream(self, query: dict, user_id: int, test_end_time: float):
+        """Make a streaming gRPC request."""
         if self.use_tls:
             grpc_channel = grpc.secure_channel(self.connection, self.channel_credentials())
         else:

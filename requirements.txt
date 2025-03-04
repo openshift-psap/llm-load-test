@@ -1,10 +1,2 @@
-deprecation
-flake8
-isort
-numpy
-pandas
-pyyaml
-pylint
-requests
-grpcio
-google-api-python-client
+# Legacy support; add dependencies to pyproject.toml
+-e . # Install llm-load-test as a library

@@ -6,16 +6,16 @@ import logging
 import os
 from pathlib import Path
 
-import numpy as np
-
-import pandas as pd
-
 from llm_load_test.plugins import (
     dummy_plugin,
     hf_tgi_plugin,
     openai_plugin,
     tgis_grpc_plugin,
 )
+
+import numpy as np
+
+import pandas as pd
 
 import yaml
 

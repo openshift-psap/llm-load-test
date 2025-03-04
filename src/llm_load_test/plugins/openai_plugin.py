@@ -1,13 +1,15 @@
+"""Plugin for OpenAI API-compatible model servers."""
 import json
 import logging
 import time
 from typing import Any, Optional, Union
 
-import requests
-import urllib3
-
 from llm_load_test.plugins import plugin
 from llm_load_test.result import RequestResult
+
+import requests
+
+import urllib3
 
 urllib3.disable_warnings()
 """
@@ -26,9 +28,9 @@ APIS = ["legacy", "chat"]
 
 logger = logging.getLogger("user")
 
+
 def deepget(obj: Union[dict, list], *path: Any, default: Any = None) -> Any:
-    """
-    Acts like .get() but for nested objects.
+    """Acts like .get() but for nested objects.
 
     Each item in path is recusively indexed on obj. For path of length N,
       obj[path[0]][path[1]]...[path[N-1]][path[N]]
@@ -47,10 +49,15 @@ def deepget(obj: Union[dict, list], *path: Any, default: Any = None) -> Any:
     return current
 
 
-# This plugin is written primarily for testing vLLM, though it can be made
-# to work for other runtimes which conform to the OpenAI API, as required.
 class OpenAIPlugin(plugin.Plugin):
+    """Plugin for OpenAI API-compatible model servers.
+
+    This plugin is written primarily for testing vLLM, though it can be made
+    to work for other runtimes which conform to the OpenAI API, as required.
+    """
+
     def __init__(self, args):
+        """Initialize the plugin."""
         self._parse_args(args)
 
     def _parse_args(self, args):
@@ -81,8 +88,8 @@ class OpenAIPlugin(plugin.Plugin):
 
         # TODO Make this configurable
         self.request_defaults = dict(
-            temperature = 0.0,
-            seed = 42,
+            temperature=0.0,
+            seed=42,
         )
 
         self.authorization = args.get("authorization")
@@ -101,14 +108,14 @@ class OpenAIPlugin(plugin.Plugin):
         return message
 
     def request_http(self, query: dict, user_id: int, test_end_time: float = 0):
-
+        """Make a syncronous HTTP request."""
         result = RequestResult(user_id, query.get("text"), query.get("input_tokens"))
 
         result.start_time = time.time()
 
         headers = {"Content-Type": "application/json"}
-        
-        if self.authorization: 
+
+        if self.authorization:
             headers["Authorization"] = f"Bearer {self.authorization}"
 
         request = {
@@ -118,9 +125,9 @@ class OpenAIPlugin(plugin.Plugin):
 
         if self.api == 'chat':
             request["messages"] = [
-                { "role": "user", "content": query["text"] }
+                {"role": "user", "content": query["text"]}
             ]
-        else: # self.api == 'legacy'
+        else:  # self.api == 'legacy'
             request["prompt"] = query["text"],
 
         if self.model_name is not None:
@@ -162,12 +169,12 @@ class OpenAIPlugin(plugin.Plugin):
             if error is None:
                 if self.api == 'chat':
                     result.output_text = deepget(message, "choices", 0, 'delta', 'content')
-                else: # self.api == 'legacy'
+                else:  # self.api == 'legacy'
                     result.output_text = deepget(message, "choices", 0, 'text')
 
                 result.output_tokens = deepget(message, "usage", "completion_tokens")
                 result.input_tokens = deepget(message, "usage", "prompt_tokens")
-                result.stop_reason =  deepget(message, "choices", 0, "finish_reason")
+                result.stop_reason = deepget(message, "choices", 0, "finish_reason")
             else:
                 result.error_code = response.status_code
                 result.error_text = error
@@ -182,12 +189,11 @@ class OpenAIPlugin(plugin.Plugin):
 
         return result
 
-
     def streaming_request_http(self, query: dict, user_id: int, test_end_time: float):
-
+        """Make a streaming HTTP request."""
         headers = {"Content-Type": "application/json"}
-        
-        if self.authorization: 
+
+        if self.authorization:
             headers["Authorization"] = f"Bearer {self.authorization}"
 
         request = {
@@ -202,9 +208,9 @@ class OpenAIPlugin(plugin.Plugin):
 
         if self.api == 'chat':
             request["messages"] = [
-                { "role": "user", "content": query["text"] }
+                {"role": "user", "content": query["text"]}
             ]
-        else: # self.api == 'legacy'
+        else:  # self.api == 'legacy'
             request["prompt"] = query["text"],
 
         # some runtimes only serve one model, won't check this.
@@ -237,20 +243,19 @@ class OpenAIPlugin(plugin.Plugin):
         resps = []
         try:
             for line in response.iter_lines():
-                recv_time = time.time() # Record time asap
+                recv_time = time.time()  # Record time asap
                 # Only record lines with data
                 if line:
                     logger.debug("response line: %s", line)
                     resps.append(dict(
-                        time = recv_time,
-                        data = line
+                        time=recv_time,
+                        data=line
                     ))
             # Full response received
             result.end_time = time.time()
         except requests.exceptions.ChunkedEncodingError as err:
             result.end_time = time.time()
             result.error_text = repr(err)
-            #result.output_text = "".join([])
             result.output_tokens = len(resps)
             if response is not None:
                 result.error_code = response.status_code
@@ -270,7 +275,7 @@ class OpenAIPlugin(plugin.Plugin):
         # Check for end of request marker
         if resps[-1]['data'] == b"data: [DONE]":
             result.end_time = resps[-1]['time']
-            resps.pop() # Drop the end indicator
+            resps.pop()  # Drop the end indicator
         else:
             logger.warning("End of response marker missing, response may be incomplete")
 
@@ -313,13 +318,13 @@ class OpenAIPlugin(plugin.Plugin):
 
             if self.api == 'chat':
                 token["text"] = deepget(message, "choices", 0, 'delta', 'content')
-            else: # self.api == 'legacy'
+            else:  # self.api == 'legacy'
                 token["text"] = deepget(message, "choices", 0, 'text')
 
             # If the message has the current usage then record the number of
             # tokens, otherwise assume 1 token
             current_usage = deepget(message, "usage", "completion_tokens")
-            if current_usage != None:
+            if current_usage is not None:
                 token['count'] = current_usage - total_usage
             else:
                 token['count'] = 1
@@ -362,7 +367,7 @@ class OpenAIPlugin(plugin.Plugin):
             logger.warning("Input token count not found in response, using dataset input_tokens")
             result.input_tokens = query.get("input_tokens")
 
-        result.output_tokens = total_usage # Just reuse our count from the loop
+        result.output_tokens = total_usage  # Just reuse our count from the loop
         if expected_output_tokens and result.output_tokens != expected_output_tokens:
             logger.warning(f"Received {result.output_tokens} tokens but expected {expected_output_tokens} tokens")
 

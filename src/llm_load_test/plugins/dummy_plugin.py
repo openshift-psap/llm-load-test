@@ -1,19 +1,22 @@
+"""Example plugin.
+
+config.yaml:
+  plugin: "dummy"
+  plugin_options:
+    streaming: True
+"""
+
 import time
 
 from llm_load_test.plugins import plugin
 from llm_load_test.result import RequestResult
 
-"""
-Example plugin config.yaml:
-
-plugin: "dummy"
-plugin_options:
-  streaming: True
-"""
-
 
 class DummyPlugin(plugin.Plugin):
+    """Dummy plugin for testing purposes."""
+
     def __init__(self, args):
+        """Initialize the plugin."""
         self._parse_args(args)
 
     def _parse_args(self, args):
@@ -22,7 +25,8 @@ class DummyPlugin(plugin.Plugin):
         else:
             self.request_func = self.request_http
 
-    def request_http(self, query, user_id, test_end_time: float=0):
+    def request_http(self, query, user_id, test_end_time: float = 0):
+        """Make a syncronous HTTP request."""
         result = RequestResult(user_id, query.get("input_id"), query.get("input_tokens"))
         result.start_time = time.time()
 
@@ -39,7 +43,8 @@ class DummyPlugin(plugin.Plugin):
 
         return result
 
-    def streaming_request_http(self, query, user_id, test_end_time: float=0):
+    def streaming_request_http(self, query, user_id, test_end_time: float = 0):
+        """Make a streaming HTTP request."""
         result = RequestResult(user_id, query.get("input_id"), query.get("input_tokens"))
         result.start_time = time.time()
         time.sleep(0.1)

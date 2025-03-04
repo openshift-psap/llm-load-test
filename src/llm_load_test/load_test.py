@@ -8,11 +8,9 @@ import multiprocessing as mp
 import sys
 import time
 
-from llm_load_test.user import User
+from llm_load_test import logging_utils, utils
 from llm_load_test.dataset import Dataset
-
-from llm_load_test import logging_utils
-from llm_load_test import utils
+from llm_load_test.user import User
 
 
 def run_main_process(concurrency, duration, dataset, dataset_q, stop_q):

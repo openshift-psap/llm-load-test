@@ -19,11 +19,11 @@ class Profiles(Enum):
     XLARGE = "XL"
 
 PROFILES = {
-    # Profile: (mean, stdev)
-    Profiles.SMALL: (128, 32),
-    Profiles.MEDIUM: (512, 128),
-    Profiles.LARGE: (2048, 512),
-    Profiles.XLARGE: (10240, 2048),
+    # Profile: (mean, stdev, min, max)
+    Profiles.SMALL: dict(mean=128, stdev=32, range_min=0, range_max=256),
+    Profiles.MEDIUM: dict(mean=512, stdev=128, range_min=256, range_max=1024),
+    Profiles.LARGE: dict(mean=2048, stdev=512, range_min=1024, range_max=3072),
+    Profiles.XLARGE: dict(mean=10240, stdev=2048, range_min=4096, range_max=16384),
 }
 SEED = 42
 SAMPLES = 4000
@@ -56,8 +56,8 @@ if __name__ == "__main__":
     # Init random number generators
     random.seed(SEED) # We use python random for sampling corpus
     rand = np.random.default_rng(seed=SEED)
-    input_dist = synthetic_datagen.NormalDist(SAMPLES, rand, *PROFILES[args.input])
-    output_dist = synthetic_datagen.NormalDist(SAMPLES, rand, *PROFILES[args.output])
+    input_dist = synthetic_datagen.NormalDist(SAMPLES, rand, **PROFILES[args.input])
+    output_dist = synthetic_datagen.NormalDist(SAMPLES, rand, **PROFILES[args.output])
 
     # Load corpus
     in_files = [argparse.FileType('r')(f) for f in glob(synthetic_datagen.CORPUS_GLOB)]

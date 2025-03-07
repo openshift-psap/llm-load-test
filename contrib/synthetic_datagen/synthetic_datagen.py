@@ -2,7 +2,7 @@
 
 from abc import ABC
 import os
-from typing import IO, Any, Iterator
+from typing import IO, Any, Iterator, Optional
 from tokenizers import Tokenizer
 import random
 import numpy as np
@@ -51,8 +51,38 @@ class Distribution(ABC):
 
 
 class NormalDist(Distribution):
-    def __init__(self, samples: int, generator: np.random.Generator, mean: int, stdev: int) -> None:
-        self._samples = generator.normal(loc=mean, scale=stdev, size=samples).astype(dtype=int).tolist()
+    def __init__(
+            self,
+            samples: int,
+            generator: np.random.Generator,
+            mean: int,
+            stdev: int,
+            range_min: Optional[int] = None,
+            range_max: Optional[int] = None
+    ) -> None:
+        self._samples = []
+
+        if range_min is None:
+            range_min = mean - 3*stdev
+        range_min = max(1, range_min)
+
+        if range_max is None:
+            range_max = mean + 3*stdev
+
+        if range_min > range_max:
+            raise ValueError("Minimum value must be less than maximum value")
+
+        discarded = 0
+        while len(self._samples) < samples:
+            sample = int(generator.normal(loc=mean, scale=stdev))
+            if sample < range_min or sample > range_max:
+                discarded += 1
+            else:
+                self._samples.append(sample)
+
+        if discarded > 0:
+            logger.warning(f"Replaced {discarded} of {samples} samples which were outside range [{range_min}, {range_max}]")
+
         super().__init__(samples, generator, mean, stdev)
 
 

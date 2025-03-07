@@ -52,7 +52,13 @@ class Distribution(ABC):
 
 class NormalDist(Distribution):
     def __init__(self, samples: int, generator: np.random.Generator, mean: int, stdev: int) -> None:
-        self._samples = generator.normal(loc=mean, scale=stdev, size=samples).astype(dtype=int).tolist()
+        self._samples = []
+        while len(self._samples) < samples:
+            sample = int(generator.normal(loc=mean, scale=stdev))
+            if sample > 0:
+                self._samples.append(sample)
+            else:
+                logger.warning(f"Discarding non-positive token count: {sample}. Distribution is no longer truely normal.")
         super().__init__(samples, generator, mean, stdev)
 
 

@@ -356,7 +356,7 @@ class OpenAIPlugin(plugin.Plugin):
         result.output_tokens_before_timeout = sum(t['count'] for t in tokens if t['time'] <= test_end_time)
 
         # Full response received, return
-        result.output_text = "".join([token['text'] for token in tokens])
+        result.output_text = "".join([token['text'] for token in tokens if token['text']])
 
         if not result.input_tokens:
             logger.warning("Input token count not found in response, using dataset input_tokens")

@@ -4,7 +4,7 @@ This tool is designed to load test large language models running in different ru
 
 ## Requirements
 
-- Python 3.10 or newer
+- Python 3.9 or newer
 
 ## Usage
 

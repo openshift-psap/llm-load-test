@@ -6,14 +6,15 @@ authors = [
     {name = "David Gray", email = "dagray@redhat.com"},
 ]
 dependencies = [
-    "numpy>=2.2.1",
+    "numpy>=2.0.0; python_version < '3.10'",
+    "numpy>=2.2.1; python_version >= '3.10'",
     "pandas>=2.2.3",
     "pyyaml>=6.0.2",
     "requests>=2.31.0",
     "grpcio>=1.70.0",
     "google-api-python-client>=2.162.0",
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.9"
 readme = "README.md"
 license = {text = "MIT"}
 

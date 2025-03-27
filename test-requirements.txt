@@ -1,9 +1,4 @@
 bashate
-flake8
-flake8-bugbear
-flake8-colors
-flake8-docstrings
-flake8-import-order
-pylint
+ruff
 pyyaml
 tox

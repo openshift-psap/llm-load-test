@@ -50,12 +50,14 @@ class RequestResult:
                     self.ttft = 1000 * (
                         self.first_token_time - self.start_time
                     )  # Time to first token in ms
-                if self.end_time is not None and self.output_tokens is not None:
+                # ITL is only meaningful if there are at least 2 tokens.
+                if self.end_time is not None and self.output_tokens is not None and self.output_tokens > 1:
                     self.itl = (1000 * (self.end_time - self.first_token_time)) / (
                         self.output_tokens - 1
                     )  # Inter-token latency in ms. Distinct from TPOT as it excludes the first token time.
 
-            if self.response_time is not None and self.output_tokens is not None:
+            # TPOT is only meaningful if there is at least 1 token.
+            if self.response_time is not None and self.output_tokens is not None and self.output_tokens > 0:
                 self.tpot = (
                     self.response_time / self.output_tokens
                 )  # Time per output token in ms

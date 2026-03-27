@@ -1,0 +1,17 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: llm-load-test-exporter-role
+rules:
+  # list pods across all namespaces to discover KServe InferenceService models
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["list"]
+  # list services to discover predictor endpoints (name, port, protocol)
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["list"]
+  # read auth tokens from model service-account secrets in any namespace
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get"]
